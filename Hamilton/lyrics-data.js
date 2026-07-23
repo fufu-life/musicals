@@ -1794,7 +1794,7 @@ window.hamiltonLyricsRows = [
     "line_index": "40",
     "english": "Two pints o' Sam Adams, but I'm workin' on three, uh!",
     "ipa": "/tu paɪnts oʊ sæm ædəmz bʌt aɪm wɝkɪn ɔn θri ʌ/",
-    "chinese_translation": "塞缪尔·亚当斯的酒我都能喝下两品脱，正喝第三杯呢！「Sam 是 Samuel 的缩写；塞缪尔·亚当斯（Samuel Adams）是美国革命家、开国元勋之一，参与策划波士顿倾茶事件。」",
+    "chinese_translation": "塞缪尔·亚当斯的酒我都能喝下两品脱，正喝第三杯呢！",
     "note": "",
     "source_file": "Hamilton (Original Broadway Cast Recording) (3367211).md",
     "speakers": [
@@ -1809,7 +1809,7 @@ window.hamiltonLyricsRows = [
     "line_index": "41",
     "english": "Those redcoats don't want it with me!",
     "ipa": "/ðoʊz rɛdkoʊts doʊnt wɔnt ɪt wɪð mi/",
-    "chinese_translation": "那些垃圾英国佬贼怕我「Redcoats是对英国士兵的称呼」",
+    "chinese_translation": "那些红衣军根本不敢惹我！",
     "note": "",
     "source_file": "Hamilton (Original Broadway Cast Recording) (3367211).md",
     "speakers": [
@@ -1854,7 +1854,7 @@ window.hamiltonLyricsRows = [
     "line_index": "44",
     "english": "The Lancelot of the revolutionary set!",
     "ipa": "/ðə lænsɪlɑt əv ðə rɛvəluʃənɛri sɛt/",
-    "chinese_translation": "我就是美国大革命中的兰斯洛特！「Lancelot为圆桌骑士之一，为亚瑟王最英勇最信任的骑士」",
+    "chinese_translation": "我就是革命阵营里的兰斯洛特！",
     "note": "",
     "source_file": "Hamilton (Original Broadway Cast Recording) (3367211).md",
     "speakers": [
@@ -16233,8 +16233,8 @@ window.hamiltonLyricsRows = [
     "note": "",
     "source_file": "Hamilton (Original Broadway Cast Recording) (3367211).md",
     "speakers": [
-      "ENSEMBLE",
-      "BURR/ENSEMBLE"
+      "BURR/ENSEMBLE",
+      "ENSEMBLE"
     ]
   },
   {
@@ -18169,8 +18169,8 @@ window.hamiltonLyricsRows = [
     "note": "",
     "source_file": "Hamilton (Original Broadway Cast Recording) (3367211).md",
     "speakers": [
-      "LAURENS",
-      "HAMILTON"
+      "HAMILTON",
+      "LAURENS"
     ]
   },
   {
@@ -34237,8 +34237,8 @@ window.hamiltonLyricsRows = [
     "note": "",
     "source_file": "Hamilton (Original Broadway Cast Recording) (3367211).md",
     "speakers": [
-      "BURR",
-      "BURR AND COMPANY"
+      "BURR AND COMPANY",
+      "BURR"
     ]
   },
   {
@@ -34283,8 +34283,8 @@ window.hamiltonLyricsRows = [
     "note": "",
     "source_file": "Hamilton (Original Broadway Cast Recording) (3367211).md",
     "speakers": [
-      "BURR",
-      "BURR AND COMPANY"
+      "BURR AND COMPANY",
+      "BURR"
     ]
   },
   {

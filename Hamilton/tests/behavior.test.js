@@ -442,6 +442,8 @@ test("reviewed translations preserve gendered lyrics without adding degrading wo
   const byLine = new Map(sandbox.window.hamiltonLyricsRows.map((row) => [`${row.song_order}:${row.line_index}`, row]));
   assert.equal(byLine.get("2:49").chinese_translation, "正忙得起劲、乐在其中；听说你母亲还问：“再来一次？”");
   assert.equal(byLine.get("2:52").chinese_translation, "隔着四层紧身胸衣，亲热起来也不容易……");
+  assert.equal(byLine.get("2:40").chinese_translation, "塞缪尔·亚当斯的酒我都能喝下两品脱，正喝第三杯呢！");
+  assert.equal(byLine.get("2:44").chinese_translation, "我就是革命阵营里的兰斯洛特！");
   assert.equal(byLine.get("11:52").chinese_translation, "你给我的感觉，是一位从不安于现状的女性");
   assert.equal(byLine.get("11:97").chinese_translation, "在那里，我唯一的“职责”就是嫁给有钱人；");
   assert.equal(byLine.get("27:65").chinese_translation, "还有，只要价钱合适，你可以继续和我被辱骂为“妓女”的妻子来往");
@@ -449,6 +451,11 @@ test("reviewed translations preserve gendered lyrics without adding degrading wo
   ["器大活好", "神魂颠倒", "搞起来", "放荡的老婆", "不会满足的女人", "世家女孩", "荡妇的儿子"].forEach((phrase) => {
     assert.equal(translations.includes(phrase), false, `unreviewed degrading wording remains: ${phrase}`);
   });
+  const aaronBurrSirTranslations = sandbox.window.hamiltonLyricsRows
+    .filter((row) => Number(row.song_order) === 2)
+    .map((row) => row.chinese_translation)
+    .join("\n");
+  assert.doesNotMatch(aaronBurrSirTranslations, /[「」]/, "song translations must not contain glossary notes");
 });
 
 test("common do verb forms use lyric-appropriate definitions", () => {
