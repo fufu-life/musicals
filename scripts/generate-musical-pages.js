@@ -20,6 +20,18 @@ const LINE_MERGE_OVERRIDES = JSON.parse(
 const MERGED_LINE_TEXT_OVERRIDES = JSON.parse(
   fs.readFileSync(path.join(ROOT, "scripts", "merged-line-text-overrides.json"), "utf8"),
 );
+const INSTRUMENTAL_MARKERS = new Set([
+  "instrumental",
+  "instrumental music",
+  "instrumental only",
+  "music only",
+  "orchestral",
+  "纯音乐",
+  "纯音乐，请欣赏",
+  "纯器乐",
+  "器乐",
+  "器乐曲",
+]);
 
 const SHOWS = [
   {
@@ -232,6 +244,171 @@ const SHOWS = [
       heroPattern: "linear-gradient(128deg, rgba(226, 29, 42, 0.2), transparent 42%), repeating-linear-gradient(90deg, rgba(217, 163, 75, 0.055) 0 1px, transparent 1px 18px)",
       visualPattern: "linear-gradient(145deg, rgba(226, 29, 42, 0.2), transparent 48%), radial-gradient(circle at 50% 22%, rgba(217, 163, 75, 0.2), transparent 58%)",
       visualFilter: "drop-shadow(0 16px 22px rgba(0, 0, 0, 0.5)) saturate(1.08)",
+    },
+  },
+  {
+    slug: "chicago",
+    source: "Chicago The Musical (New Broadway Cast Recording (1997)) (72099621)/Chicago The Musical (New Broadway Cast Recording (1997)) (72099621).md",
+    sourceFormat: "paired-english",
+    title: "Chicago",
+    titleZh: "芝加哥",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-logo.svg",
+    showEnglishToggle: false,
+    reviewedWordCardsOnly: true,
+    effect: { icon: "star", trail: "cabaretGlow", click: "marqueeBurst", primary: "#c51f2b", secondary: "#f3d39a" },
+    theme: {
+      bg: "#080708",
+      panel: "#171316",
+      accent: "#c51f2b",
+      highlight: "#f3d39a",
+      ink: "#fff8ee",
+      muted: "rgba(238, 220, 201, 0.72)",
+      line: "rgba(217, 171, 105, 0.28)",
+      shadow: "rgba(0, 0, 0, 0.62)",
+      bodyFont: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+      displayFont: '"Avenir Next Condensed", "Arial Narrow", sans-serif',
+      lyricFont: 'Baskerville, "Iowan Old Style", Georgia, "Songti SC", serif',
+      radius: "3px",
+      titleTracking: "0.045em",
+      bodyPattern: "radial-gradient(ellipse at 16% -10%, rgba(197, 31, 43, 0.23), transparent 32rem), repeating-linear-gradient(90deg, transparent 0 72px, rgba(243, 211, 154, 0.025) 73px 74px)",
+      heroPattern: "radial-gradient(circle at 84% 18%, rgba(243, 211, 154, 0.13) 0 2px, transparent 3px), linear-gradient(125deg, rgba(197, 31, 43, 0.2), transparent 55%)",
+      visualPattern: "radial-gradient(circle at 50% 20%, rgba(197, 31, 43, 0.2), transparent 66%)",
+      visualFilter: "drop-shadow(0 18px 24px rgba(0, 0, 0, 0.64))",
+    },
+  },
+  {
+    slug: "dear-evan-hansen",
+    source: "Dear Evan Hansen (Original Motion Picture Soundtrack) (133703534)/Dear Evan Hansen (Original Motion Picture Soundtrack) (133703534).md",
+    sourceFormat: "paired-english",
+    title: "Dear Evan Hansen",
+    titleZh: "亲爱的埃文·汉森",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-logo.svg",
+    showEnglishToggle: false,
+    reviewedWordCardsOnly: true,
+    effect: { icon: "key", trail: "letters", click: "letterfall", primary: "#2676a8", secondary: "#edf5f7" },
+    theme: {
+      bg: "#07141b",
+      panel: "#102732",
+      accent: "#2a7aaa",
+      highlight: "#dceef2",
+      ink: "#f7fbfc",
+      muted: "rgba(207, 229, 234, 0.74)",
+      line: "rgba(145, 205, 221, 0.27)",
+      shadow: "rgba(0, 8, 15, 0.56)",
+      bodyFont: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+      displayFont: '"Noteworthy", "Bradley Hand", "Marker Felt", sans-serif',
+      lyricFont: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+      radius: "5px",
+      titleTracking: "0.006em",
+      bodyPattern: "repeating-linear-gradient(-7deg, transparent 0 36px, rgba(181, 224, 234, 0.035) 37px 38px), radial-gradient(ellipse at 86% 0%, rgba(42, 122, 170, 0.28), transparent 34rem)",
+      heroPattern: "repeating-linear-gradient(-7deg, transparent 0 27px, rgba(220, 238, 242, 0.06) 28px 29px), linear-gradient(128deg, rgba(42, 122, 170, 0.22), transparent 60%)",
+      visualPattern: "linear-gradient(118deg, rgba(42, 122, 170, 0.2), transparent 56%), repeating-linear-gradient(-7deg, transparent 0 20px, rgba(220, 238, 242, 0.055) 21px 22px)",
+      visualFilter: "drop-shadow(0 16px 22px rgba(0, 0, 0, 0.46))",
+    },
+  },
+  {
+    slug: "six-the-musical",
+    source: "Six_ The Musical (Studio Cast Recording) (73307227)/Six_ The Musical (Studio Cast Recording) (73307227).md",
+    sourceFormat: "paired-english",
+    title: "SIX",
+    titleZh: "六位王后",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-logo.svg",
+    showEnglishToggle: false,
+    reviewedWordCardsOnly: true,
+    effect: { icon: "star", trail: "neonTrail", click: "starBurst", primary: "#d52ba6", secondary: "#f2c94c" },
+    theme: {
+      bg: "#10051c",
+      panel: "#25103a",
+      accent: "#d52ba6",
+      highlight: "#f2c94c",
+      ink: "#fff8ff",
+      muted: "rgba(226, 207, 239, 0.76)",
+      line: "rgba(221, 111, 215, 0.3)",
+      shadow: "rgba(6, 0, 18, 0.62)",
+      bodyFont: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+      displayFont: 'Impact, "Arial Black", "Avenir Next Condensed", sans-serif',
+      lyricFont: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+      radius: "8px",
+      titleTracking: "0.055em",
+      bodyPattern: "linear-gradient(135deg, rgba(213, 43, 166, 0.15), transparent 35%), repeating-linear-gradient(45deg, transparent 0 58px, rgba(242, 201, 76, 0.03) 59px 60px)",
+      heroPattern: "linear-gradient(122deg, rgba(213, 43, 166, 0.24), transparent 48%), radial-gradient(circle at 82% 18%, rgba(242, 201, 76, 0.13), transparent 16rem)",
+      visualPattern: "conic-gradient(from 0deg at 50% 50%, rgba(213, 43, 166, 0.22), rgba(242, 201, 76, 0.09), rgba(98, 64, 190, 0.2), rgba(213, 43, 166, 0.22))",
+      visualFilter: "drop-shadow(0 0 18px rgba(213, 43, 166, 0.38)) drop-shadow(0 14px 20px rgba(0, 0, 0, 0.52))",
+    },
+  },
+  {
+    slug: "suffs",
+    source: "Suffs (Original Broadway Cast Recording) (198263623)/Suffs (Original Broadway Cast Recording) (198263623).md",
+    sourceFormat: "paired-english",
+    title: "Suffs",
+    titleZh: "女权先驱",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-logo.svg",
+    showEnglishToggle: false,
+    reviewedWordCardsOnly: true,
+    effect: { icon: "flag", trail: "letters", click: "dawnRays", primary: "#f0c62b", secondary: "#7e4fa1" },
+    theme: {
+      bg: "#12100b",
+      panel: "#282113",
+      accent: "#e3ba25",
+      highlight: "#af86c8",
+      ink: "#fff9df",
+      muted: "rgba(229, 218, 177, 0.74)",
+      line: "rgba(240, 198, 43, 0.3)",
+      shadow: "rgba(0, 0, 0, 0.54)",
+      bodyFont: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+      displayFont: 'Rockwell, "Courier New", serif',
+      lyricFont: 'Georgia, "Iowan Old Style", "Songti SC", serif',
+      radius: "2px",
+      titleTracking: "0.018em",
+      bodyPattern: "repeating-linear-gradient(0deg, transparent 0 48px, rgba(240, 198, 43, 0.03) 49px 50px), radial-gradient(ellipse at 84% 0%, rgba(126, 79, 161, 0.26), transparent 32rem)",
+      heroPattern: "linear-gradient(118deg, rgba(240, 198, 43, 0.18), transparent 46%), repeating-linear-gradient(-4deg, transparent 0 24px, rgba(175, 134, 200, 0.05) 25px 26px)",
+      visualPattern: "linear-gradient(138deg, rgba(240, 198, 43, 0.2), transparent 52%), linear-gradient(42deg, rgba(126, 79, 161, 0.19), transparent 58%)",
+      visualFilter: "drop-shadow(0 16px 20px rgba(0, 0, 0, 0.5))",
+    },
+  },
+  {
+    slug: "sunset-boulevard",
+    source: "Sunset Boulevard US [ 2005 remastered (set) ] [US 1994 _ Musical _Sunset Boulevard_] (34473330)/Sunset Boulevard US [ 2005 remastered (set) ] [US 1994 _ Musical _Sunset Boulevard_] (34473330).md",
+    sourceFormat: "paired-english",
+    title: "Sunset Boulevard",
+    titleZh: "日落大道",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-logo.svg",
+    showEnglishToggle: false,
+    reviewedWordCardsOnly: true,
+    effect: { icon: "moon", trail: "goldDust", click: "sunHalo", primary: "#d78024", secondary: "#f1d7a2" },
+    theme: {
+      bg: "#070707",
+      panel: "#171310",
+      accent: "#c46d20",
+      highlight: "#e9cf99",
+      ink: "#f8f2e8",
+      muted: "rgba(218, 207, 186, 0.72)",
+      line: "rgba(221, 180, 113, 0.26)",
+      shadow: "rgba(0, 0, 0, 0.68)",
+      bodyFont: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+      displayFont: 'Didot, "Bodoni 72", Georgia, serif',
+      lyricFont: 'Baskerville, "Iowan Old Style", Georgia, "Songti SC", serif',
+      radius: "2px",
+      titleTracking: "0.025em",
+      bodyPattern: "linear-gradient(180deg, rgba(196, 109, 32, 0.18), transparent 18rem), repeating-linear-gradient(90deg, transparent 0 78px, rgba(233, 207, 153, 0.025) 79px 80px)",
+      heroPattern: "linear-gradient(112deg, rgba(196, 109, 32, 0.2), transparent 46%), repeating-linear-gradient(90deg, transparent 0 19px, rgba(233, 207, 153, 0.045) 20px 21px)",
+      visualPattern: "radial-gradient(ellipse at 50% 72%, rgba(215, 128, 36, 0.28), transparent 58%), linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.34))",
+      visualFilter: "drop-shadow(0 18px 24px rgba(0, 0, 0, 0.7)) sepia(0.08)",
     },
   },
   {
@@ -490,6 +667,11 @@ const WAVE2_SHOW_SLUGS = new Set([
   "love-never-dies",
   "les-souliers-rouges",
   "la-legende-du-roi-arthur",
+  "chicago",
+  "dear-evan-hansen",
+  "six-the-musical",
+  "suffs",
+  "sunset-boulevard",
 ]);
 
 const SONG_TITLE_TRANSLATIONS = {
@@ -882,6 +1064,10 @@ const LINE_TEXT_OVERRIDES = {
 };
 
 const SHOW_WORD_OVERRIDES = {
+  "notre-dame-de-paris": {
+    "porterait-elle": ["会穿着吗", "would it wear", "Porterait-elle", "/pɔʁtəʁɛtɛl/"],
+    protégeront: ["将保护", "will protect", "protégeront", "/pʁoteʒʁɔ̃/"],
+  },
   "le-roi-soleil": {
     acoustique: ["原声的；不插电的", "acoustic", "acoustique"],
     acoustiques: ["原声的；不插电的", "acoustic", "acoustiques"],
@@ -1887,7 +2073,7 @@ function main() {
     if (textOnly) {
       const outDir = path.join(ROOT, show.slug);
       fs.mkdirSync(outDir, { recursive: true });
-      writeFile(outDir, "songs.js", `window.songs = ${JSON.stringify(songs, null, 2)};\n`);
+      writeFile(outDir, "songs.js", `window.songs=${JSON.stringify(songs)};\n`);
       summary.push({
         slug: show.slug,
         songs: songs.length,
@@ -1909,8 +2095,8 @@ function main() {
     writeFile(outDir, "index.html", renderIndex(show));
     writeFile(outDir, "style.css", renderStyle(show));
     writeFile(outDir, "script.js", renderScript(show));
-    writeFile(outDir, "songs.js", `window.songs = ${JSON.stringify(songs, null, 2)};\n`);
-    writeFile(outDir, "word-data.js", `window.wordEntries = ${JSON.stringify(wordEntries, null, 2)};\n`);
+    writeFile(outDir, "songs.js", `window.songs=${JSON.stringify(songs)};\n`);
+    writeFile(outDir, "word-data.js", `window.wordEntries=${JSON.stringify(wordEntries)};\n`);
     writeFile(path.join(outDir, "scripts"), "build-audio.js", renderAudioBuilder(show));
     writeFile(path.join(outDir, "tests"), "behavior.test.js", renderTests(show));
     if (WAVE2_SHOW_SLUGS.has(show.slug)) {
@@ -2023,6 +2209,9 @@ function addGlossaryEntry(target, term, entry) {
 }
 
 function parseMarkdown(file, show) {
+  if (show.sourceFormat === "paired-english") {
+    return parsePairedEnglishMarkdown(file, show);
+  }
   const contentShow = show.contentSlug ? { ...show, slug: show.contentSlug } : show;
   const text = fs.readFileSync(file, "utf8");
   const lines = text.split(/\r?\n/);
@@ -2057,6 +2246,12 @@ function parseMarkdown(file, show) {
     if (zhTitle) {
       currentTitleZh = zhTitle[1].trim();
       current.titleZh = currentTitleZh === "未提供" ? "" : stripSongTitleVersionSuffix(currentTitleZh);
+      return;
+    }
+
+    const pageInclusion = raw.match(/^-\s*网页收录：(.+?)\s*$/);
+    if (pageInclusion) {
+      current.excludeFromPage = /^(?:否|不|no|false)/iu.test(pageInclusion[1].trim());
       return;
     }
 
@@ -2098,12 +2293,129 @@ function parseMarkdown(file, show) {
     pendingSpeaker = "";
   });
 
+  return finalizeParsedSongs(contentShow, show, songs);
+}
+
+function parsePairedEnglishMarkdown(file, show) {
+  const text = fs.readFileSync(file, "utf8");
+  const rows = text.split(/\r?\n/);
+  const songs = [];
+  let current = null;
+  let lyricRows = [];
+  let inLyricTable = false;
+  let pendingSpeaker = "";
+
+  const flushSong = () => {
+    if (!current) return;
+    if (lyricRows.length % 2 !== 0) {
+      throw new Error(`${show.slug} track ${current.order} has an odd paired lyric row count`);
+    }
+    for (let index = 0; index < lyricRows.length; index += 2) {
+      const originalRaw = cleanCell(lyricRows[index]);
+      const translationRaw = cleanCell(lyricRows[index + 1]);
+      if (!originalRaw || !translationRaw) continue;
+      if (/^(?:[-—_.…]+|instrumental)$/iu.test(originalRaw)) continue;
+      const speakerCell = extractSpeaker(originalRaw);
+      if (!speakerCell.text) {
+        pendingSpeaker = speakerCell.speaker || pendingSpeaker;
+        continue;
+      }
+      const speaker = speakerCell.speaker || pendingSpeaker;
+      const original = cleanLineCell(show, speakerCell.text, "original");
+      const zh = cleanLineCell(show, stripTranslationSpeaker(translationRaw, speaker), "zh");
+      if (!original || !zh) continue;
+      const lineIndex = index / 2 + 1;
+      current.lines.push({
+        id: `${show.slug}-${String(current.order).padStart(2, "0")}-${String(lineIndex).padStart(3, "0")}`,
+        lineIndex,
+        speaker,
+        original,
+        ipa: ipaFor(original, show.voice),
+        zh,
+        en: "",
+        note: "",
+      });
+      pendingSpeaker = "";
+    }
+    current.sourceTitle = cleanConfiguredSongTitle(show, current.sourceTitle || current.title);
+    current.title = current.sourceTitle;
+  };
+
+  rows.forEach((raw) => {
+    const heading = raw.match(/^##\s+(\d+)\.\s+(.+?)\s*$/);
+    if (heading) {
+      flushSong();
+      const headingTitle = cleanCell(heading[2]);
+      current = {
+        order: Number(heading[1]),
+        id: slugify(`${heading[1]}-${headingTitle}`),
+        sourceTitle: headingTitle,
+        title: headingTitle,
+        titleZh: "",
+        lines: [],
+      };
+      songs.push(current);
+      lyricRows = [];
+      inLyricTable = false;
+      pendingSpeaker = "";
+      return;
+    }
+    if (!current) return;
+
+    const sourceTitle = raw.match(/^-\s*原歌名：(.+?)\s*$/);
+    if (sourceTitle) {
+      current.sourceTitle = cleanCell(sourceTitle[1]);
+      return;
+    }
+    const translatedTitle = raw.match(/^-\s*中文歌名：(.+?)\s*$/);
+    if (translatedTitle) {
+      current.titleZh = cleanCell(translatedTitle[1]);
+      return;
+    }
+    const pageInclusion = raw.match(/^-\s*网页收录：(.+?)\s*$/);
+    if (pageInclusion) {
+      current.excludeFromPage = /^(?:否|不|no|false)/iu.test(pageInclusion[1].trim());
+      return;
+    }
+    if (/^\|\s*歌词\s*\|$/u.test(raw)) {
+      inLyricTable = true;
+      return;
+    }
+    if (!inLyricTable || /^\|\s*---\s*\|$/u.test(raw)) return;
+    const lyricCell = raw.match(/^\|\s?(.*?)\s?\|\s*$/u);
+    if (lyricCell) lyricRows.push(lyricCell[1].replace(/\\\|/g, "|").trim());
+  });
+  flushSong();
+
+  return finalizeParsedSongs(show, show, songs);
+}
+
+function cleanConfiguredSongTitle(show, value) {
+  let title = stripSongTitleVersionSuffix(value);
+  if (show.slug === "dear-evan-hansen") {
+    title = title.replace(/\s*\(From\s+(?:the\s+)?[“"]Dear Evan Hansen[”"]\s+Original Motion Picture Soundtrack\)\s*$/iu, "");
+  }
+  if (show.slug === "six-the-musical") {
+    title = title.replace(/\s*\(feat\.\s+[^)]+\)\s*$/iu, "");
+  }
+  if (show.slug === "sunset-boulevard") {
+    title = title.replace(/\s*[\[(]US 1994\s*\/\s*Musical\s+[“"]Sunset Boulevard[”"][\])]\s*$/iu, "");
+  }
+  return title.trim();
+}
+
+function finalizeParsedSongs(contentShow, show, songs) {
   const renderedSongs = songs
+    .map((song) => ({
+      ...song,
+      lines: song.lines.filter((line) => !isInstrumentalPlaceholderLine(line)),
+    }))
+    .filter((song) => !song.excludeFromPage)
     .filter((song) => song.lines.length > 0)
     .filter((song) => show.sourceOrderMin === undefined || song.order >= show.sourceOrderMin)
     .filter((song) => show.sourceOrderMax === undefined || song.order <= show.sourceOrderMax)
     .map((song, index) => {
-      const { sourceTitle, ...displaySong } = song;
+      const { sourceTitle, excludeFromPage, ...displaySong } = song;
       const translatedTitle = SONG_TITLE_OVERRIDES[contentShow.slug]?.[sourceTitle]
         || song.titleZh
         || SONG_TITLE_TRANSLATIONS[show.slug]?.[sourceTitle]
@@ -2121,6 +2433,24 @@ function parseMarkdown(file, show) {
     });
 
   return normalizeSongsForShow(contentShow, renderedSongs);
+}
+
+function isInstrumentalMarkerText(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^[\[(（【]\s*/u, "")
+    .replace(/\s*[\])）】]$/u, "")
+    .replace(/[。.!！;；:：]+$/gu, "")
+    .replace(/\s+/g, " ");
+  return INSTRUMENTAL_MARKERS.has(normalized);
+}
+
+function isInstrumentalPlaceholderLine(line) {
+  const texts = [line.original, line.zh, line.en]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+  return texts.length > 0 && texts.every(isInstrumentalMarkerText);
 }
 
 function normalizeSongsForShow(show, songs) {
@@ -2360,7 +2690,7 @@ const SPEAKER_HINT = /(?:judge|lucheni|toten|sophie|ludovika|max|\bfj\b|rudolf|\
 function extractSpeaker(value) {
   const clean = cleanCell(value);
   if (clean === "_Die") return { speaker: "", text: "" };
-  const bracketed = clean.match(/^\s*(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)\s*(.*)$/u);
+  const bracketed = clean.match(/^\s*(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)\s*[:：]?\s*(.*)$/u);
   if (bracketed) {
     return { speaker: (bracketed[1] || bracketed[2] || "").trim(), text: (bracketed[3] || "").trim() };
   }
@@ -2370,7 +2700,8 @@ function extractSpeaker(value) {
   const label = labelled[1].trim();
   if (/[()!?]/u.test(label)) return { speaker: "", text: clean };
   const upper = label === label.toLocaleUpperCase() && /\p{L}/u.test(label);
-  if (!upper && !SPEAKER_HINT.test(label)) return { speaker: "", text: clean };
+  const titleCase = label.split(/\s+/u).every((word) => /^[A-Z][\p{L}'’.-]*$/u.test(word));
+  if (!upper && !titleCase && !SPEAKER_HINT.test(label)) return { speaker: "", text: clean };
   return { speaker: label, text: labelled[2].trim() };
 }
 
@@ -2444,7 +2775,10 @@ function buildWordEntries(show, songs, rougeGlossary, freedictGlossary, englishG
     });
   });
 
-  return Object.fromEntries(Object.entries(entries).sort(([a], [b]) => a.localeCompare(b, "fr")));
+  const reviewedEntries = show.reviewedWordCardsOnly
+    ? Object.entries(entries).filter(([, entry]) => !entry.needsReview)
+    : Object.entries(entries);
+  return Object.fromEntries(reviewedEntries.sort(([a], [b]) => a.localeCompare(b, "fr")));
 }
 
 function addEntry(entries, token, show, common, rougeGlossary, freedictGlossary, englishGlossary, context) {
@@ -2795,23 +3129,110 @@ function writeFile(dir, name, content) {
   fs.writeFileSync(path.join(dir, name), content, "utf8");
 }
 
+function renderLoadRecovery() {
+  return `    <script>
+      (() => {
+        const retryKey = "musical-site-retry:" + window.location.pathname;
+        let reloadStarted = false;
+
+        function showLoadError() {
+          const render = () => {
+            if (document.querySelector("#criticalLoadError")) return;
+
+            const notice = document.createElement("aside");
+            notice.id = "criticalLoadError";
+            notice.setAttribute("role", "status");
+            notice.setAttribute("aria-live", "assertive");
+            notice.style.cssText = "position:fixed;left:50%;bottom:18px;z-index:100000;width:min(420px,calc(100% - 28px));padding:14px 16px;border:1px solid rgba(255,255,255,.22);border-radius:8px;color:#fff;background:rgba(20,16,14,.96);box-shadow:0 18px 48px rgba(0,0,0,.42);font:14px/1.6 system-ui,-apple-system,sans-serif;transform:translateX(-50%)";
+
+            const message = document.createElement("span");
+            message.textContent = "网络连接不稳定，页面资源未完整加载。请稍后重试，或切换网络。";
+
+            const retry = document.createElement("button");
+            retry.type = "button";
+            retry.textContent = "重新加载";
+            retry.style.cssText = "margin-left:12px;padding:6px 10px;border:1px solid rgba(255,255,255,.35);border-radius:6px;color:#fff;background:transparent;font:inherit;cursor:pointer";
+            retry.addEventListener("click", () => {
+              try {
+                sessionStorage.removeItem(retryKey);
+              } catch {}
+              window.location.reload();
+            });
+
+            notice.append(message, retry);
+            document.body.append(notice);
+          };
+
+          if (document.body) render();
+          else document.addEventListener("DOMContentLoaded", render, { once: true });
+        }
+
+        window.handleCriticalAssetError = () => {
+          if (reloadStarted) return;
+
+          let canRememberRetry = true;
+          let recentlyRetried = false;
+          const now = Date.now();
+
+          try {
+            const lastRetry = Number(sessionStorage.getItem(retryKey) || 0);
+            recentlyRetried = now - lastRetry < 30000;
+            if (!recentlyRetried) sessionStorage.setItem(retryKey, String(now));
+          } catch {
+            canRememberRetry = false;
+          }
+
+          if (canRememberRetry && !recentlyRetried) {
+            reloadStarted = true;
+            const retryUrl = new URL(window.location.href);
+            retryUrl.searchParams.set("_retry", String(now));
+            window.location.replace(retryUrl);
+            return;
+          }
+
+          showLoadError();
+        };
+
+        window.addEventListener("load", () => {
+          window.setTimeout(() => {
+            try {
+              sessionStorage.removeItem(retryKey);
+              const cleanUrl = new URL(window.location.href);
+              if (cleanUrl.searchParams.delete("_retry")) {
+                history.replaceState(null, "", cleanUrl);
+              }
+            } catch {}
+          }, 3000);
+        }, { once: true });
+      })();
+    </script>`;
+}
+
 function renderIndex(show) {
   return `<!doctype html>
 <html lang="zh-CN">
   <head>
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-E49LJ5T1V6"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-E49LJ5T1V6');
+
+      window.addEventListener('load', () => {
+        const analyticsScript = document.createElement('script');
+        analyticsScript.async = true;
+        analyticsScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-E49LJ5T1V6';
+        document.head.append(analyticsScript);
+      }, { once: true });
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preload" href="songs.js" as="script" />
+    <link rel="preload" href="word-data.js" as="script" fetchpriority="low" />
     <title>${escapeHtml(show.title)}｜${escapeHtml(show.titleZh)}歌词学习</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="../shared/lyrics-page-tools.css" />
   </head>
   <body>
     <canvas id="effectCanvas" aria-hidden="true"></canvas>
@@ -2835,13 +3256,6 @@ function renderIndex(show) {
             <p class="musical-name">${escapeHtml(show.title)}</p>
             <div class="song-title-row">
               <h2 id="songTitle"></h2>
-              <button class="song-play-button" id="songPlayButton" type="button" aria-label="连续播放本曲" aria-pressed="false" title="连续播放本曲">
-                <svg viewBox="0 0 28 24" aria-hidden="true">
-                  <path class="playlist-play-mark" d="M3.5 5.2v13.6l10-6.8z" />
-                  <path class="playlist-lines-mark" d="M16.5 6h8M16.5 12h8M16.5 18h8" />
-                  <rect class="playlist-stop-mark" x="8" y="6" width="12" height="12" rx="1.5" />
-                </svg>
-              </button>
             </div>
             <p id="songSubtitle" class="song-subtitle"></p>
             <div class="toolbar" role="group" aria-label="显示设置">
@@ -2849,12 +3263,19 @@ function renderIndex(show) {
               <button class="toggle-btn is-active" type="button" data-toggle="showIpa" aria-pressed="true">音标</button>
               ${show.showEnglishToggle === false ? "" : '<button class="toggle-btn is-active" type="button" data-toggle="showEn" aria-pressed="true">英文</button>'}
               <button class="toggle-btn feedback-btn" id="feedbackButton" type="button">反馈</button>
+              <div class="toolbar-playback-tools" aria-label="本曲播放控制">
+                <button class="song-play-button" id="songPlayButton" type="button" aria-label="连续播放本曲" aria-pressed="false" title="连续播放本曲">
+                  <svg viewBox="0 0 28 24" aria-hidden="true">
+                    <path class="playlist-play-mark" d="M3.5 5.2v13.6l10-6.8z" />
+                    <path class="playlist-lines-mark" d="M16.5 6h8M16.5 12h8M16.5 18h8" />
+                    <rect class="playlist-stop-mark" x="8" y="6" width="12" height="12" rx="1.5" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
           <div class="show-visual" data-mark="${escapeHtml(show.effect.icon)}" aria-hidden="true">
-            <div class="show-visual-inner">
-              <img class="show-visual-image" src="${escapeHtml(show.logo)}" alt="" />
-            </div>
+            <img class="show-visual-image" src="${escapeHtml(show.logo)}" alt="" />
           </div>
         </header>
         <label class="mobile-picker" for="songSelect">
@@ -2878,11 +3299,14 @@ function renderIndex(show) {
         effect: show.effect,
       }, null, 8)};
     </script>
-    <script src="songs.js"></script>
-    <script src="word-data.js"></script>
-    <script src="../shared/audio-playback.js"></script>
+${renderLoadRecovery()}
+    <script src="songs.js" onerror="handleCriticalAssetError()"></script>
+    <script src="../shared/audio-playback.js" onerror="handleCriticalAssetError()"></script>
+    <script src="../shared/playback-rate.js" onerror="handleCriticalAssetError()"></script>
+    <script src="../shared/lyrics-search.js" onerror="handleCriticalAssetError()"></script>
+    <script src="../shared/lyrics-page-tools.js" onerror="handleCriticalAssetError()"></script>
     <script src="../shared/cursors/${escapeHtml(show.slug)}.js?v=${CURSOR_ASSET_VERSION}"></script>
-    <script src="script.js"></script>
+    <script src="script.js" onerror="handleCriticalAssetError()"></script>
     <script src="../shared/feedback-widget.js"></script>
     <script>
       window.MusicalFeedback.mount({
@@ -3084,29 +3508,26 @@ h1 {
 }
 
 h2 {
-  font-size: clamp(1.7rem, 3.6vw, 3.25rem);
+  font-size: clamp(1.55rem, 3vw, 2.65rem);
   line-height: 1.06;
   color: var(--ink);
 }
 
 .song-title-row {
-  display: block;
   min-width: 0;
 }
 
 .song-title-row h2 {
-  display: inline;
+  display: block;
   min-width: 0;
 }
 
 .song-play-button {
   position: relative;
   display: inline-grid;
-  flex: 0 0 auto;
   place-items: center;
   width: 38px;
   height: 38px;
-  margin-inline-start: 0.32em;
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 50%;
@@ -3115,6 +3536,28 @@ h2 {
   cursor: pointer;
   vertical-align: 0.08em;
   transition: border-color 140ms ease, background-color 140ms ease, opacity 140ms ease;
+}
+
+.toolbar-playback-tools {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 5px;
+  min-height: 34px;
+}
+
+.toolbar-playback-tools .song-play-button {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+}
+
+.toolbar-playback-tools .lyrics-tools-rate {
+  flex: 0 0 auto;
+  min-width: 44px;
+  height: 30px;
+  padding: 0 6px;
+  font-size: 0.72rem;
 }
 
 .song-play-button:hover,
@@ -3342,7 +3785,9 @@ h2 {
 
 .toolbar {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 5px;
+  row-gap: 6px;
   flex-wrap: wrap;
   justify-content: flex-start;
   margin-top: 18px;
@@ -3356,52 +3801,23 @@ h2 {
   position: relative;
   display: grid;
   place-items: center;
-  height: var(--visual-desktop-height);
-  min-height: var(--visual-min-height);
-  border: 1px solid color-mix(in srgb, var(--highlight), transparent 62%);
-  border-radius: var(--radius);
-  overflow: hidden;
-  background:
-    ${visualPattern},
-    radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--highlight), transparent 70%), transparent 44%),
-    linear-gradient(145deg, color-mix(in srgb, var(--accent), transparent 82%), rgba(255, 255, 255, 0.035)),
-    color-mix(in srgb, var(--panel), black 6%);
-  box-shadow: 0 16px 34px var(--shadow);
+  align-self: center;
+  justify-self: center;
+  width: min(100%, 270px);
+  min-height: 0;
 }
 
 .show-visual::before {
-  content: "";
-  position: absolute;
-  inset: 12px;
-  border: 1px solid color-mix(in srgb, var(--highlight), transparent 74%);
-  border-radius: var(--visual-frame-radius);
-  opacity: 0.82;
+  display: none;
 }
 
 .show-visual::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.032) 0 1px, transparent 1px 14px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 38%);
-  opacity: 0.8;
-}
-
-.show-visual-inner {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  width: 100%;
-  height: 100%;
-  place-items: center;
-  justify-items: center;
-  padding: var(--visual-padding);
-  text-align: center;
+  display: none;
 }
 
 .show-visual-image {
   display: block;
+  max-width: 100%;
   width: var(--visual-width);
   height: var(--visual-height);
   object-fit: var(--visual-fit);
@@ -3506,12 +3922,16 @@ h2 {
 }
 
 .toggle-btn {
-  min-width: 64px;
-  padding: 8px 12px;
+  min-width: 0;
+  min-height: 28px;
+  padding: 0 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--muted);
   background: rgba(255, 255, 255, 0.04);
+  font-size: 0.74rem;
+  line-height: 1;
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -3660,6 +4080,21 @@ h2 {
   outline: none;
 }
 
+.lyric-word.is-word-unavailable,
+.song-title-word.is-word-unavailable {
+  padding-inline: 0;
+  cursor: text;
+  opacity: 1;
+}
+
+.lyric-word.is-word-unavailable:hover,
+.lyric-word.is-word-unavailable:focus-visible,
+.song-title-word.is-word-unavailable:hover,
+.song-title-word.is-word-unavailable:focus-visible {
+  color: inherit;
+  background: transparent;
+}
+
 .word-popover {
   position: fixed;
   z-index: 30;
@@ -3757,20 +4192,7 @@ h2 {
     padding: 20px;
   }
 
-  .toolbar {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
-    width: 100%;
-  }
-
-  .toggle-btn {
-    width: 100%;
-    min-width: 0;
-    white-space: nowrap;
-  }
-
   .show-visual {
-    min-height: 104px;
     order: -1;
   }
 
@@ -3821,12 +4243,6 @@ h2 {
   }
 }
 
-@media (min-width: 421px) and (max-width: 980px) {
-  .show-visual {
-    height: var(--visual-tablet-height);
-  }
-}
-
 @media (max-width: 420px) {
   .app-shell,
   .app-shell.is-collapsed {
@@ -3839,31 +4255,14 @@ h2 {
     padding: 16px;
   }
 
-  .song-title-row {
-    align-items: flex-start;
-    gap: 9px;
-  }
-
   .song-play-button {
     width: 34px;
     height: 34px;
   }
 
-  .show-visual {
-    height: var(--visual-mobile-height);
-  }
-
   h2 {
-    font-size: 1.85rem;
+    font-size: 1.62rem;
     overflow-wrap: anywhere;
-  }
-
-  .toolbar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .feedback-btn {
-    grid-column: -2 / -1;
   }
 
   .lyric-card {
@@ -3885,10 +4284,13 @@ function renderScript(show) {
   return `const SETTINGS_KEY = "${show.slug}-display-settings";
 const CURRENT_SONG_KEY = "${show.slug}-current-song";
 const SIDEBAR_KEY = "${show.slug}-sidebar-collapsed";
+const PLAYBACK_RATE_KEY = "${show.slug}-playback-rate";
 const TOKEN_RE = /\\p{L}+(?:['’]\\p{L}+)*(?:-\\p{L}+)*/gu;
 
 const songs = window.songs || [];
-const wordEntries = window.wordEntries || {};
+let wordEntries = {};
+let wordDataReady = Promise.resolve();
+let wordDataLoaded = false;
 const config = window.pageConfig || {};
 
 const state = {
@@ -3899,6 +4301,7 @@ const state = {
   audioFinish: null,
   speechFinish: null,
   preloadAudio: null,
+  rateControlled: false,
 };
 
 const dom = {
@@ -3909,17 +4312,49 @@ const dom = {
   showTitle: document.getElementById("showTitle"),
   songList: document.getElementById("songList"),
   songTitle: document.getElementById("songTitle"),
+  titleRow: document.querySelector(".song-title-row"),
+  playbackTools: document.querySelector(".toolbar-playback-tools"),
   songPlayButton: document.getElementById("songPlayButton"),
   songSubtitle: document.getElementById("songSubtitle"),
   lyrics: document.getElementById("lyrics"),
   popover: document.getElementById("wordPopover"),
   backToTop: document.getElementById("backToTop"),
+  hero: document.querySelector(".hero"),
+  homeButton: document.querySelector(".home-button"),
+  mobilePicker: document.querySelector(".mobile-picker"),
 };
+
+const pageTools = window.MusicalLyricsPageTools.create({
+  songs,
+  rateStorageKey: PLAYBACK_RATE_KEY,
+  hero: dom.hero,
+  homeButton: dom.homeButton,
+  titleRow: dom.titleRow,
+  rateContainer: dom.playbackTools,
+  lyrics: dom.lyrics,
+  mobilePicker: dom.mobilePicker,
+  getCurrentSong,
+  getSongTitleSecondary: (song) => song.titleZh || "",
+  getLinePrimary: (line) => line.original || "",
+  getLineSecondary: (line) => [line.en, line.zh].filter(Boolean).join(" · "),
+  onNavigate: navigateToSearchResult,
+  onRateChange(rate) {
+    if (state.audio && state.rateControlled) {
+      state.audio.defaultPlaybackRate = rate;
+      state.audio.playbackRate = rate;
+    }
+  },
+});
 
 const audioController = window.MusicalAudio.createController({
   stopCurrent: stopCurrentPlayback,
+  pauseCurrent: pauseCurrentPlayback,
+  resumeCurrent: resumeCurrentPlayback,
+  onSequenceStateChange: pageTools.setSequenceActive,
+  onSequencePauseChange: pageTools.setSequencePaused,
   onItemClear: clearSequenceHighlight,
 });
+pageTools.connectController(audioController);
 
 init();
 
@@ -3928,6 +4363,9 @@ function init() {
   dom.showTitle.append(renderClickableWords(config.title || "", "song-title-word"));
   renderSongList();
   renderSong();
+  wordDataReady = loadDeferredWordData().catch((error) => {
+    console.error("Deferred word data failed to load", error);
+  });
   bindToggles();
   bindSidebar();
   bindBackToTop();
@@ -3939,6 +4377,26 @@ function init() {
       hidePopover();
     }
   });
+}
+
+function loadScript(src, fetchPriority = "auto") {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.fetchPriority = fetchPriority;
+    script.addEventListener("load", resolve, { once: true });
+    script.addEventListener("error", () => reject(new Error(\`Failed to load \${src}\`)), { once: true });
+    document.head.append(script);
+  });
+}
+
+async function loadDeferredWordData() {
+  await loadScript("word-data.js", "high");
+  wordEntries = window.wordEntries || {};
+  wordDataLoaded = true;
+  if (state.settings.showIpa) renderSong();
+  syncWordAvailability();
 }
 
 function readSettings() {
@@ -4037,6 +4495,27 @@ function selectSong(songId) {
   resetSongScrollPosition();
 }
 
+function navigateToSearchResult(songId, lineId = "") {
+  const song = songs.find((item) => item.id === songId);
+  if (!song) return;
+  audioController.stopAll();
+  state.currentSongId = songId;
+  localStorage.setItem(CURRENT_SONG_KEY, songId);
+  renderSongList();
+  hidePopover();
+  renderSong();
+  if (!lineId) {
+    resetSongScrollPosition();
+    return;
+  }
+  requestAnimationFrame(() => {
+    const card = Array.from(dom.lyrics.querySelectorAll(".lyric-card")).find((item) => item.dataset.lineId === lineId);
+    card?.classList.add("is-search-target");
+    card?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => card?.classList.remove("is-search-target"), 1800);
+  });
+}
+
 function resetSongScrollPosition() {
   window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 }
@@ -4107,10 +4586,20 @@ function renderLine(song, line) {
   speak.className = "speak-button";
   speak.setAttribute("aria-label", "播放整句发音");
   speak.textContent = "▶";
-  speak.addEventListener("click", () => audioController.runUserAction(
-    speak,
-    () => playAudio(getLineAudioPath(song, line), line.original),
-  ));
+  const lineAudioPath = getLineAudioPath(song, line);
+  const primeLineAudio = () => window.MusicalAudio.preloadLocalAudio(lineAudioPath);
+  speak.addEventListener("pointerenter", primeLineAudio, { once: true });
+  speak.addEventListener("focus", primeLineAudio, { once: true });
+  speak.addEventListener("click", () => {
+    if (audioController.isSequenceActive() && card.classList.contains("is-sequence-active")) {
+      audioController.stopSequence();
+      return;
+    }
+    audioController.runUserAction(
+      speak,
+      () => playAudio(lineAudioPath, line.original, { rateControlled: true }),
+    );
+  });
   actions.append(speak);
 
   card.append(main, actions);
@@ -4130,7 +4619,18 @@ function renderClickableWords(text, className, options = {}) {
     button.type = "button";
     button.className = className;
     button.textContent = token;
-    button.addEventListener("click", (event) => showWord(token, event.currentTarget));
+    button.dataset.wordKey = normalizeKey(token);
+    if (wordDataLoaded && !wordEntries[button.dataset.wordKey]) {
+      button.disabled = true;
+      button.classList.add("is-word-unavailable");
+    }
+    button.addEventListener("click", async (event) => {
+      const anchor = event.currentTarget;
+      showWordLoading(token, anchor);
+      await wordDataReady;
+      if (!anchor.isConnected) return;
+      showWord(token, anchor);
+    });
     if (options.showPhonetics) {
       const tokenWrap = document.createElement("span");
       tokenWrap.className = "lyric-token";
@@ -4148,6 +4648,14 @@ function renderClickableWords(text, className, options = {}) {
   }
   if (lastIndex < String(text).length) fragment.append(document.createTextNode(String(text).slice(lastIndex)));
   return fragment;
+}
+
+function syncWordAvailability() {
+  document.querySelectorAll(".lyric-word[data-word-key], .song-title-word[data-word-key]").forEach((button) => {
+    const available = Boolean(wordEntries[button.dataset.wordKey]);
+    button.disabled = !available;
+    button.classList.toggle("is-word-unavailable", !available);
+  });
 }
 
 function getAlignedWordIpa(token, wordIndex, wordCount, ipaParts) {
@@ -4177,12 +4685,13 @@ function stripIpaSlashes(value) {
 
 function showWord(token, anchor) {
   const key = normalizeKey(token);
-  const entry = wordEntries[key] || {
-    ipa: "",
-    meaning: token,
-    en: normalizeKey(token),
-    speak: token,
-  };
+  const entry = wordEntries[key];
+  if (!entry) {
+    hidePopover();
+    anchor.disabled = true;
+    anchor.classList.add("is-word-unavailable");
+    return;
+  }
   dom.popover.replaceChildren();
 
   const head = document.createElement("div");
@@ -4200,9 +4709,11 @@ function showWord(token, anchor) {
   speak.className = "popover-speak";
   speak.setAttribute("aria-label", "播放单词发音");
   speak.textContent = "▶";
+  const wordAudioPath = getWordAudioPath(key);
+  window.MusicalAudio.preloadLocalAudio(wordAudioPath);
   speak.addEventListener("click", () => audioController.runUserAction(
     speak,
-    () => playAudio(getWordAudioPath(key), entry.speak || token),
+    () => playAudio(wordAudioPath, entry.speak || token),
   ));
   term.append(word, ipa);
   head.append(term, speak);
@@ -4216,6 +4727,24 @@ function showWord(token, anchor) {
   if (config.language !== "en" && entry.en) {
     dom.popover.append(en);
   }
+
+  const rect = anchor.getBoundingClientRect();
+  const top = Math.min(window.innerHeight - 20, rect.bottom + 10);
+  const left = Math.min(window.innerWidth - 332, Math.max(12, rect.left));
+  dom.popover.style.top = \`\${top}px\`;
+  dom.popover.style.left = \`\${Math.max(12, left)}px\`;
+  dom.popover.hidden = false;
+}
+
+function showWordLoading(token, anchor) {
+  dom.popover.replaceChildren();
+  const word = document.createElement("p");
+  word.className = "popover-word";
+  word.textContent = token;
+  const loading = document.createElement("p");
+  loading.className = "popover-meaning";
+  loading.textContent = "正在加载词义…";
+  dom.popover.append(word, loading);
 
   const rect = anchor.getBoundingClientRect();
   const top = Math.min(window.innerHeight - 20, rect.bottom + 10);
@@ -4240,11 +4769,11 @@ function normalizeKey(token) {
 }
 
 function getLineAudioPath(song, line) {
-  return \`audio/lines/\${encodeURIComponent(song.id)}/\${encodeURIComponent(line.id)}.wav\`;
+  return \`audio/lines/\${encodeURIComponent(song.id)}/\${encodeURIComponent(line.id)}.mp3\`;
 }
 
 function getWordAudioPath(key) {
-  return \`audio/words/\${encodeURIComponent(key)}.wav\`;
+  return \`audio/words/\${encodeURIComponent(key)}.mp3\`;
 }
 
 function stopCurrentPlayback() {
@@ -4258,6 +4787,7 @@ function stopCurrentPlayback() {
     state.audio.currentTime = 0;
     state.audio = null;
   }
+  state.rateControlled = false;
   if (state.speechFinish) {
     const finish = state.speechFinish;
     state.speechFinish = null;
@@ -4267,20 +4797,36 @@ function stopCurrentPlayback() {
   state.preloadAudio = null;
 }
 
-async function playAudio(src, text) {
+function pauseCurrentPlayback() {
+  if (state.audio && !state.audio.paused) state.audio.pause();
+  if ("speechSynthesis" in window && speechSynthesis.speaking) speechSynthesis.pause();
+}
+
+function resumeCurrentPlayback() {
+  if (state.audio?.paused) {
+    Promise.resolve(state.audio.play()).catch(() => audioController.stopSequence());
+  }
+  if ("speechSynthesis" in window && speechSynthesis.paused) speechSynthesis.resume();
+}
+
+async function playAudio(src, text, { rateControlled = false } = {}) {
   try {
-    await playLocalAudio(src, false);
+    await playLocalAudio(src, false, { rateControlled });
   } catch {
-    await playSpeech(text, false);
+    await playSpeech(text, false, { rateControlled });
   }
 }
 
-function playLocalAudio(src, waitForEnd) {
+function playLocalAudio(src, waitForEnd, { rateControlled = false } = {}) {
   if (!src) return Promise.reject(new Error("Missing audio source"));
   stopCurrentPlayback();
-  const audio = new Audio(src);
-  audio.preload = "auto";
+  const audio = window.MusicalAudio.getCachedAudio(src);
+  if (!audio) return Promise.reject(new Error("Audio playback unavailable"));
+  const rate = rateControlled ? pageTools.getRate() : 1;
+  audio.defaultPlaybackRate = rate;
+  audio.playbackRate = rate;
   state.audio = audio;
+  state.rateControlled = rateControlled;
   if (!waitForEnd) return audio.play();
 
   return new Promise((resolve, reject) => {
@@ -4305,13 +4851,14 @@ function playLocalAudio(src, waitForEnd) {
   });
 }
 
-function playSpeech(text, waitForEnd) {
+function playSpeech(text, waitForEnd, { rateControlled = false } = {}) {
   if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance !== "function") {
     return Promise.reject(new Error("Speech synthesis unavailable"));
   }
   stopCurrentPlayback();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = config.language === "en" ? "en-US" : config.language === "de" ? "de-DE" : "fr-FR";
+  utterance.rate = rateControlled ? pageTools.getRate() : 1;
   if (!waitForEnd) {
     speechSynthesis.speak(utterance);
     return Promise.resolve();
@@ -4336,9 +4883,9 @@ function playSpeech(text, waitForEnd) {
 
 async function playLineToEnd(song, line) {
   try {
-    await playLocalAudio(getLineAudioPath(song, line), true);
+    await playLocalAudio(getLineAudioPath(song, line), true, { rateControlled: true });
   } catch {
-    await playSpeech(line.original, true);
+    await playSpeech(line.original, true, { rateControlled: true });
   }
 }
 
@@ -4349,24 +4896,30 @@ function toggleCurrentSongPlayback() {
     button: dom.songPlayButton,
     items: song.lines,
     playItem: (line) => playLineToEnd(song, line),
+    gapMs: window.MusicalAudio.SEQUENCE_GAP_MS / pageTools.getRate(),
     onItemStart: (line, index, nextLine) => {
-      setSequenceHighlight(line.id);
+      setSequenceHighlight(line.id, index, song.lines.length);
       if (nextLine) preloadLineAudio(song, nextLine);
     },
   });
 }
 
 function preloadLineAudio(song, line) {
-  const audio = new Audio(getLineAudioPath(song, line));
-  audio.preload = "auto";
-  audio.load();
+  const audio = window.MusicalAudio.preloadLocalAudio(getLineAudioPath(song, line));
   state.preloadAudio = audio;
 }
 
-function setSequenceHighlight(lineId) {
+function setSequenceHighlight(lineId, index, total) {
   clearSequenceHighlight();
   const card = Array.from(dom.lyrics.querySelectorAll(".lyric-card")).find((item) => item.dataset.lineId === lineId);
-  card?.classList.add("is-sequence-active");
+  if (card) {
+    card.classList.add("is-sequence-active");
+    const button = card.querySelector(".speak-button");
+    button?.classList.add("is-sequence-stop");
+    button?.setAttribute("aria-label", "停止全曲播放");
+    button?.setAttribute("title", "停止全曲播放");
+  }
+  pageTools.setProgress(index, total);
   followSequenceCard(card);
 }
 
@@ -4387,6 +4940,10 @@ function followSequenceCard(card) {
 function clearSequenceHighlight() {
   dom.lyrics?.querySelectorAll(".lyric-card.is-sequence-active").forEach((card) => {
     card.classList.remove("is-sequence-active");
+    const button = card.querySelector(".speak-button");
+    button?.classList.remove("is-sequence-stop");
+    button?.setAttribute("aria-label", "播放整句发音");
+    button?.setAttribute("title", "播放整句发音");
   });
 }
 
@@ -4848,6 +5405,11 @@ function getCursorMarker(slug) {
     "love-never-dies": "preRenderWindingKey",
     "les-souliers-rouges": "preRenderPosterMoon",
     "la-legende-du-roi-arthur": "preRenderExcalibur",
+    chicago: "preRenderBowlerHat",
+    "dear-evan-hansen": "preRenderCastNote",
+    "six-the-musical": "preRenderNeonCrown",
+    suffs: "preRenderVoteButton",
+    "sunset-boulevard": "preRenderFilmReel",
   }[slug];
 }
 
@@ -4956,6 +5518,71 @@ function getReferenceCursorConfig(show) {
       clickOn: "down",
       burstParticles: 3,
       hotspot: [0, 0],
+    },
+    chicago: {
+      motif: "bowlerHat",
+      trail: "goldSparkleRosePetal",
+      burst: "spectacular",
+      motion: "tilt",
+      accent: "#c51f2b",
+      size: 58,
+      follow: 0.48,
+      emitDistance: 20,
+      clickOn: "up",
+      burstParticles: 6,
+      hotspot: [0.5, 0.5],
+    },
+    "dear-evan-hansen": {
+      motif: "castNote",
+      trail: "diamondDust",
+      burst: "softDiamondGlow",
+      motion: "still",
+      accent: "#2a7aaa",
+      size: 56,
+      follow: 0.52,
+      emitDistance: 18,
+      clickOn: "down",
+      burstParticles: 3,
+      hotspot: [0.5, 0.5],
+    },
+    "six-the-musical": {
+      motif: "neonCrown",
+      trail: "neonSpark",
+      burst: "glitchRipple",
+      motion: "pulse",
+      accent: "#d52ba6",
+      size: 62,
+      follow: 0.58,
+      emitInterval: 32,
+      clickOn: "down",
+      burstParticles: 6,
+      hotspot: [0.5, 0.5],
+    },
+    suffs: {
+      motif: "voteButton",
+      trail: "magicDust",
+      burst: "crispShockwave",
+      motion: "still",
+      accent: "#e3ba25",
+      size: 58,
+      follow: 0.46,
+      emitDistance: 16,
+      clickOn: "up",
+      burstParticles: 4,
+      hotspot: [0.5, 0.5],
+    },
+    "sunset-boulevard": {
+      motif: "filmReel",
+      trail: "goldSparkleRosePetal",
+      burst: "lunarBloom",
+      motion: "turn",
+      accent: "#d78024",
+      size: 60,
+      follow: 0.42,
+      emitDistance: 19,
+      clickOn: "down",
+      burstParticles: 3,
+      hotspot: [0.5, 0.5],
     },
   };
   return {
@@ -5468,6 +6095,107 @@ function renderReferenceCursor(show) {
       cacheCtx.arc(45, 45, 1.7, 0, Math.PI * 2);
       cacheCtx.fillStyle = "#547f8d";
       cacheCtx.fill();
+    } else if (config.motif === "bowlerHat") {
+      cacheCtx.translate(0, 5);
+      cacheCtx.fillStyle = "#0d0a0b";
+      cacheCtx.strokeStyle = "#f3d39a";
+      cacheCtx.lineWidth = 1.6;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-18, 8);
+      cacheCtx.bezierCurveTo(-17, -14, -9, -24, 0, -24);
+      cacheCtx.bezierCurveTo(9, -24, 17, -14, 18, 8);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#c51f2b";
+      cacheCtx.fillRect(-17, 1, 34, 6);
+      cacheCtx.beginPath();
+      cacheCtx.ellipse(0, 11, 28, 7, 0, 0, Math.PI * 2);
+      cacheCtx.fillStyle = "#0d0a0b";
+      cacheCtx.fill();
+      cacheCtx.stroke();
+    } else if (config.motif === "castNote") {
+      cacheCtx.rotate(-0.13);
+      cacheCtx.fillStyle = "#ecf5f6";
+      cacheCtx.strokeStyle = "#8fc5d4";
+      cacheCtx.lineWidth = 1.3;
+      cacheCtx.beginPath();
+      cacheCtx.roundRect(-12, -31, 24, 62, 9);
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.strokeStyle = "rgba(42,122,170,0.72)";
+      cacheCtx.lineWidth = 1;
+      for (let y = -20; y <= 20; y += 10) {
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(-7, y + 2);
+        cacheCtx.lineTo(7, y - 2);
+        cacheCtx.stroke();
+      }
+      cacheCtx.fillStyle = "#2a7aaa";
+      cacheCtx.font = "700 8px sans-serif";
+      cacheCtx.textAlign = "center";
+      cacheCtx.fillText("DEAR", 0, 3);
+    } else if (config.motif === "neonCrown") {
+      cacheCtx.translate(0, 5);
+      cacheCtx.strokeStyle = "#f2c94c";
+      cacheCtx.fillStyle = "rgba(213,43,166,0.24)";
+      cacheCtx.shadowColor = "#d52ba6";
+      cacheCtx.shadowBlur = 10;
+      cacheCtx.lineWidth = 3;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-27, 16);
+      cacheCtx.lineTo(-22, -18);
+      cacheCtx.lineTo(-8, -4);
+      cacheCtx.lineTo(0, -27);
+      cacheCtx.lineTo(9, -4);
+      cacheCtx.lineTo(23, -18);
+      cacheCtx.lineTo(27, 16);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.fillStyle = "#fff8ff";
+      cacheCtx.font = "900 15px sans-serif";
+      cacheCtx.textAlign = "center";
+      cacheCtx.fillText("6", 0, 11);
+    } else if (config.motif === "voteButton") {
+      cacheCtx.fillStyle = "#e3ba25";
+      cacheCtx.strokeStyle = "#af86c8";
+      cacheCtx.lineWidth = 3;
+      cacheCtx.shadowColor = "rgba(227,186,37,0.55)";
+      cacheCtx.shadowBlur = 7;
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 0, 28, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.fillStyle = "#241638";
+      cacheCtx.font = "900 10px Rockwell, serif";
+      cacheCtx.textAlign = "center";
+      cacheCtx.fillText("VOTES", 0, 4);
+    } else if (config.motif === "filmReel") {
+      cacheCtx.strokeStyle = "#f1d7a2";
+      cacheCtx.fillStyle = "#17110b";
+      cacheCtx.lineWidth = 2;
+      cacheCtx.shadowColor = "rgba(215,128,36,0.58)";
+      cacheCtx.shadowBlur = 8;
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 0, 28, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      for (let index = 0; index < 5; index += 1) {
+        const angle = index * Math.PI * 2 / 5 - Math.PI / 2;
+        cacheCtx.beginPath();
+        cacheCtx.arc(Math.cos(angle) * 14, Math.sin(angle) * 14, 5, 0, Math.PI * 2);
+        cacheCtx.fillStyle = "#d78024";
+        cacheCtx.fill();
+      }
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(22, 18);
+      cacheCtx.quadraticCurveTo(34, 29, 28, 39);
+      cacheCtx.strokeStyle = "#f1d7a2";
+      cacheCtx.stroke();
     }
     cacheCtx.restore();
   }
@@ -6030,11 +6758,22 @@ test("script initializes page config before reading display settings", () => {
   assert.ok(configIndex < readSettingsIndex);
 });
 
-test("song header includes a right-side show visual and soft switching", () => {
+test("first-screen lyrics do not wait for the word dictionary", () => {
+  assert.match(indexHtml, /<link rel="preload" href="songs\\.js" as="script" \\/>/);
+  assert.match(indexHtml, /<link rel="preload" href="word-data\\.js" as="script" fetchpriority="low" \\/>/);
+  assert.doesNotMatch(indexHtml, /<script src="word-data\\.js"><\\/script>/);
+  assert.match(scriptJs, /renderSong\\(\\);\\s*wordDataReady = loadDeferredWordData/);
+  assert.match(scriptJs, /await loadScript\\("word-data\\.js", "high"\\)/);
+  assert.match(scriptJs, /showWordLoading\\(token, anchor\\);\\s*await wordDataReady/);
+  assert.ok(Buffer.byteLength(songsJs) < 520_000, \`critical songs.js too large: \${Buffer.byteLength(songsJs)}B\`);
+});
+
+test("song header uses an unframed show logo and soft switching", () => {
   assert.match(indexHtml, /class="hero"/);
   assert.match(indexHtml, /class="home-button" href="\\.\\.\\/index\\.html" aria-label="返回音乐剧展示架"/);
   assert.match(indexHtml, /class="show-visual"/);
-  assert.match(indexHtml, /class="show-visual-image" src="assets\\/show-logo\\.png"/);
+  assert.doesNotMatch(indexHtml, /show-visual-inner/);
+  assert.match(indexHtml, /class="show-visual-image" src="assets\\/show-logo\\.(?:png|svg)"/);
   assert.match(styleCss, /\\.hero/);
   assert.match(styleCss, /\\.show-visual/);
   assert.match(scriptJs, /function renderCurrentSongWithTransition/);
@@ -6049,10 +6788,17 @@ test("song switching resets the new song to the top of the page", () => {
   assert.match(scriptJs, /renderCurrentSongWithTransition\\(\\);\\s*resetSongScrollPosition\\(\\);/);
 });
 
-test("playlist button stays in the inline title flow", () => {
-  assert.match(styleCss, /\\.song-title-row\\s*\\{[\\s\\S]*?display:\\s*block;/);
-  assert.match(styleCss, /\\.song-title-row h2\\s*\\{[\\s\\S]*?display:\\s*inline;/);
-  assert.match(styleCss, /\\.song-play-button\\s*\\{[\\s\\S]*?margin-inline-start:\\s*0\\.32em;/);
+test("playlist and rate controls follow feedback in a stable toolbar group", () => {
+  const feedbackIndex = indexHtml.indexOf('id="feedbackButton"');
+  const playbackIndex = indexHtml.indexOf('class="toolbar-playback-tools"');
+  assert.ok(feedbackIndex !== -1 && playbackIndex > feedbackIndex);
+  assert.match(indexHtml, /class="toolbar-playback-tools"[\\s\\S]*?id="songPlayButton"/);
+  assert.match(scriptJs, /playbackTools:\\s*document\\.querySelector\\("\\.toolbar-playback-tools"\\)/);
+  assert.match(scriptJs, /rateContainer:\\s*dom\\.playbackTools/);
+  assert.match(styleCss, /\\.toolbar-playback-tools\\s*\\{[\\s\\S]*?display:\\s*inline-flex;[\\s\\S]*?align-items:\\s*center;/);
+  assert.match(styleCss, /\\.toolbar-playback-tools\\s*\\{[\\s\\S]*?flex:\\s*0 0 auto;/);
+  assert.match(styleCss, /\\.toolbar-playback-tools \\.lyrics-tools-rate/);
+  assert.match(styleCss, /\\.toggle-btn\\s*\\{[\\s\\S]*?min-height:\\s*28px;[\\s\\S]*?font-size:\\s*0\\.74rem;/);
 });
 
 test("page follows the Hamilton-style collapsible navigation frame", () => {
@@ -6130,12 +6876,12 @@ test("Phantom and Love Never Dies stay in separate source ranges", () => {
 });
 
 test("reviewed OCR word fragments are reassembled", () => {
-  if (!["la-legende-du-roi-arthur", "phantom-of-the-opera"].includes(${JSON.stringify(show.slug)})) return;
+  if (!["la-legende-du-roi-arthur", "phantom-of-the-opera", "notre-dame-de-paris", "le-roi-soleil", "mozart-opera-rock"].includes(${JSON.stringify(show.slug)})) return;
   const sandbox = { window: {} };
   vm.runInNewContext(songsJs, sandbox);
   vm.runInNewContext(wordDataJs, sandbox);
   const lines = sandbox.window.songs.flatMap((song) => song.lines);
-  const brokenTerms = ["Go té", "dé mons", "dé fait", "magné tique", "dé fie", "Ensorcelé e", "pensé es", "dé tour", "dé lit", "gouté", "au delà", "guida nce", "Monsieur ur"];
+  const brokenTerms = ["Go té", "dé mons", "dé fait", "magné tique", "dé fie", "Ensorcelé e", "pensé es", "dé tour", "dé lit", "gouté", "au delà", "guida nce", "Monsieur ur", "prot égeront", "imb éciles", "qu'àvenir", "M ême", "fian? ailles", "pa? enne", "pa? ens", "r? le", "fl? te"];
   assert.equal(brokenTerms.find((term) => songsJs.includes(term)), undefined);
 
   if (${JSON.stringify(show.slug)} === "la-legende-du-roi-arthur") {
@@ -6145,6 +6891,26 @@ test("reviewed OCR word fragments are reassembled", () => {
     assert.equal(lines.find((line) => line.id === "la-legende-du-roi-arthur-17-011").original, "De désirer jusqu'au délit");
     assert.equal(sandbox.window.wordEntries["goûté"].meaning, "尝过；品尝过");
     assert.equal(sandbox.window.wordEntries.démons.meaning, "恶魔；心魔");
+    return;
+  }
+
+  if (${JSON.stringify(show.slug)} === "notre-dame-de-paris") {
+    assert.equal(lines.find((line) => line.id === "notre-dame-de-paris-08-044").original, "Avec sa bosse au dos");
+    assert.equal(lines.find((line) => line.id === "notre-dame-de-paris-10-010").original, "Dans les cœurs dans les âmes des fidèles de Notre-Dame");
+    assert.equal(lines.find((line) => line.id === "notre-dame-de-paris-21-002").original, "Te protégeront de tous les imbéciles");
+    assert.equal(lines.find((line) => line.id === "notre-dame-de-paris-31-001").original, "Gringoire qu'as-tu fait de ta femme?");
+    assert.equal(lines.find((line) => line.id === "notre-dame-de-paris-53-016").original, "Laissez entrer ces païens, ces vandales");
+    return;
+  }
+
+  if (${JSON.stringify(show.slug)} === "le-roi-soleil") {
+    assert.equal(lines.find((line) => line.id === "le-roi-soleil-24-016").original, "Chacun d'entre nous a son rôle à jouer");
+    return;
+  }
+
+  if (${JSON.stringify(show.slug)} === "mozart-opera-rock") {
+    assert.equal(lines.find((line) => line.id === "mozart-opera-rock-16-027").original, "De flûte enchantée");
+    assert.equal(sandbox.window.songs.find((song) => song.sourceOrder === 17).title, "L'assasymphonie");
     return;
   }
 
@@ -6204,6 +6970,31 @@ test("Moliere keeps the requested show name and dictionary meaning", () => {
   assert.equal(sandbox.window.wordEntries["molière"].en, "Molière");
 });
 
+test("Moliere keeps split Chinese translations aligned with their French clauses", () => {
+  if (${JSON.stringify(show.slug)} !== "moliere-le-spectacle-musical") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const lines = sandbox.window.songs.flatMap((song) => song.lines);
+  const byId = new Map(lines.map((line) => [line.id, line]));
+
+  assert.equal(byId.get("moliere-le-spectacle-musical-02-019-a").zh, "好啦");
+  assert.equal(byId.get("moliere-le-spectacle-musical-02-019-b").zh, "可那又怎样？");
+  assert.equal(byId.get("moliere-le-spectacle-musical-03-028").zh, "哦 我的爱人，那袭白裙");
+  assert.equal(byId.get("moliere-le-spectacle-musical-08-041-a").zh, "不");
+  assert.equal(byId.get("moliere-le-spectacle-musical-08-041-b").zh, "我没有选择（没有选择）");
+  assert.equal(byId.get("moliere-le-spectacle-musical-09-003-a").zh, "我们曾跌倒");
+  assert.equal(byId.get("moliere-le-spectacle-musical-09-003-b").zh, "也曾重新站起");
+
+  const duplicateSplits = lines.slice(1).filter((line, index) => {
+    const previous = lines[index];
+    return /-[ab]$/.test(line.id)
+      && /-[ab]$/.test(previous.id)
+      && line.original !== previous.original
+      && line.zh === previous.zh;
+  });
+  assert.equal(duplicateSplits.length, 0);
+});
+
 test("every word entry has IPA, Chinese meaning, English definition, and speak text", () => {
   const sandbox = { window: {} };
   vm.runInNewContext(wordDataJs, sandbox);
@@ -6238,7 +7029,7 @@ test("word-card IPA sits beside the word and translations keep English above Chi
   assert.match(scriptJs, /term\\.append\\(word, ipa\\)/);
   assert.match(styleCss, /\\.popover-term\\s*\\{[\\s\\S]*display:\\s*flex/);
   assert.ok(scriptJs.indexOf('en.className = "line-en"') < scriptJs.indexOf('zh.className = "line-zh"'));
-  assert.match(styleCss, /h2\\s*\\{[\\s\\S]*font-size:\\s*clamp\\(1\\.7rem, 3\\.6vw, 3\\.25rem\\)/);
+  assert.match(styleCss, /h2\\s*\\{[\\s\\S]*font-size:\\s*clamp\\(1\\.55rem, 3vw, 2\\.65rem\\)/);
 });
 
 test("page includes an unobtrusive return-to-top control", () => {
@@ -6248,8 +7039,10 @@ test("page includes an unobtrusive return-to-top control", () => {
   assert.match(styleCss, /\\.back-to-top/);
 });
 
-test("sentence and word audio prefer local wav files", () => {
-  assert.match(scriptJs, /new Audio\\(src\\)/);
+test("sentence and word audio prefer cached local MP3 files", () => {
+  assert.match(scriptJs, /MusicalAudio\\.getCachedAudio\\(src\\)/);
+  assert.match(scriptJs, /MusicalAudio\\.preloadLocalAudio/);
+  assert.match(scriptJs, /\\.mp3/);
   assert.match(scriptJs, /audio\\/lines/);
   assert.match(scriptJs, /audio\\/words/);
   assert.match(indexHtml, /\\.\\.\\/shared\\/audio-playback\\.js/);
@@ -6272,9 +7065,23 @@ test("sentence and word audio prefer local wav files", () => {
   assert.match(audioBuilderJs, /kind:\\s*"generated"/);
 });
 
+test("page includes shared search, rate, and persistent playlist controls", () => {
+  assert.match(indexHtml, /\\.\\.\\/shared\\/playback-rate\\.js/);
+  assert.match(indexHtml, /\\.\\.\\/shared\\/lyrics-search\\.js/);
+  assert.match(indexHtml, /\\.\\.\\/shared\\/lyrics-page-tools\\.js/);
+  assert.match(indexHtml, /\\.\\.\\/shared\\/lyrics-page-tools\\.css/);
+  assert.match(scriptJs, /MusicalLyricsPageTools\\.create/);
+  assert.match(scriptJs, /pauseCurrent:\\s*pauseCurrentPlayback/);
+  assert.match(scriptJs, /resumeCurrent:\\s*resumeCurrentPlayback/);
+  assert.match(scriptJs, /gapMs:\\s*window\\.MusicalAudio\\.SEQUENCE_GAP_MS \\/ pageTools\\.getRate\\(\\)/);
+  assert.match(scriptJs, /is-sequence-stop/);
+  assert.match(scriptJs, /navigateToSearchResult/);
+});
+
 test("narrow and mobile layouts override a persisted collapsed sidebar", () => {
   assert.match(styleCss, /@media \\(max-width: 980px\\)[\\s\\S]*\\.app-shell,\\s*[\\s\\S]*\\.app-shell\\.is-collapsed\\s*\\{[\\s\\S]*display:\\s*block/);
-  assert.match(styleCss, /@media \\(max-width: 980px\\)[\\s\\S]*\\.toolbar\\s*\\{[\\s\\S]*grid-template-columns:\\s*repeat\\(auto-fit, minmax\\(64px, 1fr\\)\\)/);
+  assert.match(styleCss, /\\.toolbar\\s*\\{[\\s\\S]*display:\\s*flex;[\\s\\S]*flex-wrap:\\s*wrap;[\\s\\S]*justify-content:\\s*flex-start;/);
+  assert.doesNotMatch(styleCss, /\\.toolbar\\s*\\{[\\s\\S]{0,180}grid-template-columns:/);
   assert.match(styleCss, /@media \\(max-width: 980px\\)[\\s\\S]*\\.lyric-card\\s*\\{[\\s\\S]*grid-template-columns:\\s*minmax\\(0, 1fr\\) 38px;/);
   assert.match(scriptJs, /window\\.matchMedia\\("\\(max-width: 980px\\)"\\)\\.matches/);
   assert.match(scriptJs, /state\\.sidebarCollapsed && !isNarrowLayout/);
@@ -6292,4 +7099,13 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = {
+  SHOWS,
+  cleanConfiguredSongTitle,
+  isInstrumentalMarkerText,
+  isInstrumentalPlaceholderLine,
+  parsePairedEnglishMarkdown,
+  parseMarkdown,
+};

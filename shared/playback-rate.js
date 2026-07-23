@@ -3,7 +3,7 @@
 
   function formatRate(rate) {
     const value = Number(rate);
-    return `${Number.isInteger(value) ? value.toFixed(1) : String(value)}×`;
+    return `${Number.isInteger(value) ? value.toFixed(1) : String(value)}x`;
   }
 
   function createControl({

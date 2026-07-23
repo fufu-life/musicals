@@ -179,6 +179,68 @@ test("sequence remains active until playback ends and can be stopped immediately
   assert.equal(button.getAttribute("aria-pressed"), "false");
 });
 
+test("sequence pause freezes playback and resumes from the same item", async () => {
+  let resolveCurrent;
+  let paused = 0;
+  let resumed = 0;
+  const controller = createController({
+    pauseCurrent: () => { paused += 1; },
+    resumeCurrent: () => { resumed += 1; },
+    stopCurrent: () => resolveCurrent?.(),
+  });
+  const sequence = controller.toggleSequence({
+    button: makeButton(),
+    items: ["one"],
+    playItem: () => new Promise((resolve) => {
+      resolveCurrent = resolve;
+    }),
+  });
+
+  assert.equal(controller.pauseSequence(), true);
+  assert.equal(controller.isSequencePaused(), true);
+  assert.equal(paused, 1);
+  assert.equal(controller.resumeSequence(), true);
+  assert.equal(controller.isSequencePaused(), false);
+  assert.equal(resumed, 1);
+
+  controller.stopSequence();
+  await sequence;
+});
+
+test("paused sequence does not advance after the gap until resumed", async () => {
+  let releaseGap;
+  let markFirstPlayed;
+  const played = [];
+  const firstPlayed = new Promise((resolve) => {
+    markFirstPlayed = resolve;
+  });
+  const controller = createController({
+    delay: () => new Promise((resolve) => {
+      releaseGap = resolve;
+    }),
+  });
+  const sequence = controller.toggleSequence({
+    button: makeButton(),
+    items: ["one", "two"],
+    playItem: async (item) => {
+      played.push(item);
+      if (item === "one") markFirstPlayed();
+    },
+  });
+
+  await firstPlayed;
+  await Promise.resolve();
+  controller.pauseSequence();
+  releaseGap();
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.deepEqual(played, ["one"]);
+
+  controller.resumeSequence();
+  await sequence;
+  assert.deepEqual(played, ["one", "two"]);
+});
+
 test("manual playback stops an active sequence before starting", async () => {
   let resolveCurrent;
   let stopped = 0;

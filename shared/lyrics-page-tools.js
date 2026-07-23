@@ -92,7 +92,7 @@
     const rateButton = document.createElement("button");
     rateButton.type = "button";
     rateButton.className = "lyrics-tools-rate";
-    rateButton.textContent = "1.0×";
+    rateButton.textContent = "1.0x";
     rateContainer.append(rateButton);
 
     const dock = document.createElement("aside");

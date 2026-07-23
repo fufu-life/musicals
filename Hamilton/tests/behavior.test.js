@@ -6,6 +6,7 @@ const indexHtml = fs.readFileSync("Hamilton/index.html", "utf8");
 const scriptJs = fs.readFileSync("Hamilton/script.js", "utf8");
 const styleCss = fs.readFileSync("Hamilton/style.css", "utf8");
 const lyricsDataJs = fs.readFileSync("Hamilton/lyrics-data.js", "utf8");
+const lyricsSourceMd = fs.readFileSync("../lyrics/Hamilton (Original Broadway Cast Recording) (3367211).md", "utf8");
 const wordDataJs = fs.existsSync("Hamilton/word-data.js") ? fs.readFileSync("Hamilton/word-data.js", "utf8") : "";
 const audioBuilderJs = fs.existsSync("Hamilton/scripts/build-audio.js")
   ? fs.readFileSync("Hamilton/scripts/build-audio.js", "utf8")
@@ -141,7 +142,7 @@ test("approved playback-rate menu controls sentences and playlists but not word 
   const feedbackIndex = indexHtml.indexOf('id="feedbackButton"');
   const playbackIndex = indexHtml.indexOf('class="toolbar-playback-tools"');
   assert.ok(feedbackIndex !== -1 && playbackIndex > feedbackIndex);
-  assert.match(indexHtml, /class="toolbar-playback-tools"[\s\S]*id="songPlayButton"[\s\S]*id="playbackRateButton"[^>]*>1\.0×<\/button>/);
+  assert.match(indexHtml, /class="toolbar-playback-tools"[\s\S]*id="songPlayButton"[\s\S]*id="playbackRateButton"[^>]*>1\.0x<\/button>/);
   assert.match(indexHtml, /\.\.\/shared\/playback-rate\.js/);
   assert.match(playbackRateJs, /\[0\.5, 0\.75, 1, 1\.25, 1\.5, 2, 3\]/);
   assert.match(playbackRateJs, /className = "musical-rate-menu"/);
@@ -205,7 +206,9 @@ test("timestamps and speaker names are metadata rather than spoken lyrics", () =
   assert.match(scriptJs, /speakers\.push\(speaker\)/);
   assert.match(scriptJs, /pendingSpeakersBySong/);
   assert.match(scriptJs, /metadata\.english/);
-  assert.match(scriptJs, /const speakers = metadata\.speakers/);
+  assert.match(scriptJs, /const structuredSpeakers = Array\.isArray\(row\.speakers\)/);
+  assert.match(scriptJs, /structuredSpeakers\.length/);
+  assert.match(scriptJs, /metadata\.speakers\.length/);
   assert.match(scriptJs, /\n\s+speakers,/);
   assert.match(scriptJs, /speakerTags\.className = "speaker-tags"/);
   assert.match(scriptJs, /tag\.className = "speaker-tag"/);
@@ -216,6 +219,69 @@ test("timestamps and speaker names are metadata rather than spoken lyrics", () =
   ["00", "06", "08", "66"].forEach((timestampPart) => {
     assert.equal(timestampPart in sandbox.window.hamiltonWordEntries, false);
   });
+
+  const lyricsSandbox = { window: {} };
+  require("node:vm").runInNewContext(lyricsDataJs, lyricsSandbox);
+  const rows = lyricsSandbox.window.hamiltonLyricsRows;
+  assert.equal(new Set(rows.map((row) => Number(row.song_order))).size, 46);
+  assert.equal(Math.max(...rows.map((row) => Number(row.song_order))), 46);
+  assert.ok(rows.every((row) => Array.isArray(row.speakers) && row.speakers.length > 0));
+  assert.ok(
+    rows.every((row) => row.speakers.every((speaker) => !/[A-Z]\d+$/.test(speaker))),
+    "speaker labels must not contain glued reference footnotes",
+  );
+  const oneLastTime = rows.filter((row) => Number(row.song_order) === 32);
+  assert.ok(
+    oneLastTime.every((row) => !/^(?:\{[^}]+\}|\[(?:\d{1,2}:\d{2}(?:\.\d+)?|[A-Za-z ]+)\])/.test(row.english)),
+    "One Last Time English lyrics must not include timestamps or role labels",
+  );
+  assert.ok(
+    oneLastTime.every((row) => !/^(?:\[\d{1,2}:\d{2}(?:\.\d+)?\]|\[[A-Za-z ]+\])/.test(row.chinese_translation)),
+    "One Last Time Chinese translations must not include timestamps or role labels",
+  );
+  const byLine = new Map(oneLastTime.map((row) => [String(row.line_index), row]));
+  assert.equal(byLine.has("27"), false, "empty role-only placeholder should not render");
+  ["66", "76"].forEach((lineIndex) => {
+    assert.deepEqual(Array.from(byLine.get(lineIndex).speakers), ["HAMILTON", "WASHINGTON"]);
+  });
+  ["80", "82", "84", "86"].forEach((lineIndex) => {
+    assert.deepEqual(Array.from(byLine.get(lineIndex).speakers), ["COMPANY"]);
+  });
+  assert.ok(
+    oneLastTime.every((row) => row.english.length <= 120 && row.chinese_translation.length <= 80),
+    "One Last Time must not retain oversized recital cards",
+  );
+  assert.equal(byLine.get("52").english, "Like the scripture says:");
+  assert.equal(byLine.get("11").english, "Shh. Talk less");
+  assert.match(scriptJs, /token\.classList\.add\("is-punctuation-attached"\)/);
+  assert.match(styleCss, /\.en-line \.lyric-token\.is-punctuation-attached\s*\{[\s\S]*?margin-right:\s*0;/);
+
+  const storyOfTonight = rows.filter((row) => Number(row.song_order) === 4);
+  assert.deepEqual(
+    Array.from(storyOfTonight.slice(0, 4), (row) => Array.from(row.speakers)),
+    [
+      ["HAMILTON"],
+      ["LAFAYETTE/MULLIGAN/LAURENS"],
+      ["HAMILTON"],
+      ["LAFAYETTE/MULLIGAN/LAURENS"],
+    ],
+  );
+});
+
+test("all 46 songs keep bracketed speaker metadata out of source and rendered lyric fields", () => {
+  const speakerPrefix = /^(?:[\[\(\{【（])(?:HAMILTON|BURR|LAURENS|LAFAYETTE|MULLIGAN|WASHINGTON|ANGELICA|ELIZA|PEGGY|COMPANY|ENSEMBLE|WOMEN|MEN|KING GEORGE|SEABURY|LEE|JEFFERSON|MADISON|REYNOLDS|PHILIP|EAKER|SCHUYLER SISTERS|CHOIRS|BOTH|MARIA|JAMES|FULL COMPANY|FULL ENSEMBLE|DOCTOR|GEORGE|DOLLY|MARTHA|MALE COMPANY|FEMALE VOTER|MALE VOTER|伯尔|杰斐逊|麦迪逊)(?:\s*(?:\/|&|AND|和|、)\s*(?:HAMILTON|BURR|JEFFERSON|MADISON|伯尔|杰斐逊|麦迪逊))*[\]\)\}】）]\s+\S/iu;
+  const sandbox = { window: {} };
+  require("node:vm").runInNewContext(lyricsDataJs, sandbox);
+  const rows = sandbox.window.hamiltonLyricsRows;
+  assert.equal(new Set(rows.map((row) => row.song_order)).size, 46);
+  for (const row of rows) {
+    assert.doesNotMatch(row.english, speakerPrefix, `${row.song_order}:${row.line_index} English speaker leak`);
+    assert.doesNotMatch(row.ipa, speakerPrefix, `${row.song_order}:${row.line_index} IPA speaker leak`);
+    assert.doesNotMatch(row.chinese_translation, speakerPrefix, `${row.song_order}:${row.line_index} Chinese speaker leak`);
+  }
+  assert.doesNotMatch(lyricsSourceMd, /\| \d+ \| \((?:Burr|JEFFERSON|MADISON)\)\s+[^|]+ \|/);
+  assert.doesNotMatch(lyricsSourceMd, /\| \d+ \| \[[A-Z\/]+\][^|]+ \|/);
+  assert.doesNotMatch(lyricsSourceMd, /\| \d+ \| (?:HAMILTON|BURR|LAURENS|LAFAYETTE|MULLIGAN|WASHINGTON|JEFFERSON|MADISON)(?:\]|:)\s+[^|]+ \|/);
 });
 
 test("search history responds to browser back and forward navigation", () => {
@@ -368,6 +434,21 @@ test("reviewed Hamilton lyric translations have no blanks or fallback text", () 
   assert.equal(translationFor("26-take-a-break", 1), "一 二 三 四");
   assert.match(translationFor("46-who-lives-who-dies-who-tells-your-story", 64), /第一所私立孤儿院/);
   assert.match(translationFor("46-who-lives-who-dies-who-tells-your-story", 74), /我的故事/);
+});
+
+test("reviewed translations preserve gendered lyrics without adding degrading wording", () => {
+  const sandbox = { window: {} };
+  require("node:vm").runInNewContext(lyricsDataJs, sandbox);
+  const byLine = new Map(sandbox.window.hamiltonLyricsRows.map((row) => [`${row.song_order}:${row.line_index}`, row]));
+  assert.equal(byLine.get("2:49").chinese_translation, "正忙得起劲、乐在其中；听说你母亲还问：“再来一次？”");
+  assert.equal(byLine.get("2:52").chinese_translation, "隔着四层紧身胸衣，亲热起来也不容易……");
+  assert.equal(byLine.get("11:52").chinese_translation, "你给我的感觉，是一位从不安于现状的女性");
+  assert.equal(byLine.get("11:97").chinese_translation, "在那里，我唯一的“职责”就是嫁给有钱人；");
+  assert.equal(byLine.get("27:65").chinese_translation, "还有，只要价钱合适，你可以继续和我被辱骂为“妓女”的妻子来往");
+  const translations = sandbox.window.hamiltonLyricsRows.map((row) => row.chinese_translation).join("\n");
+  ["器大活好", "神魂颠倒", "搞起来", "放荡的老婆", "不会满足的女人", "世家女孩", "荡妇的儿子"].forEach((phrase) => {
+    assert.equal(translations.includes(phrase), false, `unreviewed degrading wording remains: ${phrase}`);
+  });
 });
 
 test("common do verb forms use lyric-appropriate definitions", () => {

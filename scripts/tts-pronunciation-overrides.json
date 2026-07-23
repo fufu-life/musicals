@@ -1,0 +1,60 @@
+{
+  "Hamilton": {
+    "lines": {
+      "ham-02-001": "Seventeen seventy-six. New York City",
+      "ham-09-018": "Seventeen eighty.",
+      "ham-09-019": "Seventeen eighty",
+      "ham-11-044": "But Alexander, I'll never forget the first",
+      "ham-20-001": "The battle of Yorktown. Seventeen eighty-one",
+      "ham-24-003": "Seventeen eighty-nine",
+      "ham-42-001": "The election of eighteen hundred"
+    },
+    "words": {
+      "1776": "seventeen seventy-six",
+      "1780": "seventeen eighty",
+      "1781": "seventeen eighty-one",
+      "1789": "seventeen eighty-nine",
+      "1800": "eighteen hundred"
+    }
+  },
+  "chicago": {
+    "lines": {
+      "chicago-08-016": "Nineteen twenty"
+    }
+  },
+  "six-the-musical": {
+    "lines": {
+      "six-the-musical-03-004": "Fifteen twenty-two, came straight to the U.K."
+    }
+  },
+  "suffs": {
+    "lines": {
+      "suffs-09-001": "June fifth, nineteen thirteen, our first meeting with President Wilson.",
+      "suffs-09-020": "April sixth, nineteen fourteen.",
+      "suffs-09-024": "August eighth, nineteen fourteen.",
+      "suffs-09-026": "May twelfth, nineteen fifteen.",
+      "suffs-09-028": "June first, nineteen sixteen.",
+      "suffs-11-016": "Can you believe it is nineteen sixteen and all of these things are still actually true?",
+      "suffs-19-027": "April sixth, nineteen seventeen, Wilson declares war on Germany."
+    }
+  },
+  "elisabeth-das-musical": {
+    "lines": {
+      "elisabeth-das-musical-07-001": "August achtzehnhundertdreiundfünfzig. Bad Ischl. Achtzehnhundertdreiundfünfzig",
+      "elisabeth-das-musical-09-004": "Aber passend, an diesem vierundzwanzigsten April achtzehnhundertvierundfünfzig",
+      "elisabeth-das-musical-24-003": "an diesem denkwürdigen achten Juni achtzehnhundertsiebenundsechzig",
+      "elisabeth-das-musical-36-045": "achtzehnhundertzweiundsiebzig",
+      "elisabeth-das-musical-48-008": "Am zehnten September achtzehnhundertachtundneunzig"
+    }
+  },
+  "starmania": {
+    "lines": {
+      "starmania-03-057": "Quand viendra l'an deux mille"
+    }
+  },
+  "love-never-dies": {
+    "lines": {
+      "phantom-of-the-opera-29-075": "My Christine, I'll be no longer denied"
+    }
+  }
+}

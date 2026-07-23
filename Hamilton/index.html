@@ -71,7 +71,7 @@
                     <rect class="playlist-stop-mark" x="8" y="6" width="12" height="12" rx="1.5" />
                   </svg>
                 </button>
-                <button class="playback-rate-button" id="playbackRateButton" type="button" aria-label="播放速度 1.0×" title="播放速度：1.0×">1.0×</button>
+                <button class="playback-rate-button" id="playbackRateButton" type="button" aria-label="播放速度 1.0x" title="播放速度：1.0x">1.0x</button>
               </div>
             </div>
           </div>
@@ -103,7 +103,7 @@
         <strong class="playback-dock-progress" id="playbackDockProgress" aria-live="polite">准备播放</strong>
       </div>
       <div class="playback-dock-controls">
-        <button class="playback-dock-rate" id="playbackDockRate" type="button" aria-label="播放速度 1.0×">1.0×</button>
+        <button class="playback-dock-rate" id="playbackDockRate" type="button" aria-label="播放速度 1.0x">1.0x</button>
         <button class="playback-dock-pause" id="playbackDockPause" type="button" aria-label="暂停全曲播放" title="暂停全曲播放">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path class="dock-pause-mark" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />
@@ -198,6 +198,11 @@
     <script src="../shared/playback-rate.js" onerror="handleCriticalAssetError()"></script>
     <script src="../shared/lyrics-search.js" onerror="handleCriticalAssetError()"></script>
     <script src="script.js" onerror="handleCriticalAssetError()"></script>
+    <script>
+      if (new URLSearchParams(window.location.search).has("editor")) {
+        document.write('<link rel="stylesheet" href="editor.css"><script src="editor.js"><\\/script>');
+      }
+    </script>
     <script src="../shared/feedback-widget.js"></script>
     <script>
       window.MusicalFeedback.mount({

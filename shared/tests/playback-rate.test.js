@@ -32,12 +32,12 @@ test("playback-rate control keeps 1.0 as the default and includes slow speeds", 
   const button = makeButton();
   const control = createControl({ button, storage: null, storageKey: "test-rate" });
   assert.deepEqual(DEFAULT_RATES, [0.5, 0.75, 1, 1.25, 1.5, 2, 3]);
-  assert.equal(button.textContent, "1.0×");
+  assert.equal(button.textContent, "1.0x");
   [1.25, 1.5, 2, 3, 0.5, 0.75, 1].forEach((expected) => {
     button.click();
     assert.equal(control.getRate(), expected);
   });
-  assert.equal(button.textContent, "1.0×");
+  assert.equal(button.textContent, "1.0x");
 });
 
 test("playback-rate control accepts all approved menu values", () => {
@@ -67,10 +67,10 @@ test("playback-rate control restores a valid saved value and persists changes", 
   button.click();
   assert.equal(values.get("hamilton-rate"), "2");
   assert.deepEqual(changes, [2]);
-  assert.match(button.getAttribute("aria-label"), /2\.0×/);
+  assert.match(button.getAttribute("aria-label"), /2\.0x/);
 });
 
 test("formatRate keeps a visible decimal for the default rate", () => {
-  assert.equal(formatRate(1), "1.0×");
-  assert.equal(formatRate(1.25), "1.25×");
+  assert.equal(formatRate(1), "1.0x");
+  assert.equal(formatRate(1.25), "1.25x");
 });

@@ -271,8 +271,13 @@ function buildSongsFromRows(rows) {
     const lineIndex = Number(row.line_index) || song.lines.length + 1;
     const lineId = `ham-${String(order).padStart(2, "0")}-${String(lineIndex).padStart(3, "0")}`;
     const english = metadata.english;
-    const speakers = metadata.speakers.length
-      ? metadata.speakers
+    const structuredSpeakers = Array.isArray(row.speakers)
+      ? row.speakers.map((speaker) => String(speaker).trim()).filter(Boolean)
+      : [];
+    const speakers = structuredSpeakers.length
+      ? structuredSpeakers
+      : metadata.speakers.length
+        ? metadata.speakers
       : pendingSpeakersBySong.get(key) || [];
     pendingSpeakersBySong.delete(key);
     const analysis = analysisByLine.get(`${order}|${normalizeEnglishKey(english)}`) || { words: [] };
@@ -1014,10 +1019,13 @@ function renderEnglishTokens(text, wordClassName = "lyric-word", options = {}) {
   const ipaParts = splitIpa(options.line?.ipa || "");
   let wordIndex = 0;
 
-  parts.forEach((part) => {
+  parts.forEach((part, partIndex) => {
     if (/^[\p{L}\d]/u.test(part)) {
       const token = document.createElement("span");
       token.className = "lyric-token";
+      if (/^[,.;:!?…]/u.test(parts[partIndex + 1] || "")) {
+        token.classList.add("is-punctuation-attached");
+      }
 
       const button = document.createElement("button");
       button.className = wordClassName;
@@ -1217,7 +1225,12 @@ function playLocalAudio(src, waitForEnd, { rate = 1, rateControlled = false } = 
 }
 
 function getLineAudioPath(song, line) {
-  return `audio/lines/${encodeURIComponent(song.id)}/${encodeURIComponent(line.id)}.mp3`;
+  const speechText = String(line.en || "");
+  let version = 5381;
+  for (let index = 0; index < speechText.length; index += 1) {
+    version = ((version << 5) + version) ^ speechText.charCodeAt(index);
+  }
+  return `audio/lines/${encodeURIComponent(song.id)}/${encodeURIComponent(line.id)}.mp3?v=${(version >>> 0).toString(36)}`;
 }
 
 function getWordAudioPath(text) {

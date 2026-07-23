@@ -775,13 +775,16 @@ h1 {
   min-height: 20px;
   padding: 2px 7px;
   border: 1px solid rgba(255, 216, 120, 0.34);
-  border-radius: 4px;
-  color: rgba(255, 224, 142, 0.8);
-  background: rgba(255, 216, 120, 0.08);
+  border-radius: 999px;
+  color: rgba(255, 230, 164, 0.92);
+  background:
+    linear-gradient(135deg, rgba(255, 216, 120, 0.14), rgba(255, 216, 120, 0.05));
+  box-shadow: inset 0 0 0 1px rgba(20, 13, 3, 0.22);
   font-family: var(--font-sans);
   font-size: 0.68rem;
   font-weight: 700;
   line-height: 1.25;
+  letter-spacing: 0.075em;
   text-transform: uppercase;
 }
 
@@ -828,6 +831,10 @@ h1 {
   align-items: start;
   margin-right: 0.08em;
   vertical-align: top;
+}
+
+.en-line .lyric-token.is-punctuation-attached {
+  margin-right: 0;
 }
 
 .word-phonetic {
