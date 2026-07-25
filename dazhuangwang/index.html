@@ -1,23 +1,10 @@
 <!doctype html>
 <html lang="zh-Hant">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-E49LJ5T1V6');
-
-      window.addEventListener('load', () => {
-        const analyticsScript = document.createElement('script');
-        analyticsScript.async = true;
-        analyticsScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-E49LJ5T1V6';
-        document.head.append(analyticsScript);
-      }, { once: true });
-    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preload" href="songs.js" as="script" />
+    <link rel="icon" href="data:," />
+    <link rel="preload" href="songs-initial.js" as="script" />
     <title>大状王歌词粤拼</title>
     <style>
 :root {
@@ -803,6 +790,8 @@ h1 {
 
 .lyric-row {
   display: grid;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 72px;
   grid-template-columns: var(--singer-col-width) minmax(0, 1fr);
   gap: 26px;
   align-items: start;
@@ -10682,7 +10671,18 @@ body:not(.js-ready) .app-layout {
     <script>
       (() => {
         const retryKey = `musical-site-retry:${window.location.pathname}`;
+        const retryAssetParam = "_retry_asset";
         let reloadStarted = false;
+
+        window.writeCriticalScript = (source) => {
+          const assetUrl = new URL(source, window.location.href);
+          const pageUrl = new URL(window.location.href);
+          const retryToken = pageUrl.searchParams.get("_retry");
+          if (retryToken && pageUrl.searchParams.get(retryAssetParam) === assetUrl.pathname) {
+            assetUrl.searchParams.set("_retry", retryToken);
+          }
+          document.write('<script src="' + assetUrl.href + '" onerror="handleCriticalAssetError(this.src)"><\/script>');
+        };
 
         function showLoadError() {
           const render = () => {
@@ -10705,7 +10705,9 @@ body:not(.js-ready) .app-layout {
               try {
                 sessionStorage.removeItem(retryKey);
               } catch {}
-              window.location.reload();
+              const retryUrl = new URL(window.location.href);
+              retryUrl.searchParams.set("_retry", String(Date.now()));
+              window.location.replace(retryUrl);
             });
 
             notice.append(message, retry);
@@ -10716,7 +10718,7 @@ body:not(.js-ready) .app-layout {
           else document.addEventListener("DOMContentLoaded", render, { once: true });
         }
 
-        window.handleCriticalAssetError = () => {
+        window.handleCriticalAssetError = (source) => {
           if (reloadStarted) return;
 
           let canRememberRetry = true;
@@ -10735,6 +10737,7 @@ body:not(.js-ready) .app-layout {
             reloadStarted = true;
             const retryUrl = new URL(window.location.href);
             retryUrl.searchParams.set("_retry", String(now));
+            retryUrl.searchParams.set(retryAssetParam, new URL(source, window.location.href).pathname);
             window.location.replace(retryUrl);
             return;
           }
@@ -10747,7 +10750,9 @@ body:not(.js-ready) .app-layout {
             try {
               sessionStorage.removeItem(retryKey);
               const cleanUrl = new URL(window.location.href);
-              if (cleanUrl.searchParams.delete("_retry")) {
+              const changed = cleanUrl.searchParams.delete("_retry");
+              cleanUrl.searchParams.delete(retryAssetParam);
+              if (changed) {
                 history.replaceState(null, "", cleanUrl);
               }
             } catch {}
@@ -10755,11 +10760,12 @@ body:not(.js-ready) .app-layout {
         }, { once: true });
       })();
     </script>
-    <script src="songs.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/audio-playback.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/playback-rate.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/lyrics-search.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/lyrics-page-tools.js" onerror="handleCriticalAssetError()"></script>
+    <script>writeCriticalScript("songs-initial.js");</script>
+    <script>writeCriticalScript("../shared/analytics.js");</script>
+    <script>writeCriticalScript("../shared/audio-playback.js");</script>
+    <script>writeCriticalScript("../shared/playback-rate.js");</script>
+    <script>writeCriticalScript("../shared/lyrics-search.js");</script>
+    <script>writeCriticalScript("../shared/lyrics-page-tools.js");</script>
     <script>
 const DZW_SETTINGS_KEY = "dzw-display-settings-v2";
 const DZW_CURRENT_SONG_KEY = "dzw-current-song-id";
@@ -10771,7 +10777,8 @@ const defaultSettings = {
   showJyutping: true,
 };
 
-const songs = [...(window.dazhuangwangSongs || [])].sort((a, b) => a.order - b.order);
+const songs = [...(window.dazhuangwangSongsInitial || window.dazhuangwangSongs || [])].sort((a, b) => a.order - b.order);
+let fullSongsReady = null;
 const state = {
   settings: { ...defaultSettings, ...loadJson(DZW_SETTINGS_KEY, {}) },
   currentSongId: resolveInitialSongId(),
@@ -10807,6 +10814,13 @@ const audioState = {
   rateControlled: false,
 };
 
+const analytics = window.MusicalAnalytics.initShow({
+  showId: "dazhuangwang",
+  showName: "大状王",
+  pageType: "lyrics_learning",
+  getProgressElement: () => refs.lyricsList,
+});
+
 const pageTools = window.MusicalLyricsPageTools.create({
   songs,
   rateStorageKey: DZW_PLAYBACK_RATE_KEY,
@@ -10822,6 +10836,7 @@ const pageTools = window.MusicalLyricsPageTools.create({
   getSongTitleSecondary: (song) => [song.titleSimplified, song.titleTraditional].filter(Boolean).join(" · "),
   getLinePrimary: (line) => line.text || line.simplified || "",
   getLineSecondary: (line) => line.simplified || "",
+  ensureSearchReady: ensureFullSongs,
   onNavigate: navigateToSearchResult,
   onRateChange(rate) {
     if (audioState.current && audioState.rateControlled) {
@@ -10841,14 +10856,6 @@ const audioController = window.MusicalAudio.createController({
 });
 pageTools.connectController(audioController);
 
-const analyticsState = {
-  activeSongId: "",
-  lastTrackedSongId: "",
-  stayTimer: 0,
-  stayTracked: false,
-  scrollTracked: false,
-};
-
 init();
 
 function init() {
@@ -10859,10 +10866,42 @@ function init() {
   bindBackToTop();
   bindSidebar();
   bindWordPopover();
-  bindAnalyticsLifecycle();
   bindDragonflyCursor();
   refs.songPlayButton?.addEventListener("click", toggleCurrentSongPlayback);
   renderCurrentSong();
+  if (!getCurrentSong()?.lines.length) {
+    ensureFullSongs().then(renderCurrentSong);
+  }
+}
+
+function loadScript(src, fetchPriority = "auto") {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.fetchPriority = fetchPriority;
+    script.addEventListener("load", resolve, { once: true });
+    script.addEventListener("error", () => reject(new Error(`Failed to load ${src}`)), { once: true });
+    document.head.append(script);
+  });
+}
+
+async function loadFullSongs() {
+  await loadScript("songs.js", "high");
+  const fullSongs = [...(window.dazhuangwangSongs || [])].sort((a, b) => a.order - b.order);
+  if (!fullSongs.length) throw new Error("Full Dazhuangwang song data is empty");
+  songs.splice(0, songs.length, ...fullSongs);
+}
+
+function ensureFullSongs() {
+  if (!fullSongsReady) {
+    fullSongsReady = loadFullSongs().catch((error) => {
+      fullSongsReady = null;
+      console.error("Deferred Dazhuangwang song data failed to load", error);
+      throw error;
+    });
+  }
+  return fullSongsReady;
 }
 
 function loadJson(key, fallback) {
@@ -10901,12 +10940,11 @@ function bindControls() {
   refs.toggleButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const key = button.dataset.toggle;
-      const previousMode = getCurrentLanguageMode();
       state.settings[key] = !state.settings[key];
 
       saveSettings();
       renderCurrentSong();
-      trackLanguageToggle(key, previousMode);
+      if (key === "showJyutping") analytics.featureUse("ipa_toggle");
     });
   });
 }
@@ -10918,9 +10956,12 @@ function bindSongSelect() {
 }
 
 function bindHashChange() {
-  window.addEventListener("hashchange", () => {
+  window.addEventListener("hashchange", async () => {
     const songId = getSongIdFromHash();
     if (isKnownSongId(songId) && songId !== state.currentSongId) {
+      if (!songs.find((song) => song.id === songId)?.lines.length) {
+        await ensureFullSongs();
+      }
       audioController.stopAll();
       state.currentSongId = songId;
       localStorage.setItem(DZW_CURRENT_SONG_KEY, songId);
@@ -10938,19 +10979,6 @@ function bindBackToTop() {
   refs.backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
   window.addEventListener("scroll", update, { passive: true });
   update();
-}
-
-function bindAnalyticsLifecycle() {
-  window.addEventListener("scroll", checkSongScrollDepth, { passive: true });
-  window.addEventListener("resize", checkSongScrollDepth, { passive: true });
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") {
-      clearSongStayTimer();
-      return;
-    }
-    startSongStayTimer(getCurrentSong());
-    requestAnimationFrame(checkSongScrollDepth);
-  });
 }
 
 function bindSidebar() {
@@ -11146,7 +11174,7 @@ function bindDragonflyCursor() {
   animate();
 }
 
-function selectSong(songId) {
+async function selectSong(songId) {
   if (!isKnownSongId(songId)) {
     return;
   }
@@ -11158,6 +11186,9 @@ function selectSong(songId) {
       updateSidebarState();
     }
     return;
+  }
+  if (!songs.find((song) => song.id === songId)?.lines.length) {
+    await ensureFullSongs();
   }
 
   audioController.stopAll();
@@ -11297,18 +11328,19 @@ function renderCurrentSong() {
   refs.songPlayButton.disabled = !song.lines.length;
   renderSongAnnotations(song);
   refs.lyricsList.innerHTML = "";
-  enterAnalyticsSong(song);
 
   if (!song.lines.length) {
     const empty = document.createElement("p");
     empty.className = "empty-analysis";
     empty.textContent = "这首歌的歌词数据还没有录入。";
     refs.lyricsList.append(empty);
+    enterAnalyticsSong(song);
     return;
   }
 
   song.lines.forEach((line, index) => refs.lyricsList.append(renderLyricLine(song, line, index)));
-  requestAnimationFrame(checkSongScrollDepth);
+  enterAnalyticsSong(song);
+  analytics.scheduleReadProgress();
 }
 
 function renderSongAnnotations(song) {
@@ -11574,20 +11606,18 @@ function renderSpeakToken(song, line, displayText, lineIndex) {
       return;
     }
     audioController.runUserAction(speak, async () => {
+    const audioSession = analytics.audioClick({ audioType: "line", lineId: line.id });
     const speakText = getSpeakText(displayText);
-    trackAudioPlay(song, line, lineIndex, displayText);
     if (line.audio) {
       try {
-        await playEmbeddedAudio(line.audio, false, { rateControlled: true });
+        await playEmbeddedAudio(line.audio, false, { rateControlled: true, analyticsSession: audioSession });
         return;
-      } catch (error) {
-        trackAudioPlayError(song, line, lineIndex, error);
+      } catch {
         // Fall through to browser speech when a generated audio file is missing.
       }
     }
 
-    if (!speakCantonese(speakText, { rateControlled: true })) {
-      trackAudioPlayError(song, line, lineIndex, new Error("No Cantonese or Hong Kong Chinese speech voice found"));
+    if (!speakCantonese(speakText, { rateControlled: true, analyticsSession: audioSession })) {
       speak.title = "未找到粤语或香港中文语音";
       speak.disabled = true;
     }
@@ -11605,7 +11635,7 @@ function getSpeakText(text) {
     .trim();
 }
 
-function playEmbeddedAudio(src, waitForEnd, { rateControlled = false } = {}) {
+function playEmbeddedAudio(src, waitForEnd, { rateControlled = false, analyticsSession = null } = {}) {
   if (!src) {
     return Promise.reject(new Error("Missing audio source"));
   }
@@ -11617,7 +11647,14 @@ function playEmbeddedAudio(src, waitForEnd, { rateControlled = false } = {}) {
   audio.playbackRate = rate;
   audioState.current = audio;
   audioState.rateControlled = rateControlled;
-  if (!waitForEnd) return audio.play();
+  if (!waitForEnd) {
+    return Promise.resolve(audio.play()).then(() => {
+      if (analyticsSession) {
+        analytics.audioStart(analyticsSession);
+        audio.addEventListener("ended", () => analytics.audioComplete(analyticsSession), { once: true });
+      }
+    });
+  }
 
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -11631,13 +11668,20 @@ function playEmbeddedAudio(src, waitForEnd, { rateControlled = false } = {}) {
       if (error) reject(error);
       else resolve();
     };
-    const handleEnded = () => finish();
+    const handleEnded = () => {
+      if (analyticsSession) analytics.audioComplete(analyticsSession);
+      finish();
+    };
     const handleError = () => finish(new Error("Audio playback failed"));
     const stopAndResolve = () => finish();
     audioState.finish = stopAndResolve;
     audio.addEventListener("ended", handleEnded, { once: true });
     audio.addEventListener("error", handleError, { once: true });
-    Promise.resolve(audio.play()).catch(finish);
+    Promise.resolve(audio.play())
+      .then(() => {
+        if (analyticsSession) analytics.audioStart(analyticsSession);
+      })
+      .catch(finish);
   });
 }
 
@@ -11675,15 +11719,19 @@ function resumeCurrentPlayback() {
 }
 
 async function playDazhuangwangLineToEnd(line) {
+  const analyticsSession = analytics.createAudioSession({ audioType: "line", lineId: line.id });
   if (line.audio) {
     try {
-      await playEmbeddedAudio(line.audio, true, { rateControlled: true });
+      await playEmbeddedAudio(line.audio, true, { rateControlled: true, analyticsSession });
       return;
     } catch {
       // Fall through to Cantonese speech when the local file is unavailable.
     }
   }
-  const didSpeak = await speakCantoneseToEnd(getSpeakText(getLineText(line)), { rateControlled: true });
+  const didSpeak = await speakCantoneseToEnd(getSpeakText(getLineText(line)), {
+    rateControlled: true,
+    analyticsSession,
+  });
   if (!didSpeak) throw new Error("No Cantonese or Hong Kong Chinese speech voice found");
 }
 
@@ -11691,7 +11739,9 @@ function toggleCurrentSongPlayback() {
   const song = getCurrentSong();
   if (!song?.lines.length) return;
   const playableLines = song.lines.filter((line) => line.audio && !line.noAudio);
-  audioController.toggleSequence({
+  const wasActive = audioController.isSequenceActive();
+  const playlistSession = wasActive ? null : analytics.createAudioSession({ audioType: "playlist", lineId: "" });
+  const sequence = audioController.toggleSequence({
     button: refs.songPlayButton,
     items: playableLines,
     playItem: (line) => playDazhuangwangLineToEnd(line),
@@ -11700,7 +11750,17 @@ function toggleCurrentSongPlayback() {
       setSequenceHighlight(line.id, index, playableLines.length);
       if (nextLine?.audio) preloadLineAudio(nextLine.audio);
     },
+    onComplete: () => {
+      if (playlistSession) analytics.audioComplete(playlistSession);
+      analytics.featureUse("playlist_complete");
+    },
   });
+  if (!wasActive && audioController.isSequenceActive()) {
+    analytics.audioClick(playlistSession);
+    analytics.audioStart(playlistSession);
+    analytics.featureUse("playlist_start");
+  }
+  return sequence;
 }
 
 function preloadLineAudio(src) {
@@ -12044,7 +12104,7 @@ function findCantoneseVoice(voices) {
   );
 }
 
-function speakCantonese(text, { rateControlled = false } = {}) {
+function speakCantonese(text, { rateControlled = false, analyticsSession = null } = {}) {
   if (!("speechSynthesis" in window)) {
     return false;
   }
@@ -12058,11 +12118,17 @@ function speakCantonese(text, { rateControlled = false } = {}) {
     utterance.voice = voice;
   }
   utterance.rate = 0.82 * (rateControlled ? pageTools.getRate() : 1);
+  utterance.onstart = () => {
+    if (analyticsSession) analytics.audioStart(analyticsSession);
+  };
+  utterance.onend = () => {
+    if (analyticsSession) analytics.audioComplete(analyticsSession);
+  };
   window.speechSynthesis.speak(utterance);
   return true;
 }
 
-function speakCantoneseToEnd(text, { rateControlled = false } = {}) {
+function speakCantoneseToEnd(text, { rateControlled = false, analyticsSession = null } = {}) {
   if (!("speechSynthesis" in window)) return Promise.resolve(false);
   stopCurrentPlayback();
   const voice = speechState.cantoneseVoice || findCantoneseVoice(window.speechSynthesis.getVoices());
@@ -12070,6 +12136,9 @@ function speakCantoneseToEnd(text, { rateControlled = false } = {}) {
   utterance.lang = voice?.lang || "zh-HK";
   if (voice) utterance.voice = voice;
   utterance.rate = 0.82 * (rateControlled ? pageTools.getRate() : 1);
+  utterance.onstart = () => {
+    if (analyticsSession) analytics.audioStart(analyticsSession);
+  };
   return new Promise((resolve) => {
     let settled = false;
     const finish = (success) => {
@@ -12080,157 +12149,17 @@ function speakCantoneseToEnd(text, { rateControlled = false } = {}) {
     };
     const stopAndResolve = () => finish(true);
     audioState.speechFinish = stopAndResolve;
-    utterance.onend = () => finish(true);
+    utterance.onend = () => {
+      if (analyticsSession) analytics.audioComplete(analyticsSession);
+      finish(true);
+    };
     utterance.onerror = () => finish(false);
     window.speechSynthesis.speak(utterance);
   });
 }
 
-function getViewportType() {
-  return window.innerWidth < 768 ? "mobile" : "desktop";
-}
-
-function getCurrentLanguageMode() {
-  return state.settings.showJyutping ? "jyutping" : "simplified";
-}
-
-function getSongAnalyticsPayload(song) {
-  return {
-    song_id: song?.id || "unknown",
-    song_title: song?.title || "unknown",
-    song_title_zh: song?.titleZh || song?.title_zh || song?.title || "unknown",
-    song_order: song?.order || 0,
-  };
-}
-
-function trackEvent(eventName, params = {}) {
-  try {
-    const payload = {
-      app_name: "dazhuangwang_lyrics",
-      page_type: "lyrics_learning",
-      viewport_type: getViewportType(),
-      language_mode: getCurrentLanguageMode(),
-      ...params,
-    };
-
-    if (typeof window.gtag !== "function") {
-      console.debug("[analytics skipped]", eventName, payload);
-      return;
-    }
-
-    window.gtag("event", eventName, payload);
-  } catch (error) {
-    console.debug("[analytics failed]", eventName, error);
-  }
-}
-
 function enterAnalyticsSong(song) {
-  if (!song || analyticsState.activeSongId === song.id) {
-    return;
-  }
-
-  clearSongStayTimer();
-  analyticsState.activeSongId = song.id;
-  analyticsState.stayTracked = false;
-  analyticsState.scrollTracked = false;
-
-  if (analyticsState.lastTrackedSongId !== song.id) {
-    trackEvent("song_view", getSongAnalyticsPayload(song));
-    analyticsState.lastTrackedSongId = song.id;
-  }
-
-  startSongStayTimer(song);
-}
-
-function clearSongStayTimer() {
-  if (analyticsState.stayTimer) {
-    window.clearTimeout(analyticsState.stayTimer);
-    analyticsState.stayTimer = 0;
-  }
-}
-
-function startSongStayTimer(song) {
-  clearSongStayTimer();
-  if (!song || analyticsState.stayTracked || document.visibilityState === "hidden") {
-    return;
-  }
-
-  analyticsState.stayTimer = window.setTimeout(() => {
-    analyticsState.stayTimer = 0;
-    if (document.visibilityState === "hidden" || analyticsState.activeSongId !== song.id || analyticsState.stayTracked) {
-      return;
-    }
-
-    analyticsState.stayTracked = true;
-    trackEvent("song_stay_30s", {
-      ...getSongAnalyticsPayload(song),
-      stay_seconds: 30,
-    });
-  }, 30000);
-}
-
-function checkSongScrollDepth() {
-  if (analyticsState.scrollTracked || document.visibilityState === "hidden") {
-    return;
-  }
-
-  const song = getCurrentSong();
-  if (!song || analyticsState.activeSongId !== song.id || !refs.lyricsList) {
-    return;
-  }
-
-  const rect = refs.lyricsList.getBoundingClientRect();
-  const contentHeight = Math.max(refs.lyricsList.scrollHeight, rect.height);
-  if (!contentHeight) {
-    return;
-  }
-
-  const contentTop = rect.top + window.scrollY;
-  const viewportBottom = window.scrollY + window.innerHeight;
-  const progress = ((viewportBottom - contentTop) / contentHeight) * 100;
-  if (progress < 75) {
-    return;
-  }
-
-  analyticsState.scrollTracked = true;
-  trackEvent("song_scroll_75", {
-    ...getSongAnalyticsPayload(song),
-    scroll_percent: 75,
-  });
-}
-
-function trackAudioPlay(song, line, lineIndex, displayText) {
-  trackEvent("audio_play", {
-    ...getSongAnalyticsPayload(song),
-    line_id: line.id || `${song.id}-${lineIndex}`,
-    line_index: lineIndex,
-    line_text_preview: truncateForAnalytics(displayText, 80),
-  });
-}
-
-function trackAudioPlayError(song, line, lineIndex, error) {
-  trackEvent("audio_play_error", {
-    ...getSongAnalyticsPayload(song),
-    line_id: line.id || `${song.id}-${lineIndex}`,
-    line_index: lineIndex,
-    error_message: truncateForAnalytics(error?.message || String(error || "unknown error"), 120),
-  });
-}
-
-function trackLanguageToggle(key, previousMode) {
-  const song = getCurrentSong();
-  const mode = getCurrentLanguageMode();
-  trackEvent("language_toggle", {
-    ...getSongAnalyticsPayload(song),
-    mode,
-    previous_mode: previousMode,
-    toggle_key: key,
-  });
-}
-
-function truncateForAnalytics(value, maxLength) {
-  const text = String(value || "").trim();
-  return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
+  analytics.songRendered(song);
 }
 
     </script>
@@ -12242,7 +12171,7 @@ function truncateForAnalytics(value, maxLength) {
           siteName: "大状王歌词粤拼",
           recipient: "fulife@agent.qq.com",
           trigger: "#feedbackButton",
-          songs: (window.dazhuangwangSongs || []).map((song) => ({
+          songs: (window.dazhuangwangSongsInitial || window.dazhuangwangSongs || []).map((song) => ({
             value: song.id,
             label: `${song.order}. ${song.title}`,
           })),

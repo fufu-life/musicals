@@ -28,34 +28,34 @@ window.referenceCursorActive = true;
             // 1. 锐利的纯金笔尖 (Nib)
             cCtx.fillStyle = '#d4af37'; 
             cCtx.beginPath();
-            cCtx.moveTo(0, 0);   
-            cCtx.lineTo(2, 7);
-            cCtx.lineTo(7, 2);
+            cCtx.moveTo(0, 0);
+            cCtx.lineTo(2, -7);
+            cCtx.lineTo(7, -2);
             cCtx.fill();
             
             // 笔尖墨水槽缝隙
             cCtx.strokeStyle = '#2b0b1a'; 
             cCtx.lineWidth = 0.8;
             cCtx.beginPath(); 
-            cCtx.moveTo(0, 0); 
-            cCtx.lineTo(3, 3); 
+            cCtx.moveTo(0, 0);
+            cCtx.lineTo(3, -3);
             cCtx.stroke();
 
             // 2. 纯净、流畅的修长羽毛主体
             // 左半边羽毛 (迎光面，纯白)
             cCtx.fillStyle = '#ffffff';
             cCtx.beginPath();
-            cCtx.moveTo(4, 4); 
-            cCtx.bezierCurveTo(2, 10, 8, 24, 28, 28); 
-            cCtx.quadraticCurveTo(15, 15, 4, 4); 
+            cCtx.moveTo(4, -4);
+            cCtx.bezierCurveTo(2, -10, 8, -24, 28, -28);
+            cCtx.quadraticCurveTo(15, -15, 4, -4);
             cCtx.fill();
 
             // 右半边羽毛 (背光面，冷灰白产生立体感)
             cCtx.fillStyle = '#e2e5eb';
             cCtx.beginPath();
-            cCtx.moveTo(4, 4);
-            cCtx.bezierCurveTo(10, 2, 24, 8, 28, 28);
-            cCtx.quadraticCurveTo(15, 15, 4, 4);
+            cCtx.moveTo(4, -4);
+            cCtx.bezierCurveTo(10, -2, 24, -8, 28, -28);
+            cCtx.quadraticCurveTo(15, -15, 4, -4);
             cCtx.fill();
 
             // 3. 笔杆 (Shaft) - 贯穿羽毛的金箔骨架
@@ -63,17 +63,17 @@ window.referenceCursorActive = true;
             cCtx.lineWidth = 1.2;
             cCtx.lineCap = 'round';
             cCtx.beginPath();
-            cCtx.moveTo(3, 3);
-            cCtx.quadraticCurveTo(15, 15, 28, 28);
+            cCtx.moveTo(3, -3);
+            cCtx.quadraticCurveTo(15, -15, 28, -28);
             cCtx.stroke();
 
             // 【彻底删除了原本的透明镂空黑线代码，让羽毛保持完美无瑕的纯净块面】
 
             // 4. 笔根处的细碎金箔点缀
             cCtx.fillStyle = '#d4af37';
-            cCtx.beginPath(); cCtx.arc(6, 6, 1.2, 0, Math.PI*2); cCtx.fill();
-            cCtx.beginPath(); cCtx.arc(9, 4, 0.8, 0, Math.PI*2); cCtx.fill();
-            cCtx.beginPath(); cCtx.arc(4, 9, 0.6, 0, Math.PI*2); cCtx.fill();
+            cCtx.beginPath(); cCtx.arc(6, -6, 1.2, 0, Math.PI*2); cCtx.fill();
+            cCtx.beginPath(); cCtx.arc(9, -4, 0.8, 0, Math.PI*2); cCtx.fill();
+            cCtx.beginPath(); cCtx.arc(4, -9, 0.6, 0, Math.PI*2); cCtx.fill();
 
             cCtx.restore();
         }

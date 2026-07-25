@@ -46,25 +46,29 @@ test("page mounts the shared feedback widget with current song selection", () =>
   assert.match(indexHtml, /\.\.\/shared\/feedback-widget\.js/);
   assert.match(indexHtml, /window\.MusicalFeedback\.mount/);
   assert.match(indexHtml, /trigger:\s*"#feedbackButton"/);
-  assert.match(indexHtml, /window\.hamiltonLyricsRows/);
+  assert.match(indexHtml, /songs:\s*songs\.map/);
   assert.match(indexHtml, /getCurrentSongId:\s*\(\) =>/);
   assert.match(indexHtml, /getCurrentSong\(\)\?\.id/);
 });
 
 test("lyrics render before noncritical analysis and word data load", () => {
-  assert.match(indexHtml, /<link rel="preload" href="word-data\.js" as="script" fetchpriority="low" \/>/);
-  assert.doesNotMatch(indexHtml, /<script src="songs\.js"><\/script>/);
+  assert.match(indexHtml, /<link rel="preload" href="lyrics-initial\.js" as="script" \/>/);
+  assert.match(indexHtml, /writeCriticalScript\("lyrics-initial\.js"\)/);
+  assert.doesNotMatch(indexHtml, /<script src="lyrics-data\.js"><\/script>/);
   assert.doesNotMatch(indexHtml, /<script src="word-data\.js"><\/script>/);
-  assert.match(scriptJs, /renderCurrentSong\(\);\s*wordDictionaryReady = loadWordDictionary/);
+  assert.match(scriptJs, /renderCurrentSong\(\);\s*scheduleDeferredData\(\)/);
+  assert.match(scriptJs, /await loadScript\("lyrics-data\.js", "high"\)/);
   assert.match(scriptJs, /await loadScript\("word-data\.js", "high"\)/);
   assert.match(scriptJs, /await loadScript\("songs\.js", "low"\)/);
-  assert.match(scriptJs, /showLoadingPopover\(part, button\);\s*await wordDictionaryReady/);
-  assert.doesNotMatch(scriptJs, /await\s+(?:analysisDataReady|loadAnalysisData)/);
+  assert.match(scriptJs, /showLoadingPopover\(part, button\);\s*await ensureWordDictionaryReady\(\)/);
+  assert.match(scriptJs, /await ensureFullLyricsReady\(\);\s*audioController\.stopAll\(\)/);
 });
 
-test("page includes the shared Google Analytics tag", () => {
-  assert.match(indexHtml, /https:\/\/www\.googletagmanager\.com\/gtag\/js\?id=G-E49LJ5T1V6/);
-  assert.match(indexHtml, /gtag\('config', 'G-E49LJ5T1V6'\)/);
+test("page uses the shared analytics module", () => {
+  assert.match(indexHtml, /writeCriticalScript\("\.\.\/shared\/analytics\.js"\)/);
+  assert.match(scriptJs, /window\.MusicalAnalytics\.initShow/);
+  assert.match(scriptJs, /showId:\s*"hamilton"/);
+  assert.doesNotMatch(indexHtml, /function gtag\(\)/);
 });
 
 test("hero logo uses the transparent svg asset", () => {
@@ -116,9 +120,9 @@ test("sentence and word pronunciation prefer local audio files", () => {
   assert.match(scriptJs, /const audioState\s*=\s*\{\s*current:\s*null,/);
   assert.match(scriptJs, /function renderLine\(song, line\)/);
   assert.match(scriptJs, /renderLine\(song, line\)/);
-  assert.match(scriptJs, /playEnglishAudio\(lineAudioPath, line\.en, \{ rateControlled: true \}\)/);
-  assert.match(scriptJs, /playEnglishAudio\(wordAudioPath, text\)/);
-  assert.match(scriptJs, /function playLocalAudio\(src, waitForEnd, \{ rate = 1, rateControlled = false \} = \{\}\)/);
+  assert.match(scriptJs, /playEnglishAudio\(lineAudioPath, line\.en, \{ rateControlled: true, analyticsSession: audioSession \}\)/);
+  assert.match(scriptJs, /playEnglishAudio\(wordAudioPath, text, \{ analyticsSession: audioSession \}\)/);
+  assert.match(scriptJs, /function playLocalAudio\(src, waitForEnd, \{ rate = 1, rateControlled = false, analyticsSession = null \} = \{\}\)/);
   assert.match(scriptJs, /MusicalAudio\.getCachedAudio\(src\)/);
   assert.match(scriptJs, /MusicalAudio\.preloadLocalAudio/);
   assert.match(scriptJs, /\.mp3/);
@@ -150,8 +154,8 @@ test("approved playback-rate menu controls sentences and playlists but not word 
   assert.match(scriptJs, /storageKey:\s*PLAYBACK_RATE_KEY/);
   assert.match(scriptJs, /audio\.defaultPlaybackRate = rate/);
   assert.match(scriptJs, /audio\.playbackRate = rate/);
-  assert.match(scriptJs, /playEnglishAudio\(lineAudioPath, line\.en, \{ rateControlled: true \}\)/);
-  assert.match(scriptJs, /playEnglishAudio\(wordAudioPath, text\)/);
+  assert.match(scriptJs, /playEnglishAudio\(lineAudioPath, line\.en, \{ rateControlled: true, analyticsSession: audioSession \}\)/);
+  assert.match(scriptJs, /playEnglishAudio\(wordAudioPath, text, \{ analyticsSession: audioSession \}\)/);
   assert.match(scriptJs, /gapMs:\s*window\.MusicalAudio\.SEQUENCE_GAP_MS \/ getPlaybackRate\(\)/);
   assert.match(scriptJs, /0\.82 \* rate/);
   assert.match(styleCss, /\.playback-rate-button/);

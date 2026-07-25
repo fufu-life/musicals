@@ -1,23 +1,10 @@
 <!doctype html>
 <html lang="zh-CN">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-E49LJ5T1V6');
-
-      window.addEventListener('load', () => {
-        const analyticsScript = document.createElement('script');
-        analyticsScript.async = true;
-        analyticsScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-E49LJ5T1V6';
-        document.head.append(analyticsScript);
-      }, { once: true });
-    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preload" href="songs.js" as="script" />
+    <link rel="icon" href="data:," />
+    <link rel="preload" href="songs-initial.js" as="script" />
     <title>Le Rouge et le Noir</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="../shared/lyrics-page-tools.css" />
@@ -111,7 +98,18 @@
     <script>
       (() => {
         const retryKey = `musical-site-retry:${window.location.pathname}`;
+        const retryAssetParam = "_retry_asset";
         let reloadStarted = false;
+
+        window.writeCriticalScript = (source) => {
+          const assetUrl = new URL(source, window.location.href);
+          const pageUrl = new URL(window.location.href);
+          const retryToken = pageUrl.searchParams.get("_retry");
+          if (retryToken && pageUrl.searchParams.get(retryAssetParam) === assetUrl.pathname) {
+            assetUrl.searchParams.set("_retry", retryToken);
+          }
+          document.write('<script src="' + assetUrl.href + '" onerror="handleCriticalAssetError(this.src)"><\/script>');
+        };
 
         function showLoadError() {
           const render = () => {
@@ -134,7 +132,9 @@
               try {
                 sessionStorage.removeItem(retryKey);
               } catch {}
-              window.location.reload();
+              const retryUrl = new URL(window.location.href);
+              retryUrl.searchParams.set("_retry", String(Date.now()));
+              window.location.replace(retryUrl);
             });
 
             notice.append(message, retry);
@@ -145,7 +145,7 @@
           else document.addEventListener("DOMContentLoaded", render, { once: true });
         }
 
-        window.handleCriticalAssetError = () => {
+        window.handleCriticalAssetError = (source) => {
           if (reloadStarted) return;
 
           let canRememberRetry = true;
@@ -164,6 +164,7 @@
             reloadStarted = true;
             const retryUrl = new URL(window.location.href);
             retryUrl.searchParams.set("_retry", String(now));
+            retryUrl.searchParams.set(retryAssetParam, new URL(source, window.location.href).pathname);
             window.location.replace(retryUrl);
             return;
           }
@@ -176,7 +177,9 @@
             try {
               sessionStorage.removeItem(retryKey);
               const cleanUrl = new URL(window.location.href);
-              if (cleanUrl.searchParams.delete("_retry")) {
+              const changed = cleanUrl.searchParams.delete("_retry");
+              cleanUrl.searchParams.delete(retryAssetParam);
+              if (changed) {
                 history.replaceState(null, "", cleanUrl);
               }
             } catch {}
@@ -184,12 +187,13 @@
         }, { once: true });
       })();
     </script>
-    <script src="songs.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/audio-playback.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/playback-rate.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/lyrics-search.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/lyrics-page-tools.js" onerror="handleCriticalAssetError()"></script>
-    <script src="script.js" onerror="handleCriticalAssetError()"></script>
+    <script>writeCriticalScript("songs-initial.js");</script>
+    <script>writeCriticalScript("../shared/analytics.js");</script>
+    <script>writeCriticalScript("../shared/audio-playback.js");</script>
+    <script>writeCriticalScript("../shared/playback-rate.js");</script>
+    <script>writeCriticalScript("../shared/lyrics-search.js");</script>
+    <script>writeCriticalScript("../shared/lyrics-page-tools.js");</script>
+    <script>writeCriticalScript("script.js");</script>
     <script src="../shared/feedback-widget.js"></script>
     <script>
       window.MusicalFeedback.mount({
@@ -197,7 +201,7 @@
         siteName: "摇滚红与黑歌词学习",
         recipient: "fulife@agent.qq.com",
         trigger: "#feedbackButton",
-        songs: (window.songs || []).map((song) => ({
+        songs: (window.songsInitial || window.songs || []).map((song) => ({
           value: song.id,
           label: `${song.order}. ${song.title}`,
         })),

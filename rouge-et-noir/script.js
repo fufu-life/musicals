@@ -373,9 +373,10 @@ const INFLECTED_GLOSSARY_FORMS = {
 
 const songGlossaryCache = new WeakMap();
 
-const sortedSongs = [...(window.songs || [])].sort((a, b) => {
+const sortedSongs = [...(window.songsInitial || window.songs || [])].sort((a, b) => {
   return (a.order || 0) - (b.order || 0);
 });
+let fullSongsReady = null;
 
 const appState = {
   settings: { ...defaultSettings, ...loadJson(SETTINGS_KEY, {}) },
@@ -414,6 +415,13 @@ const audioState = {
   rateControlled: false,
 };
 
+const analytics = window.MusicalAnalytics.initShow({
+  showId: "rouge_et_noir",
+  showName: "Le Rouge et le Noir",
+  pageType: "lyrics_learning",
+  getProgressElement: () => refs.lyricsList,
+});
+
 const pageTools = window.MusicalLyricsPageTools.create({
   songs: sortedSongs,
   rateStorageKey: PLAYBACK_RATE_KEY,
@@ -428,6 +436,7 @@ const pageTools = window.MusicalLyricsPageTools.create({
   getSongTitleSecondary: (song) => song.titleZh || "",
   getLinePrimary: (line) => line.fr || "",
   getLineSecondary: (line) => [line.en, line.zh].filter(Boolean).join(" · "),
+  ensureSearchReady: ensureFullSongs,
   onNavigate: navigateToSearchResult,
   onRateChange(rate) {
     if (audioState.current && audioState.rateControlled) {
@@ -452,14 +461,6 @@ const songTransition = {
   settleTimer: null,
 };
 
-const analyticsState = {
-  activeSongId: "",
-  lastTrackedSongId: "",
-  stayTimer: 0,
-  stayTracked: false,
-  scrollTracked: false,
-};
-
 init();
 
 function init() {
@@ -472,30 +473,66 @@ function init() {
   bindPopupDismissal();
   bindBackToTop();
   refs.songPlayButton?.addEventListener("click", toggleCurrentSongPlayback);
-  bindAnalyticsLifecycle();
   bindRougeCursor();
   updateSidebarState();
   renderCurrentSong();
-  loadDeferredPhonetics().catch((error) => {
-    console.error("Deferred Rouge et Noir phonetics failed to load", error);
-  });
+  if (!getCurrentSong()?.lines.length) {
+    ensureFullSongs().then(renderCurrentSong);
+  }
+  scheduleDeferredPhonetics();
 }
 
-function loadScript(src) {
+function loadScript(src, fetchPriority = "auto") {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
     script.src = src;
     script.async = true;
+    script.fetchPriority = fetchPriority;
     script.addEventListener("load", resolve, { once: true });
     script.addEventListener("error", () => reject(new Error(`Failed to load ${src}`)), { once: true });
     document.head.append(script);
   });
 }
 
+async function loadFullSongs() {
+  await loadScript("songs.js", "high");
+  const fullSongs = [...(window.songs || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
+  if (!fullSongs.length) throw new Error("Full Rouge et Noir song data is empty");
+  sortedSongs.splice(0, sortedSongs.length, ...fullSongs);
+}
+
+function ensureFullSongs() {
+  if (!fullSongsReady) {
+    fullSongsReady = loadFullSongs().catch((error) => {
+      fullSongsReady = null;
+      console.error("Deferred Rouge et Noir song data failed to load", error);
+      throw error;
+    });
+  }
+  return fullSongsReady;
+}
+
 async function loadDeferredPhonetics() {
   await loadScript("line-phonetics.js");
   correctedLinePhonetics = window.rougeLinePhonetics || {};
   if (appState.settings.showPhonetics) renderCurrentSong();
+}
+
+function scheduleDeferredPhonetics() {
+  const load = () => {
+    loadDeferredPhonetics().catch((error) => {
+      console.error("Deferred Rouge et Noir phonetics failed to load", error);
+    });
+  };
+  const start = () => {
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(load, { timeout: 3000 });
+    } else {
+      window.setTimeout(load, 1200);
+    }
+  };
+  if (document.readyState === "complete") start();
+  else window.addEventListener("load", start, { once: true });
 }
 
 function loadJson(key, fallback) {
@@ -539,7 +576,6 @@ function bindControls() {
   refs.toggleButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const key = button.dataset.toggle;
-      const previousMode = getCurrentDisplayMode();
       appState.settings[key] = !appState.settings[key];
 
       if (key === "showAnalysis") {
@@ -553,7 +589,7 @@ function bindControls() {
       saveSettings();
       updateViewSettings();
       renderCurrentSong();
-      trackDisplayToggle(key, previousMode);
+      trackDisplayToggle(key);
     });
   });
 }
@@ -586,10 +622,13 @@ function updateSidebarState() {
 }
 
 function bindHashChange() {
-  window.addEventListener("hashchange", () => {
+  window.addEventListener("hashchange", async () => {
     const songId = getSongIdFromHash();
 
     if (isKnownSongId(songId) && songId !== appState.currentSongId) {
+      if (!sortedSongs.find((song) => song.id === songId)?.lines.length) {
+        await ensureFullSongs();
+      }
       audioController.stopAll();
       appState.currentSongId = songId;
       localStorage.setItem(CURRENT_SONG_KEY, songId);
@@ -601,7 +640,7 @@ function bindHashChange() {
   });
 }
 
-function selectSong(songId) {
+async function selectSong(songId) {
   if (!isKnownSongId(songId)) {
     return;
   }
@@ -612,6 +651,9 @@ function selectSong(songId) {
 
   if (songId === appState.currentSongId) {
     return;
+  }
+  if (!sortedSongs.find((song) => song.id === songId)?.lines.length) {
+    await ensureFullSongs();
   }
 
   audioController.stopAll();
@@ -829,16 +871,17 @@ function renderLyricLine(song, line) {
       return;
     }
     audioController.runUserAction(sentenceSpeakButton, async () => {
-      const didSpeak = await playFrenchAudio(lineAudioPath, line.fr, { rateControlled: true });
+      const audioSession = analytics.audioClick({ audioType: "line", lineId: line.id });
+      const didSpeak = await playFrenchAudio(lineAudioPath, line.fr, {
+        rateControlled: true,
+        analyticsSession: audioSession,
+      });
 
       if (!didSpeak) {
         sentenceSpeakButton.title = "未找到法语语音";
         sentenceSpeakButton.disabled = true;
-        trackAudioPlayError(song, line, lineNumber, "line", new Error("No French line audio found"));
         return;
       }
-
-      trackAudioPlay(song, line, lineNumber, "line", line.fr);
     });
   });
   if (line.repeatCount) {
@@ -1493,209 +1536,22 @@ function bindBackToTop() {
   updateBackToTop();
 }
 
-function bindAnalyticsLifecycle() {
-  window.addEventListener("scroll", checkSongScrollDepth, { passive: true });
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") {
-      clearSongStayTimer();
-      return;
-    }
-
-    startSongStayTimer(getCurrentSong());
-  });
-}
-
-function getViewportType() {
-  if (window.matchMedia("(max-width: 700px)").matches) {
-    return "mobile";
-  }
-
-  if (window.matchMedia("(max-width: 1024px)").matches) {
-    return "tablet";
-  }
-
-  return "desktop";
-}
-
-function getCurrentDisplayMode() {
-  return [
-    appState.settings.showZh ? "zh" : "",
-    appState.settings.showEn ? "en" : "",
-    appState.settings.showAnalysis ? "analysis" : "",
-    appState.settings.showPhonetics ? "phonetics" : "",
-  ]
-    .filter(Boolean)
-    .join("+") || "fr_only";
-}
-
-function getSongAnalyticsPayload(song) {
-  return {
-    song_id: song?.id || "unknown",
-    song_title: song?.title || "unknown",
-    song_title_zh: song?.zhTitle || song?.titleZh || song?.title || "unknown",
-    song_order: song?.order || 0,
-  };
-}
-
-function trackEvent(eventName, params = {}) {
-  try {
-    ensureGtagQueue();
-
-    const payload = {
-      app_name: "rouge_et_noir_lyrics",
-      page_type: "lyrics_learning",
-      viewport_type: getViewportType(),
-      display_mode: getCurrentDisplayMode(),
-      ...params,
-    };
-
-    window.gtag("event", eventName, payload);
-  } catch (error) {
-    console.debug("[analytics failed]", eventName, error);
-  }
-}
-
-function ensureGtagQueue() {
-  window.dataLayer = window.dataLayer || [];
-
-  if (typeof window.gtag !== "function") {
-    window.gtag = function gtag() {
-      window.dataLayer.push(arguments);
-    };
-  }
-}
-
 function enterAnalyticsSong(song) {
-  if (!song || analyticsState.activeSongId === song.id) {
-    return;
-  }
-
-  clearSongStayTimer();
-  analyticsState.activeSongId = song.id;
-  analyticsState.stayTracked = false;
-  analyticsState.scrollTracked = false;
-
-  if (analyticsState.lastTrackedSongId !== song.id) {
-    trackEvent("song_view", getSongAnalyticsPayload(song));
-    analyticsState.lastTrackedSongId = song.id;
-  }
-
-  startSongStayTimer(song);
+  analytics.songRendered(song);
 }
 
-function clearSongStayTimer() {
-  if (analyticsState.stayTimer) {
-    window.clearTimeout(analyticsState.stayTimer);
-    analyticsState.stayTimer = 0;
-  }
+function trackDisplayToggle(key) {
+  const featureNames = {
+    showZh: "translation_toggle",
+    showEn: "english_toggle",
+    showAnalysis: "analysis_toggle",
+    showPhonetics: "ipa_toggle",
+  };
+  if (featureNames[key]) analytics.featureUse(featureNames[key]);
 }
 
-function startSongStayTimer(song) {
-  clearSongStayTimer();
-  if (!song || analyticsState.stayTracked || document.visibilityState === "hidden") {
-    return;
-  }
-
-  analyticsState.stayTimer = window.setTimeout(() => {
-    analyticsState.stayTimer = 0;
-    if (document.visibilityState === "hidden" || analyticsState.activeSongId !== song.id || analyticsState.stayTracked) {
-      return;
-    }
-
-    analyticsState.stayTracked = true;
-    trackEvent("song_stay_30s", {
-      ...getSongAnalyticsPayload(song),
-      stay_seconds: 30,
-    });
-  }, 30000);
-}
-
-function checkSongScrollDepth() {
-  if (analyticsState.scrollTracked || document.visibilityState === "hidden") {
-    return;
-  }
-
-  const song = getCurrentSong();
-  if (!song || analyticsState.activeSongId !== song.id || !refs.lyricsList) {
-    return;
-  }
-
-  const rect = refs.lyricsList.getBoundingClientRect();
-  const contentHeight = Math.max(refs.lyricsList.scrollHeight, rect.height);
-  if (!contentHeight) {
-    return;
-  }
-
-  const contentTop = rect.top + window.scrollY;
-  const viewportBottom = window.scrollY + window.innerHeight;
-  const progress = ((viewportBottom - contentTop) / contentHeight) * 100;
-  if (progress < 75) {
-    return;
-  }
-
-  analyticsState.scrollTracked = true;
-  trackEvent("song_scroll_75", {
-    ...getSongAnalyticsPayload(song),
-    scroll_percent: 75,
-  });
-}
-
-function trackAudioPlay(song, line, lineIndex, audioType, displayText) {
-  trackEvent("audio_play", {
-    ...getSongAnalyticsPayload(song),
-    audio_type: audioType,
-    line_id: line?.id || "",
-    line_index: lineIndex || 0,
-    text_preview: truncateForAnalytics(displayText, 80),
-  });
-}
-
-function trackAudioPlayError(song, line, lineIndex, audioType, error, displayText = "") {
-  trackEvent("audio_play_error", {
-    ...getSongAnalyticsPayload(song),
-    audio_type: audioType,
-    line_id: line?.id || "",
-    line_index: lineIndex || 0,
-    text_preview: truncateForAnalytics(displayText || line?.fr || "", 80),
-    error_message: truncateForAnalytics(error?.message || String(error || "unknown error"), 120),
-  });
-}
-
-function trackDisplayToggle(key, previousMode) {
-  const song = getCurrentSong();
-  trackEvent("display_toggle", {
-    ...getSongAnalyticsPayload(song),
-    toggle_key: key,
-    enabled: Boolean(appState.settings[key]),
-    previous_mode: previousMode,
-    mode: getCurrentDisplayMode(),
-  });
-}
-
-function trackLineDetailToggle(song, lineId, detailType, expanded, source) {
-  const lineIndex = (song?.lines || []).findIndex((line) => line.id === lineId) + 1;
-  trackEvent("line_detail_toggle", {
-    ...getSongAnalyticsPayload(song),
-    detail_type: detailType,
-    expanded,
-    source,
-    line_id: lineId,
-    line_index: lineIndex,
-  });
-}
-
-function trackWordLookup(song, displayWord, entry) {
-  trackEvent("word_lookup", {
-    ...getSongAnalyticsPayload(song),
-    word: truncateForAnalytics(displayWord, 60),
-    lemma: truncateForAnalytics(entry?.lemma || entry?.fr || displayWord, 60),
-    has_ipa: Boolean(entry?.ipa),
-  });
-}
-
-function truncateForAnalytics(value, maxLength) {
-  const text = String(value || "").trim();
-  return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
+function trackLineDetailToggle(song, lineId, detailType) {
+  analytics.featureUse(detailType === "analysis" ? "analysis_toggle" : "ipa_toggle");
 }
 
 function bindRougeCursor() {
@@ -1854,7 +1710,6 @@ function showWordPopup(song, displayWord, key, anchor, phoneticContext = {}) {
   const correctedIpa = getCorrectedWordIpa(phoneticContext.correctedParts, phoneticContext.wordIndex);
   const displayEntry = correctedIpa ? { ...entry, ipa: correctedIpa } : entry;
   wordPopup.innerHTML = "";
-  trackWordLookup(song, displayWord, displayEntry);
 
   const popoverHead = document.createElement("div");
   popoverHead.className = "popover-head";
@@ -1886,17 +1741,15 @@ function showWordPopup(song, displayWord, key, anchor, phoneticContext = {}) {
   speakButton.addEventListener("click", (event) => {
     event.stopPropagation();
     audioController.runUserAction(speakButton, async () => {
+      const audioSession = analytics.audioClick({ audioType: "word", lineId: "" });
       const speakText = entry?.speak || displayWord;
-      const didSpeak = await playFrenchAudio(wordAudioPath, speakText);
+      const didSpeak = await playFrenchAudio(wordAudioPath, speakText, { analyticsSession: audioSession });
 
       if (!didSpeak) {
         speakButton.title = "未找到法语语音";
         speakButton.disabled = true;
-        trackAudioPlayError(song, null, 0, "word", new Error("No French word audio found"), speakText);
         return;
       }
-
-      trackAudioPlay(song, null, 0, "word", speakText);
     });
   });
 
@@ -1940,17 +1793,17 @@ function hideWordPopup() {
   wordPopup.hidden = true;
 }
 
-async function playFrenchAudio(src, fallbackText, { rateControlled = false } = {}) {
+async function playFrenchAudio(src, fallbackText, { rateControlled = false, analyticsSession = null } = {}) {
   if (src) {
     try {
-      await playLocalAudio(src, false, { rateControlled });
+      await playLocalAudio(src, false, { rateControlled, analyticsSession });
       return true;
     } catch {
       // Fall back to speech synthesis when the generated file is missing.
     }
   }
 
-  return speakFrench(fallbackText, false, { rateControlled });
+  return speakFrench(fallbackText, false, { rateControlled, analyticsSession });
 }
 
 function stopCurrentPlayback() {
@@ -1986,7 +1839,7 @@ function resumeCurrentPlayback() {
   if ("speechSynthesis" in window && window.speechSynthesis.paused) window.speechSynthesis.resume();
 }
 
-function playLocalAudio(src, waitForEnd, { rateControlled = false } = {}) {
+function playLocalAudio(src, waitForEnd, { rateControlled = false, analyticsSession = null } = {}) {
   if (!src) {
     return Promise.reject(new Error("Missing audio source"));
   }
@@ -1998,7 +1851,14 @@ function playLocalAudio(src, waitForEnd, { rateControlled = false } = {}) {
   audio.playbackRate = rate;
   audioState.current = audio;
   audioState.rateControlled = rateControlled;
-  if (!waitForEnd) return audio.play();
+  if (!waitForEnd) {
+    return Promise.resolve(audio.play()).then(() => {
+      if (analyticsSession) {
+        analytics.audioStart(analyticsSession);
+        audio.addEventListener("ended", () => analytics.audioComplete(analyticsSession), { once: true });
+      }
+    });
+  }
 
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -2012,13 +1872,20 @@ function playLocalAudio(src, waitForEnd, { rateControlled = false } = {}) {
       if (error) reject(error);
       else resolve();
     };
-    const handleEnded = () => finish();
+    const handleEnded = () => {
+      if (analyticsSession) analytics.audioComplete(analyticsSession);
+      finish();
+    };
     const handleError = () => finish(new Error("Audio playback failed"));
     const stopAndResolve = () => finish();
     audioState.finish = stopAndResolve;
     audio.addEventListener("ended", handleEnded, { once: true });
     audio.addEventListener("error", handleError, { once: true });
-    Promise.resolve(audio.play()).catch(finish);
+    Promise.resolve(audio.play())
+      .then(() => {
+        if (analyticsSession) analytics.audioStart(analyticsSession);
+      })
+      .catch(finish);
   });
 }
 
@@ -2050,7 +1917,7 @@ function normalizeFrenchAudioText(text) {
     .trim();
 }
 
-function speakFrench(text, waitForEnd, { rateControlled = false } = {}) {
+function speakFrench(text, waitForEnd, { rateControlled = false, analyticsSession = null } = {}) {
   if (!("speechSynthesis" in window)) {
     return Promise.resolve(false);
   }
@@ -2067,7 +1934,13 @@ function speakFrench(text, waitForEnd, { rateControlled = false } = {}) {
   utterance.lang = "fr-FR";
   utterance.voice = frenchVoice;
   utterance.rate = 0.86 * (rateControlled ? pageTools.getRate() : 1);
+  utterance.onstart = () => {
+    if (analyticsSession) analytics.audioStart(analyticsSession);
+  };
   if (!waitForEnd) {
+    utterance.onend = () => {
+      if (analyticsSession) analytics.audioComplete(analyticsSession);
+    };
     window.speechSynthesis.speak(utterance);
     return Promise.resolve(true);
   }
@@ -2081,17 +1954,21 @@ function speakFrench(text, waitForEnd, { rateControlled = false } = {}) {
     };
     const stopAndResolve = () => finish(true);
     audioState.speechFinish = stopAndResolve;
-    utterance.onend = () => finish(true);
+    utterance.onend = () => {
+      if (analyticsSession) analytics.audioComplete(analyticsSession);
+      finish(true);
+    };
     utterance.onerror = () => finish(false);
     window.speechSynthesis.speak(utterance);
   });
 }
 
 async function playLineToEnd(song, line) {
+  const analyticsSession = analytics.createAudioSession({ audioType: "line", lineId: line.id });
   try {
-    await playLocalAudio(getLineAudioPath(song, line), true, { rateControlled: true });
+    await playLocalAudio(getLineAudioPath(song, line), true, { rateControlled: true, analyticsSession });
   } catch {
-    const didSpeak = await speakFrench(line.fr, true, { rateControlled: true });
+    const didSpeak = await speakFrench(line.fr, true, { rateControlled: true, analyticsSession });
     if (!didSpeak) throw new Error("No French line audio found");
   }
 }
@@ -2099,7 +1976,9 @@ async function playLineToEnd(song, line) {
 function toggleCurrentSongPlayback() {
   const song = getCurrentSong();
   if (!song?.lines.length) return;
-  audioController.toggleSequence({
+  const wasActive = audioController.isSequenceActive();
+  const playlistSession = wasActive ? null : analytics.createAudioSession({ audioType: "playlist", lineId: "" });
+  const sequence = audioController.toggleSequence({
     button: refs.songPlayButton,
     items: song.lines,
     playItem: (line) => playLineToEnd(song, line),
@@ -2108,7 +1987,17 @@ function toggleCurrentSongPlayback() {
       setSequenceHighlight(line.id, index, song.lines.length);
       if (nextLine) preloadLineAudio(song, nextLine);
     },
+    onComplete: () => {
+      if (playlistSession) analytics.audioComplete(playlistSession);
+      analytics.featureUse("playlist_complete");
+    },
   });
+  if (!wasActive && audioController.isSequenceActive()) {
+    analytics.audioClick(playlistSession);
+    analytics.audioStart(playlistSession);
+    analytics.featureUse("playlist_start");
+  }
+  return sequence;
 }
 
 function preloadLineAudio(song, line) {

@@ -141,11 +141,11 @@ test("the three independent pages keep their own audio and fallback implementati
   const dazhuangwang = readShowFiles(libraryShows.find((show) => show.id === "dazhuangwang")).script;
 
   assert.match(hamilton, /function playLineToEnd/);
-  assert.match(hamilton, /speakEnglish\(line\.en, true, \{ rate \}\)/);
+  assert.match(hamilton, /speakEnglish\(line\.en, true, \{ rate, analyticsSession \}\)/);
   assert.match(rouge, /function playLineToEnd/);
-  assert.match(rouge, /speakFrench\(line\.fr, true, \{ rateControlled: true \}\)/);
+  assert.match(rouge, /speakFrench\(line\.fr, true, \{ rateControlled: true, analyticsSession \}\)/);
   assert.match(dazhuangwang, /function playDazhuangwangLineToEnd/);
-  assert.match(dazhuangwang, /speakCantoneseToEnd\(getSpeakText\(getLineText\(line\)\), \{ rateControlled: true \}\)/);
+  assert.match(dazhuangwang, /speakCantoneseToEnd\(getSpeakText\(getLineText\(line\)\), \{\s*rateControlled: true,\s*analyticsSession,/);
 });
 
 test("dazhuangwang excludes lines without local audio from whole-song playback", () => {

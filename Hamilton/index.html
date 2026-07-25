@@ -1,24 +1,10 @@
 <!doctype html>
 <html lang="zh-CN">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-E49LJ5T1V6');
-
-      window.addEventListener('load', () => {
-        const analyticsScript = document.createElement('script');
-        analyticsScript.async = true;
-        analyticsScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-E49LJ5T1V6';
-        document.head.append(analyticsScript);
-      }, { once: true });
-    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preload" href="lyrics-data.js" as="script" />
-    <link rel="preload" href="word-data.js" as="script" fetchpriority="low" />
+    <link rel="icon" href="data:," />
+    <link rel="preload" href="lyrics-initial.js" as="script" />
     <title>Hamilton 中英歌词</title>
     <link rel="stylesheet" href="style.css" />
   </head>
@@ -120,7 +106,18 @@
     <script>
       (() => {
         const retryKey = `musical-site-retry:${window.location.pathname}`;
+        const retryAssetParam = "_retry_asset";
         let reloadStarted = false;
+
+        window.writeCriticalScript = (source) => {
+          const assetUrl = new URL(source, window.location.href);
+          const pageUrl = new URL(window.location.href);
+          const retryToken = pageUrl.searchParams.get("_retry");
+          if (retryToken && pageUrl.searchParams.get(retryAssetParam) === assetUrl.pathname) {
+            assetUrl.searchParams.set("_retry", retryToken);
+          }
+          document.write('<script src="' + assetUrl.href + '" onerror="handleCriticalAssetError(this.src)"><\/script>');
+        };
 
         function showLoadError() {
           const render = () => {
@@ -143,7 +140,9 @@
               try {
                 sessionStorage.removeItem(retryKey);
               } catch {}
-              window.location.reload();
+              const retryUrl = new URL(window.location.href);
+              retryUrl.searchParams.set("_retry", String(Date.now()));
+              window.location.replace(retryUrl);
             });
 
             notice.append(message, retry);
@@ -154,7 +153,7 @@
           else document.addEventListener("DOMContentLoaded", render, { once: true });
         }
 
-        window.handleCriticalAssetError = () => {
+        window.handleCriticalAssetError = (source) => {
           if (reloadStarted) return;
 
           let canRememberRetry = true;
@@ -173,6 +172,7 @@
             reloadStarted = true;
             const retryUrl = new URL(window.location.href);
             retryUrl.searchParams.set("_retry", String(now));
+            retryUrl.searchParams.set(retryAssetParam, new URL(source, window.location.href).pathname);
             window.location.replace(retryUrl);
             return;
           }
@@ -185,7 +185,9 @@
             try {
               sessionStorage.removeItem(retryKey);
               const cleanUrl = new URL(window.location.href);
-              if (cleanUrl.searchParams.delete("_retry")) {
+              const changed = cleanUrl.searchParams.delete("_retry");
+              cleanUrl.searchParams.delete(retryAssetParam);
+              if (changed) {
                 history.replaceState(null, "", cleanUrl);
               }
             } catch {}
@@ -193,11 +195,12 @@
         }, { once: true });
       })();
     </script>
-    <script src="lyrics-data.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/audio-playback.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/playback-rate.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/lyrics-search.js" onerror="handleCriticalAssetError()"></script>
-    <script src="script.js" onerror="handleCriticalAssetError()"></script>
+    <script>writeCriticalScript("lyrics-initial.js");</script>
+    <script>writeCriticalScript("../shared/analytics.js");</script>
+    <script>writeCriticalScript("../shared/audio-playback.js");</script>
+    <script>writeCriticalScript("../shared/playback-rate.js");</script>
+    <script>writeCriticalScript("../shared/lyrics-search.js");</script>
+    <script>writeCriticalScript("script.js");</script>
     <script>
       if (new URLSearchParams(window.location.search).has("editor")) {
         document.write('<link rel="stylesheet" href="editor.css"><script src="editor.js"><\\/script>');
@@ -210,10 +213,10 @@
         siteName: "Hamilton 中英歌词",
         recipient: "fulife@agent.qq.com",
         trigger: "#feedbackButton",
-        songs: [...new Map((window.hamiltonLyricsRows || []).map((row) => [
-          row.song_id,
-          { value: row.song_id, label: `${row.song_order}. ${row.song_title}` },
-        ])).values()],
+        songs: songs.map((song) => ({
+          value: song.id,
+          label: `${song.order}. ${song.title}`,
+        })),
         getCurrentSongId: () => (typeof getCurrentSong === "function" ? getCurrentSong()?.id : undefined),
       });
     </script>

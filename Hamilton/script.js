@@ -18,7 +18,9 @@ let wordLookup = new Map();
 let analysisSongs = [];
 let analysisByLine = new Map();
 let generatedWordEntries = {};
-let wordDictionaryReady = Promise.resolve();
+let wordDictionaryReady = null;
+let analysisDataReady = null;
+let fullLyricsReady = null;
 let playbackRateControl = null;
 const audioState = {
   current: null,
@@ -67,6 +69,13 @@ const refs = {
   searchResultsSummary: document.querySelector("#searchResultsSummary"),
   searchResultsList: document.querySelector("#searchResultsList"),
 };
+
+const analytics = window.MusicalAnalytics.initShow({
+  showId: "hamilton",
+  showName: "Hamilton",
+  pageType: "lyrics_learning",
+  getProgressElement: () => refs.lyrics,
+});
 
 const audioController = window.MusicalAudio.createController({
   stopCurrent: stopCurrentPlayback,
@@ -175,19 +184,11 @@ async function init() {
   refs.lyrics.innerHTML = '<p class="empty">正在读取歌词...</p>';
   try {
     songs = await loadSongs();
-    state.searchIndex = window.MusicalLyricsSearch.buildIndex(songs, {
-      getLinePrimary: (line) => line.en,
-      getLineSecondary: (line) => line.zh,
-    });
     setSearchAvailability(true);
     state.currentSongId = resolveInitialSongId();
+    if (!getCurrentSong()?.lines.length) await ensureFullLyricsReady();
     renderCurrentSong();
-    wordDictionaryReady = loadWordDictionary().catch((error) => {
-      console.error("Deferred Hamilton word dictionary failed to load", error);
-    });
-    loadAnalysisData().catch((error) => {
-      console.error("Deferred Hamilton analysis data failed to load", error);
-    });
+    scheduleDeferredData();
     applyHashState();
   } catch (error) {
     console.error(error);
@@ -211,21 +212,79 @@ function loadScript(src, fetchPriority = "auto") {
 async function loadWordDictionary() {
   await loadScript("word-data.js", "high");
   generatedWordEntries = window.hamiltonWordEntries || {};
-  songs = buildSongsFromRows(window.hamiltonLyricsRows || []);
+  songs = buildSongsFromRows(getAvailableLyricsRows());
 }
 
 async function loadAnalysisData() {
   await loadScript("songs.js", "low");
   analysisSongs = [...(window.hamiltonSongs || [])];
   analysisByLine = buildAnalysisLookup(analysisSongs);
-  songs = buildSongsFromRows(window.hamiltonLyricsRows || []);
+  songs = buildSongsFromRows(getAvailableLyricsRows());
+}
+
+function ensureWordDictionaryReady() {
+  if (!wordDictionaryReady) {
+    wordDictionaryReady = loadWordDictionary().catch((error) => {
+      console.error("Deferred Hamilton word dictionary failed to load", error);
+    });
+  }
+  return wordDictionaryReady;
+}
+
+function ensureAnalysisDataReady() {
+  if (!analysisDataReady) {
+    analysisDataReady = loadAnalysisData().catch((error) => {
+      console.error("Deferred Hamilton analysis data failed to load", error);
+    });
+  }
+  return analysisDataReady;
+}
+
+function scheduleDeferredData() {
+  const start = () => {
+    const load = () => {
+      ensureWordDictionaryReady();
+      ensureAnalysisDataReady();
+    };
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(load, { timeout: 3000 });
+    } else {
+      window.setTimeout(load, 1200);
+    }
+  };
+  if (document.readyState === "complete") start();
+  else window.addEventListener("load", start, { once: true });
 }
 
 async function loadSongs() {
-  if (Array.isArray(window.hamiltonLyricsRows) && window.hamiltonLyricsRows.length) {
-    return buildSongsFromRows(window.hamiltonLyricsRows);
+  const rows = getAvailableLyricsRows();
+  if (rows.length) {
+    return buildSongsFromRows(rows);
   }
   return loadSongsFromCsv();
+}
+
+function getAvailableLyricsRows() {
+  return window.hamiltonLyricsRows || window.hamiltonLyricsInitialRows || [];
+}
+
+async function loadFullLyrics() {
+  await loadScript("lyrics-data.js", "high");
+  const rows = window.hamiltonLyricsRows || [];
+  if (!rows.length) throw new Error("Full Hamilton lyric data is empty");
+  songs = buildSongsFromRows(rows);
+  state.searchIndex = [];
+}
+
+function ensureFullLyricsReady() {
+  if (!fullLyricsReady) {
+    fullLyricsReady = loadFullLyrics().catch((error) => {
+      fullLyricsReady = null;
+      console.error("Deferred Hamilton lyric data failed to load", error);
+      throw error;
+    });
+  }
+  return fullLyricsReady;
 }
 
 async function loadSongsFromCsv() {
@@ -246,7 +305,7 @@ function buildSongsFromRows(rows) {
     const title = row.song_title?.trim();
     const rawEnglish = row.english?.trim();
     const zh = row.chinese_translation?.trim();
-    if (!Number.isFinite(order) || !title || !rawEnglish) return;
+    if (!Number.isFinite(order) || !title) return;
 
     const key = `${order}|${title}`;
     if (!grouped.has(key)) {
@@ -258,6 +317,7 @@ function buildSongsFromRows(rows) {
         lines: [],
       });
     }
+    if (!rawEnglish) return;
 
     const metadata = parseLeadingLineMetadata(rawEnglish, row.ipa);
     if (!metadata.english) {
@@ -534,12 +594,17 @@ function getCurrentSong() {
 }
 
 function bindControls() {
+  const featureNames = {
+    showZh: "translation_toggle",
+    showIpa: "ipa_toggle",
+  };
   refs.toggleButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const key = button.dataset.toggle;
       state.settings[key] = !state.settings[key];
       saveSettings();
       renderCurrentSong();
+      if (featureNames[key]) analytics.featureUse(featureNames[key]);
     });
   });
 
@@ -557,12 +622,12 @@ function bindHashChange() {
   window.addEventListener("popstate", applyHashState);
 }
 
-function applyHashState() {
+async function applyHashState() {
   const searchQuery = getSearchQueryFromHash();
   if (searchQuery !== null) {
     openSearchControl({ focus: false });
     if (window.MusicalLyricsSearch.normalizeSearchText(searchQuery)) {
-      showSearchResults(searchQuery, { updateHistory: false });
+      await showSearchResults(searchQuery, { updateHistory: false });
     } else {
       exitSearchMode({ collapse: false, clearInput: false });
     }
@@ -574,6 +639,9 @@ function applyHashState() {
   const songChanged = isKnownSongId(songId) && songId !== state.currentSongId;
   const wasSearching = state.searchActive || state.searchOpen;
   if (songChanged || wasSearching || lineId) {
+    if (songChanged && !songs.find((song) => song.id === songId)?.lines.length) {
+      await ensureFullLyricsReady();
+    }
     audioController.stopAll();
     if (isKnownSongId(songId)) {
       state.currentSongId = songId;
@@ -648,7 +716,7 @@ function openSearchControl({ focus = true } = {}) {
   if (focus) window.requestAnimationFrame(() => refs.searchInput.focus());
 }
 
-function submitSearch(queryValue) {
+async function submitSearch(queryValue) {
   const query = String(queryValue || "").trim();
   if (!window.MusicalLyricsSearch.normalizeSearchText(query)) {
     refs.searchInput.setCustomValidity("请输入歌词或歌名");
@@ -656,11 +724,12 @@ function submitSearch(queryValue) {
     refs.searchInput.reportValidity();
     return;
   }
-  showSearchResults(query, { updateHistory: true });
+  await showSearchResults(query, { updateHistory: true });
 }
 
-function showSearchResults(queryValue, { updateHistory = false } = {}) {
+async function showSearchResults(queryValue, { updateHistory = false } = {}) {
   const query = String(queryValue || "").trim();
+  await ensureFullLyricsReady();
   audioController.stopAll();
   hidePopover();
   openSearchControl({ focus: false });
@@ -725,6 +794,12 @@ function appendHighlightedText(element, value, query) {
 }
 
 function renderSearchResults(query) {
+  if (!state.searchIndex.length) {
+    state.searchIndex = window.MusicalLyricsSearch.buildIndex(songs, {
+      getLinePrimary: (line) => line.en,
+      getLineSecondary: (line) => line.zh,
+    });
+  }
   const outcome = window.MusicalLyricsSearch.searchIndex(state.searchIndex, query, { limit: SEARCH_RESULT_LIMIT });
   refs.searchResultsTitle.textContent = `“${query}”的搜索结果`;
   refs.searchResultsList.replaceChildren();
@@ -818,9 +893,12 @@ function navigateToSearchResult(songId, lineId = "") {
   if (!lineId) resetSongScrollPosition();
 }
 
-function selectSong(songId) {
+async function selectSong(songId) {
   if (!isKnownSongId(songId)) return;
   if (songId === state.currentSongId && !state.searchActive) return;
+  if (!songs.find((song) => song.id === songId)?.lines.length) {
+    await ensureFullLyricsReady();
+  }
   audioController.stopAll();
   exitSearchMode({ collapse: true, clearInput: true });
   state.currentSongId = songId;
@@ -924,6 +1002,7 @@ function renderCurrentSong() {
 
   refs.lyrics.innerHTML = "";
   song.lines.forEach((line) => refs.lyrics.append(renderLine(song, line)));
+  analytics.songRendered(song);
   revealPendingLine();
 }
 
@@ -998,7 +1077,10 @@ function renderLine(song, line) {
     }
     audioController.runUserAction(
       speak,
-      () => playEnglishAudio(lineAudioPath, line.en, { rateControlled: true }),
+      () => {
+        const audioSession = analytics.audioClick({ audioType: "line", lineId: line.id });
+        return playEnglishAudio(lineAudioPath, line.en, { rateControlled: true, analyticsSession: audioSession });
+      },
     );
   });
   actions.append(speak);
@@ -1034,7 +1116,7 @@ function renderEnglishTokens(text, wordClassName = "lyric-word", options = {}) {
       button.addEventListener("click", async (event) => {
         event.stopPropagation();
         showLoadingPopover(part, button);
-        await wordDictionaryReady;
+        await ensureWordDictionaryReady();
         if (!button.isConnected) return;
         showPopover(getWordEntry(part), button);
       });
@@ -1107,7 +1189,10 @@ function showPopover(word, anchor) {
   speak.addEventListener("click", (event) => {
     event.stopPropagation();
     const text = word.speak || word.term;
-    audioController.runUserAction(speak, () => playEnglishAudio(wordAudioPath, text));
+    audioController.runUserAction(speak, () => {
+      const audioSession = analytics.audioClick({ audioType: "word", lineId: "" });
+      return playEnglishAudio(wordAudioPath, text, { analyticsSession: audioSession });
+    });
   });
 
   const meaning = document.createElement("p");
@@ -1140,17 +1225,17 @@ function hidePopover() {
   refs.wordPopover.hidden = true;
 }
 
-async function playEnglishAudio(src, fallbackText, { rateControlled = false } = {}) {
+async function playEnglishAudio(src, fallbackText, { rateControlled = false, analyticsSession = null } = {}) {
   const rate = rateControlled ? getPlaybackRate() : 1;
   if (src) {
     try {
-      await playLocalAudio(src, false, { rate, rateControlled });
+      await playLocalAudio(src, false, { rate, rateControlled, analyticsSession });
       return;
     } catch {
       // Keep browser TTS as a fallback when a local file is missing or blocked.
     }
   }
-  await speakEnglish(fallbackText, false, { rate });
+  await speakEnglish(fallbackText, false, { rate, analyticsSession });
 }
 
 function stopCurrentPlayback() {
@@ -1190,7 +1275,7 @@ function resumeCurrentPlayback() {
   }
 }
 
-function playLocalAudio(src, waitForEnd, { rate = 1, rateControlled = false } = {}) {
+function playLocalAudio(src, waitForEnd, { rate = 1, rateControlled = false, analyticsSession = null } = {}) {
   if (!src) return Promise.reject(new Error("Missing audio source"));
   stopCurrentPlayback();
   const audio = window.MusicalAudio.getCachedAudio(src);
@@ -1199,7 +1284,14 @@ function playLocalAudio(src, waitForEnd, { rate = 1, rateControlled = false } = 
   audio.playbackRate = rate;
   audioState.current = audio;
   audioState.rateControlled = rateControlled;
-  if (!waitForEnd) return audio.play();
+  if (!waitForEnd) {
+    return Promise.resolve(audio.play()).then(() => {
+      if (analyticsSession) {
+        analytics.audioStart(analyticsSession);
+        audio.addEventListener("ended", () => analytics.audioComplete(analyticsSession), { once: true });
+      }
+    });
+  }
 
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -1214,13 +1306,20 @@ function playLocalAudio(src, waitForEnd, { rate = 1, rateControlled = false } = 
       if (error) reject(error);
       else resolve();
     };
-    const handleEnded = () => finish();
+    const handleEnded = () => {
+      if (analyticsSession) analytics.audioComplete(analyticsSession);
+      finish();
+    };
     const handleError = () => finish(new Error("Audio playback failed"));
     const stopAndResolve = () => finish();
     audioState.finish = stopAndResolve;
     audio.addEventListener("ended", handleEnded, { once: true });
     audio.addEventListener("error", handleError, { once: true });
-    Promise.resolve(audio.play()).catch(finish);
+    Promise.resolve(audio.play())
+      .then(() => {
+        if (analyticsSession) analytics.audioStart(analyticsSession);
+      })
+      .catch(finish);
   });
 }
 
@@ -1238,7 +1337,7 @@ function getWordAudioPath(text) {
   return key ? `audio/words/${encodeURIComponent(key)}.mp3` : "";
 }
 
-function speakEnglish(text, waitForEnd, { rate = 1 } = {}) {
+function speakEnglish(text, waitForEnd, { rate = 1, analyticsSession = null } = {}) {
   if (!("speechSynthesis" in window)) return Promise.reject(new Error("Speech synthesis unavailable"));
   stopCurrentPlayback();
   const utterance = new SpeechSynthesisUtterance(text.replace(/^[A-Z][A-Z .,'&/-]{1,40}:\s*/, ""));
@@ -1247,7 +1346,13 @@ function speakEnglish(text, waitForEnd, { rate = 1 } = {}) {
   utterance.lang = "en-US";
   utterance.rate = Math.min(10, Math.max(0.1, 0.82 * rate));
   utterance.pitch = 1.06;
+  utterance.onstart = () => {
+    if (analyticsSession) analytics.audioStart(analyticsSession);
+  };
   if (!waitForEnd) {
+    utterance.onend = () => {
+      if (analyticsSession) analytics.audioComplete(analyticsSession);
+    };
     window.speechSynthesis.speak(utterance);
     return Promise.resolve();
   }
@@ -1262,7 +1367,10 @@ function speakEnglish(text, waitForEnd, { rate = 1 } = {}) {
     };
     const stopAndResolve = () => finish();
     audioState.speechFinish = stopAndResolve;
-    utterance.onend = () => finish();
+    utterance.onend = () => {
+      if (analyticsSession) analytics.audioComplete(analyticsSession);
+      finish();
+    };
     utterance.onerror = () => finish(new Error("Speech synthesis failed"));
     window.speechSynthesis.speak(utterance);
   });
@@ -1270,17 +1378,20 @@ function speakEnglish(text, waitForEnd, { rate = 1 } = {}) {
 
 async function playLineToEnd(song, line) {
   const rate = getPlaybackRate();
+  const analyticsSession = analytics.createAudioSession({ audioType: "line", lineId: line.id });
   try {
-    await playLocalAudio(getLineAudioPath(song, line), true, { rate, rateControlled: true });
+    await playLocalAudio(getLineAudioPath(song, line), true, { rate, rateControlled: true, analyticsSession });
   } catch {
-    await speakEnglish(line.en, true, { rate });
+    await speakEnglish(line.en, true, { rate, analyticsSession });
   }
 }
 
 function toggleCurrentSongPlayback() {
   const song = getCurrentSong();
   if (!song?.lines.length) return;
-  audioController.toggleSequence({
+  const wasActive = audioController.isSequenceActive();
+  const playlistSession = wasActive ? null : analytics.createAudioSession({ audioType: "playlist", lineId: "" });
+  const sequence = audioController.toggleSequence({
     button: refs.songPlayButton,
     items: song.lines,
     playItem: (line) => playLineToEnd(song, line),
@@ -1289,7 +1400,17 @@ function toggleCurrentSongPlayback() {
       setSequenceHighlight(line.id, index, song.lines.length);
       if (nextLine) preloadLineAudio(song, nextLine);
     },
+    onComplete: () => {
+      if (playlistSession) analytics.audioComplete(playlistSession);
+      analytics.featureUse("playlist_complete");
+    },
   });
+  if (!wasActive && audioController.isSequenceActive()) {
+    analytics.audioClick(playlistSession);
+    analytics.audioStart(playlistSession);
+    analytics.featureUse("playlist_start");
+  }
+  return sequence;
 }
 
 function preloadLineAudio(song, line) {

@@ -123,12 +123,18 @@
     let searchActive = false;
     const hideWhileSearching = (options.hideWhileSearching || []).filter(Boolean);
     const hiddenStates = new Map();
-    const searchIndex = globalScope.MusicalLyricsSearch.buildIndex(songs, {
-      getSongOrder: (song) => Number(song.displayOrder || song.order) || 0,
-      getSongTitleSecondary: options.getSongTitleSecondary || ((song) => song.titleZh || song.zhTitle || ""),
-      getLinePrimary: options.getLinePrimary || ((line) => line.original || line.fr || line.en || line.text || ""),
-      getLineSecondary: options.getLineSecondary || ((line) => [line.en, line.zh, line.simplified].filter(Boolean).join(" · ")),
-    });
+    let searchIndex = null;
+
+    function getSearchIndex() {
+      if (searchIndex) return searchIndex;
+      searchIndex = globalScope.MusicalLyricsSearch.buildIndex(songs, {
+        getSongOrder: (song) => Number(song.displayOrder || song.order) || 0,
+        getSongTitleSecondary: options.getSongTitleSecondary || ((song) => song.titleZh || song.zhTitle || ""),
+        getLinePrimary: options.getLinePrimary || ((line) => line.original || line.fr || line.en || line.text || ""),
+        getLineSecondary: options.getLineSecondary || ((line) => [line.en, line.zh, line.simplified].filter(Boolean).join(" · ")),
+      });
+      return searchIndex;
+    }
 
     const rateControl = globalScope.MusicalPlaybackRate.createControl({
       button: rateButton,
@@ -169,7 +175,7 @@
     }
 
     function renderSearch(queryValue) {
-      const outcome = globalScope.MusicalLyricsSearch.searchIndex(searchIndex, queryValue, { limit: 100 });
+      const outcome = globalScope.MusicalLyricsSearch.searchIndex(getSearchIndex(), queryValue, { limit: 100 });
       const query = String(queryValue || "").trim();
       searchActive = true;
       results.hidden = false;
@@ -235,10 +241,14 @@
       options.onNavigate?.(songId, lineId);
     }
 
-    searchForm.addEventListener("submit", (event) => {
+    searchForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!searchOpen) setSearchOpen(true);
-      else renderSearch(searchInput.value);
+      else {
+        await options.ensureSearchReady?.();
+        searchIndex = null;
+        renderSearch(searchInput.value);
+      }
     });
     searchClose.addEventListener("click", closeSearch);
     dockRate.addEventListener("click", () => rateControl.toggleMenu(dockRate));

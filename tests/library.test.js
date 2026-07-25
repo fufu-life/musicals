@@ -28,7 +28,7 @@ test("library groups all twenty-five shows by language", () => {
   assert.match(indexHtml, /id="languageGroups"/);
   assert.match(
     indexHtml,
-    /<script src="shows\.js" onerror="handleCriticalAssetError\(\)"><\/script>\s*<script src="library\.js" onerror="handleCriticalAssetError\(\)"><\/script>/,
+    /writeCriticalScript\("shows\.js"\)[\s\S]*writeCriticalScript\("library\.js"\)/,
   );
 });
 
@@ -74,7 +74,14 @@ test("every show card links directly to its page instead of a folder", () => {
 test("online library renders only explicitly deployed shows without network probes", () => {
   assert.deepEqual(
     libraryShows.filter((show) => show.deployed).map((show) => show.id),
-    ["dazhuangwang", "hamilton", "rouge-et-noir"],
+    [
+      "dazhuangwang",
+      "hamilton",
+      "rouge-et-noir",
+      "mozart-opera-rock",
+      "romeo-et-juliette",
+      "moliere-le-spectacle-musical",
+    ],
   );
   assert.match(libraryScript, /window\.location\.protocol === "file:"/);
   assert.match(libraryScript, /window\.libraryShows\.filter\(\(show\) => show\.deployed\)/);
@@ -109,7 +116,7 @@ test("deployed cards prefetch their first-screen data without probing undeployed
   assert.doesNotMatch(libraryScript, /window\.libraryShows\.flatMap\([^)]*prefetch/);
 });
 
-test("library and all twenty-five show pages keep the shared Google Analytics tag", () => {
+test("library and all twenty-five show pages use the shared analytics module", () => {
   const pages = [
     ["library", indexHtml],
     ...libraryShows.map((show) => [
@@ -118,11 +125,81 @@ test("library and all twenty-five show pages keep the shared Google Analytics ta
     ]),
   ];
   pages.forEach(([name, html]) => {
-    assert.match(
-      html,
-      /https:\/\/www\.googletagmanager\.com\/gtag\/js\?id=G-E49LJ5T1V6/,
-      `${name}: gtag loader`,
-    );
-    assert.match(html, /gtag\('config', 'G-E49LJ5T1V6'\)/, `${name}: gtag config`);
+    assert.match(html, /shared\/analytics\.js/, `${name}: shared analytics`);
+    assert.doesNotMatch(html, /function gtag\(\)/, `${name}: no copied gtag bootstrap`);
   });
+  assert.match(libraryScript, /window\.MusicalAnalytics\.initLibrary/);
+  assert.match(libraryScript, /analytics\.trackLibraryEntry/);
+});
+
+test("all twenty-five show runtimes report songs, audio lifecycle, and features through the shared module", () => {
+  const customInline = new Set(["dazhuangwang"]);
+  const customScripts = new Map([
+    ["hamilton", "Hamilton/script.js"],
+    ["rouge-et-noir", "rouge-et-noir/script.js"],
+  ]);
+
+  libraryShows.forEach((show) => {
+    const html = fs.readFileSync(path.join(root, show.href), "utf8");
+    const runtime = customInline.has(show.id)
+      ? html
+      : fs.readFileSync(path.join(root, customScripts.get(show.id) || `${show.id}/script.js`), "utf8");
+    assert.match(runtime, /MusicalAnalytics\.initShow/, `${show.id}: initShow`);
+    assert.match(runtime, /analytics\.songRendered/, `${show.id}: song view`);
+    assert.match(runtime, /analytics\.audioClick/, `${show.id}: audio click`);
+    assert.match(runtime, /analytics\.audioStart/, `${show.id}: audio start`);
+    assert.match(runtime, /analytics\.audioComplete/, `${show.id}: audio complete`);
+    assert.match(runtime, /analytics\.featureUse/, `${show.id}: feature use`);
+    assert.doesNotMatch(runtime, /text_preview|line_text_preview|error_message/, `${show.id}: identifier-only analytics`);
+  });
+});
+
+test("library provides language and Chinese-title initial navigation", () => {
+  assert.match(indexHtml, /id="languageNav"/);
+  assert.match(libraryScript, /pinyinInitials/);
+  assert.match(libraryScript, /zh-Hans-CN-u-co-pinyin/);
+  assert.match(libraryScript, /alpha-nav/);
+  assert.match(libraryScript, /is-letter-highlight/);
+  assert.match(indexHtml, /@keyframes letter-highlight/);
+  assert.doesNotMatch(libraryScript, /alpha-section/);
+  assert.doesNotMatch(libraryScript, /alpha-heading/);
+});
+
+test("library spotlight cursor follows the supplied three-layer theatre-light reference", () => {
+  const cursorScript = fs.readFileSync(path.join(root, "library-cursor.js"), "utf8");
+  assert.match(indexHtml, /class="spotlight-mouse"/);
+  assert.match(indexHtml, /class="mouse-beam"/);
+  assert.match(indexHtml, /class="mouse-puddle"/);
+  assert.match(indexHtml, /class="mouse-dot"/);
+  assert.match(indexHtml, /src="library-cursor\.js\?v=/);
+  assert.match(cursorScript, /pointer: coarse/);
+  assert.match(cursorScript, /prefers-reduced-motion: reduce/);
+  assert.match(cursorScript, /show-card/);
+  assert.match(indexHtml, /skewX\(-25deg\)/);
+  assert.match(indexHtml, /is-hover \.mouse-beam/);
+  assert.match(indexHtml, /is-click \.mouse-puddle/);
+  assert.match(indexHtml, /spotlight-stardust/);
+  assert.match(cursorScript, /activeSparks < 10/);
+  assert.match(cursorScript, /spotlight-spark/);
+});
+
+test("library provides a scroll-aware return-to-top button", () => {
+  assert.match(indexHtml, /id="libraryBackToTop"/);
+  assert.match(indexHtml, /aria-label="返回页面顶部"/);
+  assert.match(indexHtml, /\.library-back-to-top\.is-visible/);
+  assert.match(libraryScript, /window\.scrollY > 420/);
+  assert.match(libraryScript, /window\.scrollTo\(\{ top: 0, behavior: "smooth" \}\)/);
+  assert.match(indexHtml, /M12 19V5M6 11l6-6 6 6/);
+});
+
+test("every library show has a stable Chinese-title initial", () => {
+  const initialBlock = libraryScript.match(/const pinyinInitials = \{([\s\S]*?)\n  \};/);
+  assert.ok(initialBlock);
+  const ids = [...initialBlock[1].matchAll(/(?:"([\w-]+)"|([\w-]+)):\s*"[A-Z#]"/g)].map((match) => match[1] || match[2]);
+  const missing = libraryShows.map((show) => show.id).filter((id) => !ids.includes(id));
+  assert.deepEqual(missing, []);
+});
+
+test("Hamilton keeps its Chinese display title in the library", () => {
+  assert.equal(libraryShows.find((show) => show.id === "hamilton").title, "汉密尔顿");
 });

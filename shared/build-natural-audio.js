@@ -1,5 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const crypto = require("node:crypto");
 const { spawnSync } = require("node:child_process");
 const vm = require("node:vm");
 
@@ -42,6 +43,22 @@ function cleanSpeechText(text) {
     .trim();
 }
 
+function speechVersion(text) {
+  return crypto.createHash("sha256").update(cleanSpeechText(text), "utf8").digest("hex").slice(0, 16);
+}
+
+function loadAudioManifest(root) {
+  const file = path.join(root, "audio", "audio-manifest.json");
+  if (!fs.existsSync(file)) return { file, jobs: {} };
+  const data = JSON.parse(fs.readFileSync(file, "utf8"));
+  return { file, jobs: data.jobs || {} };
+}
+
+function writeAudioManifest(manifest) {
+  fs.mkdirSync(path.dirname(manifest.file), { recursive: true });
+  fs.writeFileSync(manifest.file, `${JSON.stringify({ version: 1, jobs: manifest.jobs }, null, 2)}\n`, "utf8");
+}
+
 function loadPronunciationOverrides(root) {
   const file = path.resolve(root, "..", "scripts", "tts-pronunciation-overrides.json");
   if (!fs.existsSync(file)) return { lines: {}, words: {} };
@@ -57,16 +74,23 @@ function collectGeneratedJobs(root, masterRoot, lineSpeechOverrides = {}, wordSp
     return {
       id: line.id,
       text,
+      manifestKey: `line:${line.id}`,
+      speechVersion: speechVersion(text),
       output: path.join(masterRoot, "audio", "lines", encodeURIComponent(song.id), `${encodeURIComponent(line.id)}.wav`),
       delivery: path.join(root, "audio", "lines", encodeURIComponent(song.id), `${encodeURIComponent(line.id)}.mp3`),
     };
   }).filter(Boolean));
-  const wordJobs = Object.entries(data.wordEntries || {}).map(([key, entry]) => ({
-    id: key,
-    text: wordSpeechOverrides[key] || entry.speak || key,
-    output: path.join(masterRoot, "audio", "words", `${encodeURIComponent(key)}.wav`),
-    delivery: path.join(root, "audio", "words", `${encodeURIComponent(key)}.mp3`),
-  }));
+  const wordJobs = Object.entries(data.wordEntries || {}).map(([key, entry]) => {
+    const text = wordSpeechOverrides[key] || entry.speak || key;
+    return {
+      id: key,
+      text,
+      manifestKey: `word:${key}`,
+      speechVersion: speechVersion(text),
+      output: path.join(masterRoot, "audio", "words", `${encodeURIComponent(key)}.wav`),
+      delivery: path.join(root, "audio", "words", `${encodeURIComponent(key)}.mp3`),
+    };
+  });
   return { lineJobs, wordJobs };
 }
 
@@ -84,16 +108,23 @@ function collectHamiltonJobs(root, masterRoot, lineSpeechOverrides = {}, wordSpe
     return {
       id: lineId,
       text,
+      manifestKey: `line:${lineId}`,
+      speechVersion: speechVersion(text),
       output: path.join(masterRoot, "audio", "lines", encodeURIComponent(songId), `${encodeURIComponent(lineId)}.wav`),
       delivery: path.join(root, "audio", "lines", encodeURIComponent(songId), `${encodeURIComponent(lineId)}.mp3`),
     };
   }).filter(Boolean);
-  const wordJobs = Object.entries(data.hamiltonWordEntries || {}).map(([key, entry]) => ({
-    id: key,
-    text: cleanSpeechText(wordSpeechOverrides[key] || entry.speak || key),
-    output: path.join(masterRoot, "audio", "words", `${encodeURIComponent(key)}.wav`),
-    delivery: path.join(root, "audio", "words", `${encodeURIComponent(key)}.mp3`),
-  }));
+  const wordJobs = Object.entries(data.hamiltonWordEntries || {}).map(([key, entry]) => {
+    const text = cleanSpeechText(wordSpeechOverrides[key] || entry.speak || key);
+    return {
+      id: key,
+      text,
+      manifestKey: `word:${key}`,
+      speechVersion: speechVersion(text),
+      output: path.join(masterRoot, "audio", "words", `${encodeURIComponent(key)}.wav`),
+      delivery: path.join(root, "audio", "words", `${encodeURIComponent(key)}.mp3`),
+    };
+  });
   return { lineJobs, wordJobs };
 }
 
@@ -185,6 +216,7 @@ function runBuild({
     : collectGeneratedJobs(root, masterRoot, effectiveLineOverrides, effectiveWordOverrides);
 
   const allJobs = [...lineJobs, ...wordJobs];
+  const manifest = loadAudioManifest(root);
   const targetedJobs = requestedIds.size
     ? allJobs.filter((job) => requestedIds.has(job.id))
     : allJobs;
@@ -207,7 +239,9 @@ function runBuild({
     : targetedJobs;
   const emptyJob = selected.find((job) => !String(job.text || "").trim());
   if (emptyJob) throw new Error(`Refusing to synthesize empty text for ${emptyJob.id}`);
-  const jobs = force ? selected : selected.filter((job) => !isValidDelivery(job.delivery));
+  const jobs = force ? selected : selected.filter((job) => (
+    !isValidDelivery(job.delivery) || manifest.jobs[job.manifestKey] !== job.speechVersion
+  ));
   if (!jobs.length) {
     console.log(`Audio build complete. voice=${voice}, generated=0, skipped=${selected.length}`);
     return;
@@ -264,6 +298,10 @@ function runBuild({
     jobs.forEach(transcodeDelivery);
     const invalidDelivery = jobs.filter((job) => !isValidDelivery(job.delivery));
     if (invalidDelivery.length) throw new Error(`Invalid MP3 delivery files: ${invalidDelivery.slice(0, 5).map((job) => job.id).join(", ")}`);
+    jobs.forEach((job) => {
+      manifest.jobs[job.manifestKey] = job.speechVersion;
+    });
+    writeAudioManifest(manifest);
     console.log(`Audio build complete. voice=${voice}, generated=${synthesisJobs.length}, converted=${jobs.length}, skipped=${selected.length - jobs.length}`);
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });

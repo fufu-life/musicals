@@ -498,6 +498,107 @@ window.referenceCursorActive = true;
       cacheCtx.arc(45, 45, 1.7, 0, Math.PI * 2);
       cacheCtx.fillStyle = "#547f8d";
       cacheCtx.fill();
+    } else if (config.motif === "bowlerHat") {
+      cacheCtx.translate(0, 5);
+      cacheCtx.fillStyle = "#0d0a0b";
+      cacheCtx.strokeStyle = "#f3d39a";
+      cacheCtx.lineWidth = 1.6;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-18, 8);
+      cacheCtx.bezierCurveTo(-17, -14, -9, -24, 0, -24);
+      cacheCtx.bezierCurveTo(9, -24, 17, -14, 18, 8);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#c51f2b";
+      cacheCtx.fillRect(-17, 1, 34, 6);
+      cacheCtx.beginPath();
+      cacheCtx.ellipse(0, 11, 28, 7, 0, 0, Math.PI * 2);
+      cacheCtx.fillStyle = "#0d0a0b";
+      cacheCtx.fill();
+      cacheCtx.stroke();
+    } else if (config.motif === "castNote") {
+      cacheCtx.rotate(-0.13);
+      cacheCtx.fillStyle = "#ecf5f6";
+      cacheCtx.strokeStyle = "#8fc5d4";
+      cacheCtx.lineWidth = 1.3;
+      cacheCtx.beginPath();
+      cacheCtx.roundRect(-12, -31, 24, 62, 9);
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.strokeStyle = "rgba(42,122,170,0.72)";
+      cacheCtx.lineWidth = 1;
+      for (let y = -20; y <= 20; y += 10) {
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(-7, y + 2);
+        cacheCtx.lineTo(7, y - 2);
+        cacheCtx.stroke();
+      }
+      cacheCtx.fillStyle = "#2a7aaa";
+      cacheCtx.font = "700 8px sans-serif";
+      cacheCtx.textAlign = "center";
+      cacheCtx.fillText("DEAR", 0, 3);
+    } else if (config.motif === "neonCrown") {
+      cacheCtx.translate(0, 5);
+      cacheCtx.strokeStyle = "#f2c94c";
+      cacheCtx.fillStyle = "rgba(213,43,166,0.24)";
+      cacheCtx.shadowColor = "#d52ba6";
+      cacheCtx.shadowBlur = 10;
+      cacheCtx.lineWidth = 3;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-27, 16);
+      cacheCtx.lineTo(-22, -18);
+      cacheCtx.lineTo(-8, -4);
+      cacheCtx.lineTo(0, -27);
+      cacheCtx.lineTo(9, -4);
+      cacheCtx.lineTo(23, -18);
+      cacheCtx.lineTo(27, 16);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.fillStyle = "#fff8ff";
+      cacheCtx.font = "900 15px sans-serif";
+      cacheCtx.textAlign = "center";
+      cacheCtx.fillText("6", 0, 11);
+    } else if (config.motif === "voteButton") {
+      cacheCtx.fillStyle = "#e3ba25";
+      cacheCtx.strokeStyle = "#af86c8";
+      cacheCtx.lineWidth = 3;
+      cacheCtx.shadowColor = "rgba(227,186,37,0.55)";
+      cacheCtx.shadowBlur = 7;
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 0, 28, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.fillStyle = "#241638";
+      cacheCtx.font = "900 10px Rockwell, serif";
+      cacheCtx.textAlign = "center";
+      cacheCtx.fillText("VOTES", 0, 4);
+    } else if (config.motif === "filmReel") {
+      cacheCtx.strokeStyle = "#f1d7a2";
+      cacheCtx.fillStyle = "#17110b";
+      cacheCtx.lineWidth = 2;
+      cacheCtx.shadowColor = "rgba(215,128,36,0.58)";
+      cacheCtx.shadowBlur = 8;
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 0, 28, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      for (let index = 0; index < 5; index += 1) {
+        const angle = index * Math.PI * 2 / 5 - Math.PI / 2;
+        cacheCtx.beginPath();
+        cacheCtx.arc(Math.cos(angle) * 14, Math.sin(angle) * 14, 5, 0, Math.PI * 2);
+        cacheCtx.fillStyle = "#d78024";
+        cacheCtx.fill();
+      }
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(22, 18);
+      cacheCtx.quadraticCurveTo(34, 29, 28, 39);
+      cacheCtx.strokeStyle = "#f1d7a2";
+      cacheCtx.stroke();
     }
     cacheCtx.restore();
   }

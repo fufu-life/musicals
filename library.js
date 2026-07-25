@@ -1,7 +1,21 @@
 (function () {
   const groupsRoot = document.querySelector("#languageGroups");
+  const languageNav = document.querySelector("#languageNav");
   const countNode = document.querySelector("#showCount");
+  const backToTop = document.querySelector("#libraryBackToTop");
+  const analytics = window.MusicalAnalytics.initLibrary();
   const prefetchedPages = new Set();
+  const pinyinInitials = {
+    dazhuangwang: "D", hamilton: "H", "les-miserables": "B", "moulin-rouge": "H",
+    chicago: "Z", "dear-evan-hansen": "Q", "six-the-musical": "L", suffs: "N",
+    "sunset-boulevard": "R", "phantom-of-the-opera": "J", "love-never-dies": "Z",
+    "elisabeth-das-musical": "Y", "mozart-das-musical": "M", "rouge-et-noir": "Y",
+    starmania: "X", "les-souliers-rouges": "H", "la-legende-du-roi-arthur": "Y",
+    "notre-dame-de-paris": "B", "mozart-opera-rock": "Y", "romeo-et-juliette": "L",
+    "le-roi-soleil": "T", "1789-les-amants-de-la-bastille": "#", "don-juan": "T",
+    "moliere-le-spectacle-musical": "M", "cyrano-de-bergerac": "D",
+  };
+  const pinyinCollator = new Intl.Collator("zh-Hans-CN-u-co-pinyin", { sensitivity: "base" });
 
   function appendCoverTitle(cover, show) {
     if (show.image) {
@@ -41,10 +55,12 @@
     });
   }
 
-  function createCard(show) {
+  function createCard(show, initial, isInitialCard) {
     const card = document.createElement("a");
     card.className = `show-card ${show.cardClass}`;
     card.href = show.href;
+    card.dataset.initial = initial;
+    if (isInitialCard) card.id = `letter-${show.language}-${initial}`;
 
     const cover = document.createElement("div");
     cover.className = "cover";
@@ -60,14 +76,39 @@
     title.textContent = show.title;
     copy.append(meta, title);
     card.append(cover, copy);
+    card.addEventListener("click", () => analytics.trackLibraryEntry({
+      showId: show.id,
+      showName: show.originalTitle || show.title,
+    }));
     card.addEventListener("pointerenter", () => prefetchShowPage(show), { once: true });
     card.addEventListener("focus", () => prefetchShowPage(show), { once: true });
     return card;
   }
 
+  function createAnchor(href, label, className) {
+    const anchor = document.createElement("a");
+    anchor.href = href;
+    anchor.className = className;
+    anchor.textContent = label;
+    return anchor;
+  }
+
+  function groupShowsByInitial(shows) {
+    return shows
+      .slice()
+      .sort((left, right) => pinyinCollator.compare(left.sortTitle || left.title, right.sortTitle || right.title))
+      .reduce((groups, show) => {
+        const initial = pinyinInitials[show.id] || "#";
+        if (!groups.has(initial)) groups.set(initial, []);
+        groups.get(initial).push(show);
+        return groups;
+      }, new Map());
+  }
+
   function createGroup(language, shows) {
     const section = document.createElement("section");
     section.className = "language-group";
+    section.id = `language-${language.id}`;
     section.setAttribute("aria-labelledby", `${language.id}-heading`);
 
     const heading = document.createElement("div");
@@ -79,14 +120,47 @@
     count.textContent = `${shows.length} 部`;
     heading.append(title, count);
 
+    const initialGroups = groupShowsByInitial(shows);
+    const alphaNav = document.createElement("nav");
+    alphaNav.className = "alpha-nav";
+    alphaNav.setAttribute("aria-label", `${language.label}首字母索引`);
+    const alphabet = [...initialGroups.keys()].sort((left, right) => left === "#" ? -1 : right === "#" ? 1 : left.localeCompare(right));
+    alphabet.forEach((initial) => {
+      const link = createAnchor(`#letter-${language.id}-${initial}`, initial, "alpha-link");
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        const target = section.querySelector(`#letter-${language.id}-${initial}`);
+        if (!target) return;
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        const cards = [...section.querySelectorAll(`.show-card[data-initial="${initial}"]`)];
+        cards.forEach((card) => card.classList.remove("is-letter-highlight"));
+        requestAnimationFrame(() => cards.forEach((card) => card.classList.add("is-letter-highlight")));
+        window.setTimeout(() => cards.forEach((card) => card.classList.remove("is-letter-highlight")), 1200);
+      });
+      alphaNav.append(link);
+    });
+
     const displayCase = document.createElement("div");
     displayCase.className = "display-case";
     const collection = document.createElement("div");
     collection.className = "collection";
-    collection.append(...shows.map(createCard));
+    alphabet.forEach((initial) => {
+      initialGroups.get(initial).forEach((show, index) => collection.append(createCard(show, initial, index === 0)));
+    });
     displayCase.append(collection);
-    section.append(heading, displayCase);
+    section.append(heading, alphaNav, displayCase);
     return section;
+  }
+
+  function updateActiveNavigation() {
+    const groups = [...groupsRoot.querySelectorAll(".language-group")];
+    let current = groups[0];
+    groups.forEach((group) => {
+      if (group.getBoundingClientRect().top <= 120) current = group;
+    });
+    if (!current) return;
+    languageNav.querySelectorAll("a").forEach((link) => link.classList.toggle("is-active", link.getAttribute("href") === `#${current.id}`));
+    backToTop.classList.toggle("is-visible", window.scrollY > 420);
   }
 
   function renderLibrary() {
@@ -100,7 +174,14 @@
       return shows.length ? [createGroup(language, shows)] : [];
     });
     groupsRoot.replaceChildren(...groups);
+    languageNav.replaceChildren(...groups.map((group) => {
+      const language = window.libraryLanguages.find((item) => `language-${item.id}` === group.id);
+      return createAnchor(`#${group.id}`, language.label, "language-link");
+    }));
+    updateActiveNavigation();
   }
 
   renderLibrary();
+  window.addEventListener("scroll", updateActiveNavigation, { passive: true });
+  backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 })();

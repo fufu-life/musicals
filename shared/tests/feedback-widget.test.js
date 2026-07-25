@@ -100,7 +100,7 @@ test("Hamilton and Rouge et Noir mount feedback next to display controls", () =>
   assert.match(hamilton, /data-toggle="showIpa"[\s\S]*id="feedbackButton"[^>]*>反馈<\/button>/);
   assert.match(hamilton, /\.\.\/shared\/feedback-widget\.js/);
   assert.match(hamilton, /window\.MusicalFeedback\.mount/);
-  assert.match(hamilton, /window\.hamiltonLyricsRows/);
+  assert.match(hamilton, /songs:\s*songs\.map/);
   assert.match(hamilton, /getCurrentSong\(\)\?\.id/);
 
   const rouge = fs.readFileSync(path.resolve(__dirname, "../../rouge-et-noir/index.html"), "utf8");
@@ -108,7 +108,7 @@ test("Hamilton and Rouge et Noir mount feedback next to display controls", () =>
   assert.match(rouge, /data-toggle="showPhonetics"[\s\S]*id="feedbackButton"[^>]*>[\s\S]*反馈[\s\S]*<\/button>/);
   assert.match(rouge, /\.\.\/shared\/feedback-widget\.js/);
   assert.match(rouge, /window\.MusicalFeedback\.mount/);
-  assert.match(rouge, /window\.songs/);
+  assert.match(rouge, /window\.songsInitial \|\| window\.songs/);
   assert.match(rouge, /getCurrentSong\(\)\?\.id/);
   assert.match(rougeStyle, /--feedback-accent:\s*var\(--gold-soft\)/);
   assert.match(rougeStyle, /--feedback-deep:\s*#14090a/);

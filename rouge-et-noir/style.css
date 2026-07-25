@@ -623,6 +623,8 @@ h1 .lyric-word:focus-visible {
 
 .lyric-card {
   display: grid;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 96px;
   grid-template-columns: minmax(0, 1fr) 76px;
   gap: 12px;
   padding: 18px 16px 18px 20px;
