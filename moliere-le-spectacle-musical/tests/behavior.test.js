@@ -120,6 +120,13 @@ test("song header uses an unframed show logo and soft switching", () => {
   assert.match(styleCss, /@keyframes lyric-card-soft-in/);
 });
 
+test("Moliere credits the translation group above every song title", () => {
+  assert.match(indexHtml, /<div class="musical-name-row">[\s\S]*?<p class="musical-name">Molière<\/p>[\s\S]*?鸣谢扒喜扒拉字幕组翻译，/);
+  assert.match(indexHtml, /<a href="https:\/\/www\.bilibili\.com\/video\/BV11Ki1YAEpj\/" target="_blank" rel="noopener noreferrer">点此观看官摄<\/a>/);
+  assert.match(styleCss, /\.moliere-translation-credit\s*\{[\s\S]*?color:\s*inherit/);
+  assert.match(styleCss, /\.musical-name-row\s*\{[\s\S]*?flex-wrap:\s*wrap/);
+});
+
 test("song switching resets the new song to the top of the page", () => {
   assert.match(scriptJs, /function resetSongScrollPosition/);
   assert.match(scriptJs, /window\.scrollTo\(\{ top: 0, left: 0, behavior: "auto" \}\)/);
