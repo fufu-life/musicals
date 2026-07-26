@@ -121,9 +121,9 @@ test("song header uses an unframed show logo and soft switching", () => {
 });
 
 test("Moliere credits the translation group above every song title", () => {
-  assert.match(indexHtml, /<div class="musical-name-row">[\s\S]*?<p class="musical-name">Molière<\/p>[\s\S]*?鸣谢扒喜扒拉字幕组翻译，/);
-  assert.match(indexHtml, /<a href="https:\/\/www\.bilibili\.com\/video\/BV11Ki1YAEpj\/" target="_blank" rel="noopener noreferrer">点此观看官摄<\/a>/);
-  assert.match(styleCss, /\.moliere-translation-credit\s*\{[\s\S]*?color:\s*inherit/);
+  assert.match(indexHtml, /<div class="musical-name-row">[\s\S]*?<p class="musical-name">Molière<\/p>[\s\S]*?鸣谢扒喜扒拉字幕组授权转载歌词译文，/);
+  assert.match(indexHtml, /<a href="https:\/\/www\.bilibili\.com\/video\/BV11Ki1YAEpj\/" target="_blank" rel="noopener noreferrer">观看熟肉<\/a>/);
+  assert.match(styleCss, /\.moliere-translation-credit\s*\{[\s\S]*?color:\s*var\(--muted\)/);
   assert.match(styleCss, /\.musical-name-row\s*\{[\s\S]*?flex-wrap:\s*wrap/);
 });
 

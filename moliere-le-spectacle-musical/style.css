@@ -449,7 +449,7 @@ h2 {
 }
 
 .moliere-translation-credit {
-  color: inherit;
+  color: var(--muted);
   text-transform: none;
   letter-spacing: 0;
 }
