@@ -109,11 +109,20 @@ test("song titles and every lyric word use clickable word cards", () => {
   assert.match(scriptJs, /renderEnglishTokens\(/);
   assert.match(scriptJs, /"song-title-word"/);
   assert.match(scriptJs, /"lyric-word"/);
-  assert.match(scriptJs, /className\s*=\s*"popover-speak"/);
+  assert.doesNotMatch(scriptJs, /popover-speak/);
   assert.match(scriptJs, /getWordEntry\(/);
   assert.match(styleCss, /\.lyric-word/);
   assert.match(styleCss, /\.song-title-word/);
   assert.match(styleCss, /\.popover-ipa/);
+});
+
+test("clicking a word opens its card and automatically plays its cached pronunciation once", () => {
+  assert.match(scriptJs, /showPopover\(getWordEntry\(part\), button, \{ autoplay: true \}\)/);
+  assert.match(scriptJs, /function showPopover\(word, anchor, \{ autoplay = false \} = \{\}\)/);
+  assert.match(scriptJs, /const playWordPronunciation = \(\) => \{[\s\S]*?audioController\.runUserAction\(anchor/);
+  assert.match(scriptJs, /if \(autoplay\) playWordPronunciation\(\);/);
+  assert.match(scriptJs, /head\.append\(title, ipa\)/);
+  assert.match(styleCss, /max-width:\s*min\(260px, calc\(100vw - 24px\)\)/);
 });
 
 test("sentence and word pronunciation prefer local audio files", () => {
@@ -286,6 +295,16 @@ test("all 46 songs keep bracketed speaker metadata out of source and rendered ly
   assert.doesNotMatch(lyricsSourceMd, /\| \d+ \| \((?:Burr|JEFFERSON|MADISON)\)\s+[^|]+ \|/);
   assert.doesNotMatch(lyricsSourceMd, /\| \d+ \| \[[A-Z\/]+\][^|]+ \|/);
   assert.doesNotMatch(lyricsSourceMd, /\| \d+ \| (?:HAMILTON|BURR|LAURENS|LAFAYETTE|MULLIGAN|WASHINGTON|JEFFERSON|MADISON)(?:\]|:)\s+[^|]+ \|/);
+});
+
+test("Non-Stop assigns the repeated lead line to Hamilton", () => {
+  const sandbox = { window: {} };
+  require("node:vm").runInNewContext(lyricsDataJs, sandbox);
+  const row = sandbox.window.hamiltonLyricsRows.find((item) => (
+    Number(item.song_order) === 23 && String(item.line_index) === "183"
+  ));
+  assert.equal(row.english, "They are asking me to lead");
+  assert.deepEqual(Array.from(row.speakers), ["HAMILTON"]);
 });
 
 test("search history responds to browser back and forward navigation", () => {

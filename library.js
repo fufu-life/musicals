@@ -3,6 +3,8 @@
   const languageNav = document.querySelector("#languageNav");
   const countNode = document.querySelector("#showCount");
   const backToTop = document.querySelector("#libraryBackToTop");
+  const copyrightNoticeButton = document.querySelector("#copyrightNoticeButton");
+  const copyrightNotice = document.querySelector("#copyrightNotice");
   const analytics = window.MusicalAnalytics.initLibrary();
   const prefetchedPages = new Set();
   const pinyinInitials = {
@@ -184,4 +186,8 @@
   renderLibrary();
   window.addEventListener("scroll", updateActiveNavigation, { passive: true });
   backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  copyrightNoticeButton.addEventListener("click", () => copyrightNotice.showModal());
+  copyrightNotice.addEventListener("click", (event) => {
+    if (event.target === copyrightNotice) copyrightNotice.close();
+  });
 })();

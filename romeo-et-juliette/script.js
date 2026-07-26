@@ -408,7 +408,7 @@ function renderClickableWords(text, className, options = {}) {
       showWordLoading(token, anchor);
       await ensureWordDataReady();
       if (!anchor.isConnected) return;
-      showWord(token, anchor);
+      showWord(token, anchor, { autoplay: true });
     });
     if (options.showPhonetics) {
       const tokenWrap = document.createElement("span");
@@ -462,7 +462,7 @@ function stripIpaSlashes(value) {
   return String(value || "").replace(/^\/|\/$/g, "").trim();
 }
 
-function showWord(token, anchor) {
+function showWord(token, anchor, { autoplay = false } = {}) {
   const key = normalizeKey(token);
   const entry = wordEntries[key];
   if (!entry) {
@@ -483,24 +483,19 @@ function showWord(token, anchor) {
   const ipa = document.createElement("p");
   ipa.className = "popover-ipa";
   ipa.textContent = entry.ipa || "";
-  const speak = document.createElement("button");
-  speak.type = "button";
-  speak.className = "popover-speak";
-  speak.setAttribute("aria-label", "播放单词发音");
-  speak.textContent = "▶";
   const wordAudioPath = getWordAudioPath(key);
   window.MusicalAudio.preloadLocalAudio(wordAudioPath);
-  speak.addEventListener("click", () => {
+  const playWordPronunciation = () => {
     audioController.runUserAction(
-      speak,
+      anchor,
       () => {
         const audioSession = analytics.audioClick({ audioType: "word", lineId: "" });
         return playAudio(wordAudioPath, entry.speak || token, { analyticsSession: audioSession });
       },
     );
-  });
+  };
   term.append(word, ipa);
-  head.append(term, speak);
+  head.append(term);
   const meaning = document.createElement("p");
   meaning.className = "popover-meaning";
   meaning.textContent = entry.meaning || "";
@@ -518,6 +513,7 @@ function showWord(token, anchor) {
   dom.popover.style.top = `${top}px`;
   dom.popover.style.left = `${Math.max(12, left)}px`;
   dom.popover.hidden = false;
+  if (autoplay) playWordPronunciation();
 }
 
 function showWordLoading(token, anchor) {

@@ -720,8 +720,7 @@ h1 .lyric-word:focus-visible {
   cursor: not-allowed;
 }
 
-.sentence-speak.is-audio-loading,
-.popover-speak.is-audio-loading {
+.sentence-speak.is-audio-loading {
   opacity: 0.56;
   pointer-events: none;
 }
@@ -917,9 +916,9 @@ h1 .lyric-word:focus-visible {
   display: grid;
   gap: 5px;
   width: fit-content;
-  min-width: min(190px, calc(100vw - 24px));
-  max-width: min(320px, calc(100vw - 24px));
-  padding: 10px 11px;
+  min-width: min(150px, calc(100vw - 24px));
+  max-width: min(240px, calc(100vw - 24px));
+  padding: 9px 10px;
   border: 1px solid rgba(200, 170, 131, 0.5);
   border-radius: var(--radius);
   color: var(--ink);
@@ -968,39 +967,6 @@ h1 .lyric-word:focus-visible {
 .popover-meaning {
   color: #eaded5;
   font-family: var(--font-zh);
-}
-
-.popover-speak {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  min-height: 0;
-  border: 1px solid rgba(201, 164, 92, 0.42);
-  border-radius: 999px;
-  padding: 0;
-  color: #fff7e8;
-  background: rgba(163, 35, 46, 0.52);
-  cursor: pointer;
-}
-
-.popover-speak svg {
-  width: 14px;
-  height: 14px;
-  fill: currentColor;
-}
-
-.popover-speak svg path + path {
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-width: 1.8;
-}
-
-.popover-speak:disabled {
-  color: var(--quiet);
-  cursor: not-allowed;
-  background: rgba(255, 255, 255, 0.04);
 }
 
 .back-to-top {
@@ -1229,7 +1195,7 @@ h1 .lyric-word:focus-visible {
   }
 
   .word-popover {
-    max-width: min(300px, calc(100vw - 18px));
+    max-width: min(220px, calc(100vw - 18px));
     padding: 9px 10px;
   }
 

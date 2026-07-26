@@ -225,6 +225,18 @@ test("Phantom and Love Never Dies stay in separate source ranges", () => {
   assert.match(songs[0].lines[0].id, /^phantom-of-the-opera-22-/);
 });
 
+test("Romeo Aimer keeps one opening lyric, not an expanded spelling duplicate", () => {
+  if ("moliere-le-spectacle-musical" !== "romeo-et-juliette") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const aimer = sandbox.window.songs.find((song) => song.sourceOrder === 18);
+  assert.deepEqual(
+    Array.from(aimer.lines.slice(0, 2), (line) => line.original),
+    ["Aimer, c'est ce qu'y a d'plus beau", "Aimer, c'est monter si haut"],
+  );
+  assert.equal(aimer.lines.some((line) => line.id === "romeo-et-juliette-18-004"), false);
+});
+
 test("reviewed OCR word fragments are reassembled", () => {
   if (!["la-legende-du-roi-arthur", "phantom-of-the-opera", "notre-dame-de-paris", "le-roi-soleil", "mozart-opera-rock"].includes("moliere-le-spectacle-musical")) return;
   const sandbox = { window: {} };
@@ -380,6 +392,16 @@ test("word-card IPA sits beside the word and translations keep English above Chi
   assert.match(styleCss, /\.popover-term\s*\{[\s\S]*display:\s*flex/);
   assert.ok(scriptJs.indexOf('en.className = "line-en"') < scriptJs.indexOf('zh.className = "line-zh"'));
   assert.match(styleCss, /h2\s*\{[\s\S]*font-size:\s*clamp\(1\.55rem, 3vw, 2\.65rem\)/);
+});
+
+test("clicking a word opens its card and automatically plays its cached pronunciation once", () => {
+  assert.match(scriptJs, /showWord\(token, anchor, \{ autoplay: true \}\)/);
+  assert.match(scriptJs, /function showWord\(token, anchor, \{ autoplay = false \} = \{\}\)/);
+  assert.match(scriptJs, /const playWordPronunciation = \(\) => \{[\s\S]*?audioController\.runUserAction\(/);
+  assert.match(scriptJs, /if \(autoplay\) playWordPronunciation\(\);/);
+  assert.doesNotMatch(scriptJs, /popover-speak/);
+  assert.match(scriptJs, /head\.append\(term\)/);
+  assert.match(styleCss, /max-width:\s*min\(240px, calc\(100vw - 24px\)\)/);
 });
 
 test("page includes an unobtrusive return-to-top control", () => {

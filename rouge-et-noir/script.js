@@ -1102,7 +1102,7 @@ function renderFrenchText(song, text, showPhonetics, line = null) {
         showWordPopup(song, part, key, button, {
           correctedParts,
           wordIndex: currentWordIndex,
-        });
+        }, { autoplay: true });
       });
 
       const phonetic = document.createElement("span");
@@ -1705,7 +1705,7 @@ function bindRougeCursor() {
   animate();
 }
 
-function showWordPopup(song, displayWord, key, anchor, phoneticContext = {}) {
+function showWordPopup(song, displayWord, key, anchor, phoneticContext = {}, { autoplay = false } = {}) {
   const entry = getGlossaryEntry(song, key);
   const correctedIpa = getCorrectedWordIpa(phoneticContext.correctedParts, phoneticContext.wordIndex);
   const displayEntry = correctedIpa ? { ...entry, ipa: correctedIpa } : entry;
@@ -1730,33 +1730,25 @@ function showWordPopup(song, displayWord, key, anchor, phoneticContext = {}) {
   en.className = "popover-en";
   en.textContent = entry.en || "";
 
-  const speakButton = document.createElement("button");
-  speakButton.className = "popover-speak";
-  speakButton.type = "button";
-  speakButton.title = "播放发音";
-  speakButton.setAttribute("aria-label", `播放发音：${displayWord}`);
-  speakButton.append(createSpeakerIcon());
   const wordAudioPath = getWordAudioPath(entry?.speak || displayWord);
   window.MusicalAudio.preloadLocalAudio(wordAudioPath);
-  speakButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    audioController.runUserAction(speakButton, async () => {
+  const playWordPronunciation = () => {
+    audioController.runUserAction(anchor, async () => {
       const audioSession = analytics.audioClick({ audioType: "word", lineId: "" });
       const speakText = entry?.speak || displayWord;
       const didSpeak = await playFrenchAudio(wordAudioPath, speakText, { analyticsSession: audioSession });
 
       if (!didSpeak) {
-        speakButton.title = "未找到法语语音";
-        speakButton.disabled = true;
         return;
       }
     });
-  });
+  };
 
-  popoverHead.append(title, ipa, speakButton);
+  popoverHead.append(title, ipa);
   wordPopup.append(popoverHead, en, zh);
   wordPopup.hidden = false;
   positionWordPopup(anchor);
+  if (autoplay) playWordPronunciation();
 }
 
 function createSpeakerIcon() {

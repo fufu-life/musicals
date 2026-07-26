@@ -212,6 +212,110 @@
         letter-spacing: 0;
       }
 
+      .library-title-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 10px 14px;
+      }
+
+      .copyright-notice-trigger {
+        flex: 0 0 auto;
+        padding: 4px 9px;
+        border: 1px solid rgba(216, 177, 91, 0.34);
+        border-radius: 999px;
+        color: var(--muted);
+        font: 0.78rem/1.35 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.04em;
+        background: rgba(255, 255, 255, 0.025);
+        cursor: pointer;
+        transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+      }
+
+      .copyright-notice-trigger:hover,
+      .copyright-notice-trigger:focus-visible {
+        border-color: color-mix(in srgb, var(--gold), white 12%);
+        color: var(--ink);
+        background: color-mix(in srgb, var(--gold), transparent 86%);
+        outline: none;
+      }
+
+      .copyright-dialog {
+        width: min(620px, calc(100% - 28px));
+        max-height: min(720px, calc(100vh - 36px));
+        padding: 0;
+        border: 1px solid rgba(216, 177, 91, 0.4);
+        border-radius: 12px;
+        color: var(--ink);
+        background:
+          linear-gradient(145deg, rgba(216, 177, 91, 0.11), transparent 36%),
+          #1a100b;
+        box-shadow: 0 28px 90px rgba(0, 0, 0, 0.58);
+      }
+
+      .copyright-dialog::backdrop {
+        background: rgba(5, 4, 3, 0.72);
+        backdrop-filter: blur(3px);
+      }
+
+      .copyright-dialog-inner {
+        max-height: inherit;
+        overflow: auto;
+        padding: 24px 26px 28px;
+      }
+
+      .copyright-dialog-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 18px;
+      }
+
+      .copyright-dialog h2 {
+        margin: 0;
+        color: var(--gold);
+        font-family: "Songti SC", "Noto Serif CJK SC", "STSong", serif;
+        font-size: 1.45rem;
+      }
+
+      .copyright-dialog-close {
+        display: grid;
+        flex: 0 0 auto;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border: 1px solid rgba(216, 177, 91, 0.28);
+        border-radius: 50%;
+        color: var(--muted);
+        font: 1.2rem/1 system-ui, sans-serif;
+        background: transparent;
+        cursor: pointer;
+      }
+
+      .copyright-dialog-close:hover,
+      .copyright-dialog-close:focus-visible {
+        border-color: var(--gold);
+        color: var(--ink);
+        outline: none;
+      }
+
+      .copyright-dialog p {
+        margin: 0 0 13px;
+        color: rgba(251, 244, 230, 0.82);
+        font-size: 0.94rem;
+        line-height: 1.82;
+      }
+
+      .copyright-dialog p:last-child {
+        margin-bottom: 0;
+      }
+
+      .copyright-dialog a {
+        color: #efd58f;
+      }
+
       .intro {
         max-width: 860px;
         margin: 16px 0 0;
@@ -673,6 +777,10 @@
           margin-top: 18px;
         }
 
+        .copyright-dialog-inner {
+          padding: 20px 18px 22px;
+        }
+
         .library-back-to-top {
           right: 14px;
           bottom: 14px;
@@ -714,7 +822,10 @@
     <main>
       <header class="library-head">
         <div>
-          <h1>阿浮的音乐剧歌词集</h1>
+          <div class="library-title-row">
+            <h1>阿浮的音乐剧歌词集</h1>
+            <button class="copyright-notice-trigger" id="copyrightNoticeButton" type="button" aria-haspopup="dialog" aria-controls="copyrightNotice">版权声明</button>
+          </div>
           <p class="intro">感谢剧场让我们的轨迹短暂交叠，行走在志同道合的路上，愿我们一直望着<span class="no-break">同一个月亮。</span></p>
           <nav class="library-nav" id="languageNav" aria-label="按语种快速定位"></nav>
         </div>
@@ -726,6 +837,22 @@
 
       <div class="language-groups" id="languageGroups" aria-live="polite"></div>
     </main>
+    <dialog class="copyright-dialog" id="copyrightNotice" aria-labelledby="copyrightNoticeTitle">
+      <div class="copyright-dialog-inner">
+        <div class="copyright-dialog-head">
+          <h2 id="copyrightNoticeTitle">版权声明</h2>
+          <form method="dialog"><button class="copyright-dialog-close" type="submit" aria-label="关闭版权声明">×</button></form>
+        </div>
+        <p>本站所展示的歌词内容，其原始版权归歌曲作者、词曲版权所有者、音乐发行公司及相关版权方所有。</p>
+        <p>中文翻译歌词的版权归字幕组与译者所有。其中，莫里哀的中文翻译歌词由「扒喜扒拉字幕组」制作。部分音乐剧的中文翻译为AI生成。</p>
+        <p>法剧、德奥等音乐剧的英文翻译歌词以及单词释义为AI对照词典生成，仅用于学习、交流与非商业用途。</p>
+        <p>本站不主张、不拥有任何原始歌词及翻译歌词的版权。所有歌词、翻译及相关权利均归属于原始版权持有人。</p>
+        <p>使用本站提供的歌词、翻译等内容所产生的任何风险、损失或纠纷，由使用者自行承担。</p>
+        <p>如原始版权方认为本站相关内容侵犯其合法权益，请通过以下邮箱与本站联系：<br />邮箱：<a href="mailto:fulife@agent.qq.com">fulife@agent.qq.com</a></p>
+        <p>版权方需提供有效的版权证明或相关授权文件。本站在收到有效证明并核实后，将立即采取措施，包括但不限于删除相关内容或下架对应页面。</p>
+        <p>感谢各位版权方、创作者及用户的理解与支持。</p>
+      </div>
+    </dialog>
     <button class="library-back-to-top" id="libraryBackToTop" type="button" aria-label="返回页面顶部">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
     </button>

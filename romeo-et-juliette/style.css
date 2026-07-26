@@ -673,8 +673,7 @@ h2 {
   justify-items: center;
 }
 
-.speak-button,
-.popover-speak {
+.speak-button {
   display: inline-grid;
   place-items: center;
   width: 36px;
@@ -686,14 +685,12 @@ h2 {
   cursor: pointer;
 }
 
-.speak-button:hover,
-.popover-speak:hover {
+.speak-button:hover {
   border-color: var(--highlight);
   background: color-mix(in srgb, var(--highlight), transparent 86%);
 }
 
-.speak-button.is-audio-loading,
-.popover-speak.is-audio-loading {
+.speak-button.is-audio-loading {
   opacity: 0.56;
   pointer-events: none;
 }
@@ -764,8 +761,9 @@ h2 {
 .word-popover {
   position: fixed;
   z-index: 30;
-  width: min(320px, calc(100vw - 24px));
-  padding: 14px;
+  width: fit-content;
+  max-width: min(240px, calc(100vw - 24px));
+  padding: 11px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
@@ -781,8 +779,8 @@ h2 {
 .popover-head {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 0;
 }
 
 .popover-term {

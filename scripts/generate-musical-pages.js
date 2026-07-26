@@ -2011,6 +2011,7 @@ function main() {
   const testsOnly = process.argv.includes("--tests-only");
   const indexOnly = process.argv.includes("--index-only");
   const scriptsOnly = process.argv.includes("--scripts-only");
+  const initialDataOnly = process.argv.includes("--initial-data-only");
   const selectedShows = requestedSlug ? SHOWS.filter((show) => show.slug === requestedSlug) : SHOWS;
   if (requestedSlug && selectedShows.length === 0) throw new Error(`Unknown show slug: ${requestedSlug}`);
 
@@ -2041,6 +2042,13 @@ function main() {
       fs.mkdirSync(outDir, { recursive: true });
       writeFile(outDir, "script.js", renderScript(show));
       summary.push({ slug: show.slug, script: "built" });
+      return;
+    }
+    if (initialDataOnly) {
+      const outDir = path.join(ROOT, show.slug);
+      const songs = loadWindowArray(path.join(outDir, "songs.js"), "songs");
+      writeFile(outDir, "songs-initial.js", `window.songsInitial=${JSON.stringify(buildInitialSongs(songs))};\n`);
+      summary.push({ slug: show.slug, initialData: "built" });
       return;
     }
     if (stylesOnly) {
@@ -2074,6 +2082,7 @@ function main() {
       const outDir = path.join(ROOT, show.slug);
       fs.mkdirSync(outDir, { recursive: true });
       writeFile(outDir, "songs.js", `window.songs=${JSON.stringify(songs)};\n`);
+      writeFile(outDir, "songs-initial.js", `window.songsInitial=${JSON.stringify(buildInitialSongs(songs))};\n`);
       summary.push({
         slug: show.slug,
         songs: songs.length,
@@ -2096,6 +2105,7 @@ function main() {
     writeFile(outDir, "style.css", renderStyle(show));
     writeFile(outDir, "script.js", renderScript(show));
     writeFile(outDir, "songs.js", `window.songs=${JSON.stringify(songs)};\n`);
+    writeFile(outDir, "songs-initial.js", `window.songsInitial=${JSON.stringify(buildInitialSongs(songs))};\n`);
     writeFile(outDir, "word-data.js", `window.wordEntries=${JSON.stringify(wordEntries)};\n`);
     writeFile(path.join(outDir, "scripts"), "build-audio.js", renderAudioBuilder(show));
     writeFile(path.join(outDir, "tests"), "behavior.test.js", renderTests(show));
@@ -2112,6 +2122,21 @@ function main() {
   });
 
   console.table(summary);
+}
+
+function loadWindowArray(file, key) {
+  const sandbox = { window: {} };
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(file, "utf8"), sandbox);
+  const value = sandbox.window[key];
+  if (!Array.isArray(value) || !value.length) {
+    throw new Error(`No ${key} data found in ${file}; refusing to overwrite initial data`);
+  }
+  return value;
+}
+
+function buildInitialSongs(songs) {
+  return songs.map((song, index) => index === 0 ? song : { ...song, lines: [] });
 }
 
 function loadRougeGlossary() {
@@ -2267,13 +2292,27 @@ function parseMarkdown(file, show) {
 
     const row = rowByHeader(header, cells);
     const original = row["法语歌词（校订）"] || row["德语歌词（校订）"] || row["英文歌词（校订）"] || "";
-    if (!original.trim()) return;
+    const note = cleanCell(row["备注"] || "");
+    const noteSpeaker = extractNoteSpeaker(note);
+    if (!original.trim()) {
+      pendingSpeaker = noteSpeaker || pendingSpeaker;
+      return;
+    }
     if (/^--.*--$/u.test(original.trim())) return;
-    const speakerCell = extractSpeaker(original);
+    const bracketedLyric = original.trim().match(/^\s*(?:\[([^\]]{1,500})\]|【([^】]{1,500})】)\s*$/u);
+    const hasAlignedText = Boolean(
+      cleanCell(row["法语音标（IPA）"] || row["德语音标（IPA）"] || row["英文音标（IPA）"] || "")
+      || cleanCell(row["中文翻译（校订）"] || "")
+      || cleanCell(row["English Translation"] || ""),
+    );
+    const speakerCell = bracketedLyric && hasAlignedText
+      ? { speaker: "", text: (bracketedLyric[1] || bracketedLyric[2] || "").trim() }
+      : extractSpeaker(original);
     if (!speakerCell.text) {
       pendingSpeaker = speakerCell.speaker || pendingSpeaker;
       return;
     }
+    const speaker = speakerCell.speaker || noteSpeaker;
     const cleanedOriginal = cleanLineCell(contentShow, speakerCell.text, "original");
     if (!cleanedOriginal) return;
 
@@ -2283,12 +2322,18 @@ function parseMarkdown(file, show) {
     current.lines.push({
       id: lineId,
       lineIndex: lineNumber,
-      speaker: speakerCell.speaker || pendingSpeaker,
+      speaker: speaker || pendingSpeaker,
       original: cleanedOriginal,
       ipa: cleanCell(row["法语音标（IPA）"] || row["德语音标（IPA）"] || row["英文音标（IPA）"] || ""),
-      zh: textOverride.zh ?? cleanLineCell(contentShow, stripTranslationSpeaker(row["中文翻译（校订）"] || "", speakerCell.speaker), "zh"),
-      en: textOverride.en ?? cleanLineCell(contentShow, stripTranslationSpeaker(row["English Translation"] || "", speakerCell.speaker), "en"),
-      note: cleanCell(row["备注"] || ""),
+      zh: normalizeGeneratedLineText(contentShow, textOverride.zh ?? cleanLineCell(contentShow, stripTranslationSpeaker(
+        bracketedLyric ? stripOuterBrackets(row["中文翻译（校订）"] || "") : (row["中文翻译（校订）"] || ""),
+        speaker,
+      ), "zh"), "zh"),
+      en: normalizeGeneratedLineText(contentShow, textOverride.en ?? cleanLineCell(contentShow, stripTranslationSpeaker(
+        bracketedLyric ? stripOuterBrackets(row["English Translation"] || "") : (row["English Translation"] || ""),
+        speaker,
+      ), "en"), "en"),
+      note: noteSpeaker ? "" : note,
     });
     pendingSpeaker = "";
   });
@@ -2461,7 +2506,15 @@ function normalizeSongsForShow(show, songs) {
     if (show.slug === "1789-les-amants-de-la-bastille" && song.sourceOrder === 2) {
       lines = merge1789OpeningLines(lines, show);
     }
-    return { ...song, lines: mergeReviewedLineWraps(lines, show) };
+    return {
+      ...song,
+      lines: mergeReviewedLineWraps(lines, show).map((line) => ({
+        ...line,
+        original: normalizeGeneratedLineText(show, line.original, "original"),
+        zh: normalizeGeneratedLineText(show, line.zh, "zh"),
+        en: normalizeGeneratedLineText(show, line.en, "en"),
+      })),
+    };
   });
 }
 
@@ -2570,7 +2623,7 @@ function normalizeGeneratedSongLines(show, lines) {
         original: normalizedOriginal,
         ipa: count === 1 && normalizedOriginal === line.original && line.ipa ? line.ipa : ipaFor(normalizedOriginal, show.voice),
         en: normalizeGeneratedLineText(show, english[index] || line.en, "en"),
-        zh: chinese[index] || line.zh,
+        zh: normalizeGeneratedLineText(show, chinese[index] || line.zh, "zh"),
         note: index === 0 ? line.note : "",
       };
     });
@@ -2613,6 +2666,18 @@ function normalizeGeneratedLineText(show, value, field) {
     (SHOW_LYRIC_CORRECTIONS[show.slug] || []).forEach(([pattern, replacement]) => {
       cleaned = cleaned.replace(pattern, replacement);
     });
+  }
+  if (field === "zh") {
+    cleaned = cleaned
+      .replace(/,\s*/gu, "，")
+      .replace(/!\s*/gu, "！")
+      .replace(/\?\s*/gu, "？")
+      .replace(/:\s*/gu, "：")
+      .replace(/;\s*/gu, "；")
+      .replace(/\(/gu, "（")
+      .replace(/\)/gu, "）")
+      .replace(/\s+([，。！？；：）])/gu, "$1")
+      .replace(/（\s+/gu, "（");
   }
   return cleaned;
 }
@@ -2705,6 +2770,17 @@ function extractSpeaker(value) {
   return { speaker: label, text: labelled[2].trim() };
 }
 
+function stripOuterBrackets(value) {
+  const clean = cleanCell(value);
+  const match = clean.match(/^\s*(?:\[([^\]]+)\]|【([^】]+)】|\(([^)]+)\)|（([^）]+)）)\s*$/u);
+  return (match?.[1] || match?.[2] || match?.[3] || match?.[4] || clean).trim();
+}
+
+function extractNoteSpeaker(value) {
+  const match = cleanCell(value).match(/^唱段人\s*[:：]\s*(.+)$/u);
+  return match ? match[1].trim() : "";
+}
+
 function stripTranslationSpeaker(value, sourceSpeaker) {
   const clean = cleanCell(value);
   if (!sourceSpeaker) return clean;
@@ -2748,9 +2824,9 @@ function cleanLineCell(show, value, field) {
     });
   }
   if (show.slug === "don-juan" && (field === "original" || field === "en")) {
-    return cleaned.replace(/,+\s*$/u, "");
+    cleaned = cleaned.replace(/,+\s*$/u, "");
   }
-  return cleaned;
+  return normalizeGeneratedLineText(show, cleaned, field);
 }
 
 function buildWordEntries(show, songs, rougeGlossary, freedictGlossary, englishGlossary) {
@@ -3133,7 +3209,18 @@ function renderLoadRecovery() {
   return `    <script>
       (() => {
         const retryKey = "musical-site-retry:" + window.location.pathname;
+        const retryAssetParam = "_retry_asset";
         let reloadStarted = false;
+
+        window.writeCriticalScript = (source) => {
+          const assetUrl = new URL(source, window.location.href);
+          const pageUrl = new URL(window.location.href);
+          const retryToken = pageUrl.searchParams.get("_retry");
+          if (retryToken && pageUrl.searchParams.get(retryAssetParam) === assetUrl.pathname) {
+            assetUrl.searchParams.set("_retry", retryToken);
+          }
+          document.write('<script src="' + assetUrl.href + '" onerror="handleCriticalAssetError(this.src)"><\\/script>');
+        };
 
         function showLoadError() {
           const render = () => {
@@ -3156,7 +3243,9 @@ function renderLoadRecovery() {
               try {
                 sessionStorage.removeItem(retryKey);
               } catch {}
-              window.location.reload();
+              const retryUrl = new URL(window.location.href);
+              retryUrl.searchParams.set("_retry", String(Date.now()));
+              window.location.replace(retryUrl);
             });
 
             notice.append(message, retry);
@@ -3167,7 +3256,7 @@ function renderLoadRecovery() {
           else document.addEventListener("DOMContentLoaded", render, { once: true });
         }
 
-        window.handleCriticalAssetError = () => {
+        window.handleCriticalAssetError = (source) => {
           if (reloadStarted) return;
 
           let canRememberRetry = true;
@@ -3186,6 +3275,7 @@ function renderLoadRecovery() {
             reloadStarted = true;
             const retryUrl = new URL(window.location.href);
             retryUrl.searchParams.set("_retry", String(now));
+            retryUrl.searchParams.set(retryAssetParam, new URL(source, window.location.href).pathname);
             window.location.replace(retryUrl);
             return;
           }
@@ -3198,7 +3288,9 @@ function renderLoadRecovery() {
             try {
               sessionStorage.removeItem(retryKey);
               const cleanUrl = new URL(window.location.href);
-              if (cleanUrl.searchParams.delete("_retry")) {
+              const changed = cleanUrl.searchParams.delete("_retry");
+              cleanUrl.searchParams.delete(retryAssetParam);
+              if (changed) {
                 history.replaceState(null, "", cleanUrl);
               }
             } catch {}
@@ -3208,28 +3300,18 @@ function renderLoadRecovery() {
     </script>`;
 }
 
+function renderCriticalScript(source) {
+  return `    <script>writeCriticalScript(${JSON.stringify(source)});</script>`;
+}
+
 function renderIndex(show) {
   return `<!doctype html>
 <html lang="zh-CN">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-E49LJ5T1V6');
-
-      window.addEventListener('load', () => {
-        const analyticsScript = document.createElement('script');
-        analyticsScript.async = true;
-        analyticsScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-E49LJ5T1V6';
-        document.head.append(analyticsScript);
-      }, { once: true });
-    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preload" href="songs.js" as="script" />
-    <link rel="preload" href="word-data.js" as="script" fetchpriority="low" />
+    <link rel="icon" href="data:," />
+    <link rel="preload" href="songs-initial.js" as="script" />
     <title>${escapeHtml(show.title)}｜${escapeHtml(show.titleZh)}歌词学习</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="../shared/lyrics-page-tools.css" />
@@ -3300,13 +3382,14 @@ function renderIndex(show) {
       }, null, 8)};
     </script>
 ${renderLoadRecovery()}
-    <script src="songs.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/audio-playback.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/playback-rate.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/lyrics-search.js" onerror="handleCriticalAssetError()"></script>
-    <script src="../shared/lyrics-page-tools.js" onerror="handleCriticalAssetError()"></script>
+${renderCriticalScript("songs-initial.js")}
+${renderCriticalScript("../shared/analytics.js")}
+${renderCriticalScript("../shared/audio-playback.js")}
+${renderCriticalScript("../shared/playback-rate.js")}
+${renderCriticalScript("../shared/lyrics-search.js")}
+${renderCriticalScript("../shared/lyrics-page-tools.js")}
     <script src="../shared/cursors/${escapeHtml(show.slug)}.js?v=${CURSOR_ASSET_VERSION}"></script>
-    <script src="script.js" onerror="handleCriticalAssetError()"></script>
+${renderCriticalScript("script.js")}
     <script src="../shared/feedback-widget.js"></script>
     <script>
       window.MusicalFeedback.mount({
@@ -3314,7 +3397,7 @@ ${renderLoadRecovery()}
         siteName: ${JSON.stringify(`${show.titleZh}歌词学习`)},
         recipient: "fulife@agent.qq.com",
         trigger: "#feedbackButton",
-        songs: (window.songs || []).map((song) => ({
+        songs: (window.songsInitial || window.songs || []).map((song) => ({
           value: song.id,
           label: \`\${String(song.displayOrder || song.order).padStart(2, "0")}. \${song.title}\`,
         })),
@@ -3949,6 +4032,8 @@ h2 {
 
 .lyric-card {
   display: grid;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 96px;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 14px;
   padding: 16px 17px;
@@ -4007,8 +4092,7 @@ h2 {
   justify-items: center;
 }
 
-.speak-button,
-.popover-speak {
+.speak-button {
   display: inline-grid;
   place-items: center;
   width: 36px;
@@ -4020,14 +4104,12 @@ h2 {
   cursor: pointer;
 }
 
-.speak-button:hover,
-.popover-speak:hover {
+.speak-button:hover {
   border-color: var(--highlight);
   background: color-mix(in srgb, var(--highlight), transparent 86%);
 }
 
-.speak-button.is-audio-loading,
-.popover-speak.is-audio-loading {
+.speak-button.is-audio-loading {
   opacity: 0.56;
   pointer-events: none;
 }
@@ -4098,8 +4180,9 @@ h2 {
 .word-popover {
   position: fixed;
   z-index: 30;
-  width: min(320px, calc(100vw - 24px));
-  padding: 14px;
+  width: fit-content;
+  max-width: min(240px, calc(100vw - 24px));
+  padding: 11px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
@@ -4115,8 +4198,8 @@ h2 {
 .popover-head {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 0;
 }
 
 .popover-term {
@@ -4287,9 +4370,10 @@ const SIDEBAR_KEY = "${show.slug}-sidebar-collapsed";
 const PLAYBACK_RATE_KEY = "${show.slug}-playback-rate";
 const TOKEN_RE = /\\p{L}+(?:['’]\\p{L}+)*(?:-\\p{L}+)*/gu;
 
-const songs = window.songs || [];
+const songs = window.songsInitial || window.songs || [];
+let fullSongsReady = null;
 let wordEntries = {};
-let wordDataReady = Promise.resolve();
+let wordDataReady = null;
 let wordDataLoaded = false;
 const config = window.pageConfig || {};
 
@@ -4324,6 +4408,13 @@ const dom = {
   mobilePicker: document.querySelector(".mobile-picker"),
 };
 
+const analytics = window.MusicalAnalytics.initShow({
+  showId: config.slug,
+  showName: config.title,
+  pageType: "lyrics_learning",
+  getProgressElement: () => dom.lyrics,
+});
+
 const pageTools = window.MusicalLyricsPageTools.create({
   songs,
   rateStorageKey: PLAYBACK_RATE_KEY,
@@ -4337,6 +4428,7 @@ const pageTools = window.MusicalLyricsPageTools.create({
   getSongTitleSecondary: (song) => song.titleZh || "",
   getLinePrimary: (line) => line.original || "",
   getLineSecondary: (line) => [line.en, line.zh].filter(Boolean).join(" · "),
+  ensureSearchReady: ensureFullSongs,
   onNavigate: navigateToSearchResult,
   onRateChange(rate) {
     if (state.audio && state.rateControlled) {
@@ -4363,9 +4455,10 @@ function init() {
   dom.showTitle.append(renderClickableWords(config.title || "", "song-title-word"));
   renderSongList();
   renderSong();
-  wordDataReady = loadDeferredWordData().catch((error) => {
-    console.error("Deferred word data failed to load", error);
-  });
+  if (!getCurrentSong()?.lines.length) {
+    ensureFullSongs().then(renderSong);
+  }
+  scheduleDeferredWordData();
   bindToggles();
   bindSidebar();
   bindBackToTop();
@@ -4391,12 +4484,52 @@ function loadScript(src, fetchPriority = "auto") {
   });
 }
 
+async function loadFullSongs() {
+  await loadScript("songs.js", "high");
+  const fullSongs = window.songs || [];
+  if (!fullSongs.length) throw new Error("Full song data is empty");
+  songs.splice(0, songs.length, ...fullSongs);
+  renderSongList();
+}
+
+function ensureFullSongs() {
+  if (!fullSongsReady) {
+    fullSongsReady = loadFullSongs().catch((error) => {
+      fullSongsReady = null;
+      console.error("Deferred full song data failed to load", error);
+      throw error;
+    });
+  }
+  return fullSongsReady;
+}
+
 async function loadDeferredWordData() {
-  await loadScript("word-data.js", "high");
+  await loadScript("word-data.js", "low");
   wordEntries = window.wordEntries || {};
   wordDataLoaded = true;
   if (state.settings.showIpa) renderSong();
   syncWordAvailability();
+}
+
+function ensureWordDataReady() {
+  if (!wordDataReady) {
+    wordDataReady = loadDeferredWordData().catch((error) => {
+      console.error("Deferred word data failed to load", error);
+    });
+  }
+  return wordDataReady;
+}
+
+function scheduleDeferredWordData() {
+  const start = () => {
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(ensureWordDataReady, { timeout: 3000 });
+    } else {
+      window.setTimeout(ensureWordDataReady, 1200);
+    }
+  };
+  if (document.readyState === "complete") start();
+  else window.addEventListener("load", start, { once: true });
 }
 
 function readSettings() {
@@ -4413,6 +4546,11 @@ function saveSettings() {
 }
 
 function bindToggles() {
+  const featureNames = {
+    showZh: "translation_toggle",
+    showEn: "english_toggle",
+    showIpa: "ipa_toggle",
+  };
   document.querySelectorAll("[data-toggle]").forEach((button) => {
     const key = button.dataset.toggle;
     button.classList.toggle("is-active", Boolean(state.settings[key]));
@@ -4423,6 +4561,7 @@ function bindToggles() {
       button.setAttribute("aria-pressed", String(Boolean(state.settings[key])));
       saveSettings();
       renderSong();
+      if (featureNames[key]) analytics.featureUse(featureNames[key]);
     });
   });
 }
@@ -4484,8 +4623,10 @@ function renderSongList() {
   }
 }
 
-function selectSong(songId) {
+async function selectSong(songId) {
   if (songId === state.currentSongId) return;
+  const target = songs.find((song) => song.id === songId);
+  if (!target?.lines.length) await ensureFullSongs();
   audioController.stopAll();
   state.currentSongId = songId;
   localStorage.setItem(CURRENT_SONG_KEY, songId);
@@ -4542,6 +4683,7 @@ function renderSong() {
   dom.songSubtitle.textContent = song.titleZh || "";
   dom.songPlayButton.disabled = !song.lines.length;
   dom.lyrics.replaceChildren(...song.lines.map((line) => renderLine(song, line)));
+  analytics.songRendered(song);
 }
 
 function getCurrentSong() {
@@ -4597,7 +4739,10 @@ function renderLine(song, line) {
     }
     audioController.runUserAction(
       speak,
-      () => playAudio(lineAudioPath, line.original, { rateControlled: true }),
+      () => {
+        const audioSession = analytics.audioClick({ audioType: "line", lineId: line.id });
+        return playAudio(lineAudioPath, line.original, { rateControlled: true, analyticsSession: audioSession });
+      },
     );
   });
   actions.append(speak);
@@ -4627,9 +4772,9 @@ function renderClickableWords(text, className, options = {}) {
     button.addEventListener("click", async (event) => {
       const anchor = event.currentTarget;
       showWordLoading(token, anchor);
-      await wordDataReady;
+      await ensureWordDataReady();
       if (!anchor.isConnected) return;
-      showWord(token, anchor);
+      showWord(token, anchor, { autoplay: true });
     });
     if (options.showPhonetics) {
       const tokenWrap = document.createElement("span");
@@ -4683,7 +4828,7 @@ function stripIpaSlashes(value) {
   return String(value || "").replace(/^\\/|\\/$/g, "").trim();
 }
 
-function showWord(token, anchor) {
+function showWord(token, anchor, { autoplay = false } = {}) {
   const key = normalizeKey(token);
   const entry = wordEntries[key];
   if (!entry) {
@@ -4704,19 +4849,19 @@ function showWord(token, anchor) {
   const ipa = document.createElement("p");
   ipa.className = "popover-ipa";
   ipa.textContent = entry.ipa || "";
-  const speak = document.createElement("button");
-  speak.type = "button";
-  speak.className = "popover-speak";
-  speak.setAttribute("aria-label", "播放单词发音");
-  speak.textContent = "▶";
   const wordAudioPath = getWordAudioPath(key);
   window.MusicalAudio.preloadLocalAudio(wordAudioPath);
-  speak.addEventListener("click", () => audioController.runUserAction(
-    speak,
-    () => playAudio(wordAudioPath, entry.speak || token),
-  ));
+  const playWordPronunciation = () => {
+    audioController.runUserAction(
+      anchor,
+      () => {
+        const audioSession = analytics.audioClick({ audioType: "word", lineId: "" });
+        return playAudio(wordAudioPath, entry.speak || token, { analyticsSession: audioSession });
+      },
+    );
+  };
   term.append(word, ipa);
-  head.append(term, speak);
+  head.append(term);
   const meaning = document.createElement("p");
   meaning.className = "popover-meaning";
   meaning.textContent = entry.meaning || "";
@@ -4734,6 +4879,7 @@ function showWord(token, anchor) {
   dom.popover.style.top = \`\${top}px\`;
   dom.popover.style.left = \`\${Math.max(12, left)}px\`;
   dom.popover.hidden = false;
+  if (autoplay) playWordPronunciation();
 }
 
 function showWordLoading(token, anchor) {
@@ -4769,11 +4915,20 @@ function normalizeKey(token) {
 }
 
 function getLineAudioPath(song, line) {
-  return \`audio/lines/\${encodeURIComponent(song.id)}/\${encodeURIComponent(line.id)}.mp3\`;
+  return withAudioVersion(\`audio/lines/\${encodeURIComponent(song.id)}/\${encodeURIComponent(line.id)}.mp3\`, line.original);
 }
 
 function getWordAudioPath(key) {
-  return \`audio/words/\${encodeURIComponent(key)}.mp3\`;
+  return withAudioVersion(\`audio/words/\${encodeURIComponent(key)}.mp3\`, wordEntries[key]?.speak || key);
+}
+
+function withAudioVersion(path, speechText) {
+  let hash = 2166136261;
+  for (const character of String(speechText || "")) {
+    hash ^= character.codePointAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return \`\${path}?v=\${(hash >>> 0).toString(36)}\`;
 }
 
 function stopCurrentPlayback() {
@@ -4809,15 +4964,15 @@ function resumeCurrentPlayback() {
   if ("speechSynthesis" in window && speechSynthesis.paused) speechSynthesis.resume();
 }
 
-async function playAudio(src, text, { rateControlled = false } = {}) {
+async function playAudio(src, text, { rateControlled = false, analyticsSession = null } = {}) {
   try {
-    await playLocalAudio(src, false, { rateControlled });
+    await playLocalAudio(src, false, { rateControlled, analyticsSession });
   } catch {
-    await playSpeech(text, false, { rateControlled });
+    await playSpeech(text, false, { rateControlled, analyticsSession });
   }
 }
 
-function playLocalAudio(src, waitForEnd, { rateControlled = false } = {}) {
+function playLocalAudio(src, waitForEnd, { rateControlled = false, analyticsSession = null } = {}) {
   if (!src) return Promise.reject(new Error("Missing audio source"));
   stopCurrentPlayback();
   const audio = window.MusicalAudio.getCachedAudio(src);
@@ -4827,7 +4982,14 @@ function playLocalAudio(src, waitForEnd, { rateControlled = false } = {}) {
   audio.playbackRate = rate;
   state.audio = audio;
   state.rateControlled = rateControlled;
-  if (!waitForEnd) return audio.play();
+  if (!waitForEnd) {
+    return Promise.resolve(audio.play()).then(() => {
+      if (analyticsSession) {
+        analytics.audioStart(analyticsSession);
+        audio.addEventListener("ended", () => analytics.audioComplete(analyticsSession), { once: true });
+      }
+    });
+  }
 
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -4841,17 +5003,24 @@ function playLocalAudio(src, waitForEnd, { rateControlled = false } = {}) {
       if (error) reject(error);
       else resolve();
     };
-    const handleEnded = () => finish();
+    const handleEnded = () => {
+      if (analyticsSession) analytics.audioComplete(analyticsSession);
+      finish();
+    };
     const handleError = () => finish(new Error("Audio playback failed"));
     const stopAndResolve = () => finish();
     state.audioFinish = stopAndResolve;
     audio.addEventListener("ended", handleEnded, { once: true });
     audio.addEventListener("error", handleError, { once: true });
-    Promise.resolve(audio.play()).catch(finish);
+    Promise.resolve(audio.play())
+      .then(() => {
+        if (analyticsSession) analytics.audioStart(analyticsSession);
+      })
+      .catch(finish);
   });
 }
 
-function playSpeech(text, waitForEnd, { rateControlled = false } = {}) {
+function playSpeech(text, waitForEnd, { rateControlled = false, analyticsSession = null } = {}) {
   if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance !== "function") {
     return Promise.reject(new Error("Speech synthesis unavailable"));
   }
@@ -4859,7 +5028,13 @@ function playSpeech(text, waitForEnd, { rateControlled = false } = {}) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = config.language === "en" ? "en-US" : config.language === "de" ? "de-DE" : "fr-FR";
   utterance.rate = rateControlled ? pageTools.getRate() : 1;
+  utterance.onstart = () => {
+    if (analyticsSession) analytics.audioStart(analyticsSession);
+  };
   if (!waitForEnd) {
+    utterance.onend = () => {
+      if (analyticsSession) analytics.audioComplete(analyticsSession);
+    };
     speechSynthesis.speak(utterance);
     return Promise.resolve();
   }
@@ -4875,24 +5050,30 @@ function playSpeech(text, waitForEnd, { rateControlled = false } = {}) {
     };
     const stopAndResolve = () => finish();
     state.speechFinish = stopAndResolve;
-    utterance.onend = () => finish();
+    utterance.onend = () => {
+      if (analyticsSession) analytics.audioComplete(analyticsSession);
+      finish();
+    };
     utterance.onerror = () => finish(new Error("Speech synthesis failed"));
     speechSynthesis.speak(utterance);
   });
 }
 
 async function playLineToEnd(song, line) {
+  const analyticsSession = analytics.createAudioSession({ audioType: "line", lineId: line.id });
   try {
-    await playLocalAudio(getLineAudioPath(song, line), true, { rateControlled: true });
+    await playLocalAudio(getLineAudioPath(song, line), true, { rateControlled: true, analyticsSession });
   } catch {
-    await playSpeech(line.original, true, { rateControlled: true });
+    await playSpeech(line.original, true, { rateControlled: true, analyticsSession });
   }
 }
 
 function toggleCurrentSongPlayback() {
   const song = getCurrentSong();
   if (!song?.lines.length) return;
-  audioController.toggleSequence({
+  const wasActive = audioController.isSequenceActive();
+  const playlistSession = wasActive ? null : analytics.createAudioSession({ audioType: "playlist", lineId: "" });
+  const sequence = audioController.toggleSequence({
     button: dom.songPlayButton,
     items: song.lines,
     playItem: (line) => playLineToEnd(song, line),
@@ -4901,7 +5082,17 @@ function toggleCurrentSongPlayback() {
       setSequenceHighlight(line.id, index, song.lines.length);
       if (nextLine) preloadLineAudio(song, nextLine);
     },
+    onComplete: () => {
+      if (playlistSession) analytics.audioComplete(playlistSession);
+      analytics.featureUse("playlist_complete");
+    },
   });
+  if (!wasActive && audioController.isSequenceActive()) {
+    analytics.audioClick(playlistSession);
+    analytics.audioStart(playlistSession);
+    analytics.featureUse("playlist_start");
+  }
+  return sequence;
 }
 
 function preloadLineAudio(song, line) {
@@ -6685,14 +6876,17 @@ const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const scriptJs = fs.readFileSync(path.join(root, "script.js"), "utf8");
 const styleCss = fs.readFileSync(path.join(root, "style.css"), "utf8");
 const songsJs = fs.readFileSync(path.join(root, "songs.js"), "utf8");
+const songsInitialJs = fs.readFileSync(path.join(root, "songs-initial.js"), "utf8");
 const wordDataJs = fs.readFileSync(path.join(root, "word-data.js"), "utf8");
 const audioBuilderJs = fs.readFileSync(path.join(root, "scripts", "build-audio.js"), "utf8");
 const cursorJs = fs.readFileSync(path.join(root, "..", "shared", "cursors", "${show.slug}.js"), "utf8");
 const cursorMarker = ${JSON.stringify(getCursorMarker(show.slug))};
 
-test("page includes the shared Google Analytics tag", () => {
-  assert.match(indexHtml, /https:\\/\\/www\\.googletagmanager\\.com\\/gtag\\/js\\?id=G-E49LJ5T1V6/);
-  assert.match(indexHtml, /gtag\\('config', 'G-E49LJ5T1V6'\\)/);
+test("page uses the shared analytics module", () => {
+  assert.match(indexHtml, /writeCriticalScript\\("\\.\\.\\/shared\\/analytics\\.js"\\)/);
+  assert.match(scriptJs, /window\\.MusicalAnalytics\\.initShow/);
+  assert.match(scriptJs, /showId:\\s*config\\.slug/);
+  assert.doesNotMatch(indexHtml, /function gtag\\(\\)/);
 });
 
 test("lyrics do not contain OCR acute apostrophes or glued Latin punctuation", () => {
@@ -6759,12 +6953,23 @@ test("script initializes page config before reading display settings", () => {
 });
 
 test("first-screen lyrics do not wait for the word dictionary", () => {
-  assert.match(indexHtml, /<link rel="preload" href="songs\\.js" as="script" \\/>/);
-  assert.match(indexHtml, /<link rel="preload" href="word-data\\.js" as="script" fetchpriority="low" \\/>/);
+  assert.match(indexHtml, /<link rel="preload" href="songs-initial\\.js" as="script" \\/>/);
+  assert.doesNotMatch(indexHtml, /<link rel="preload" href="word-data\\.js"/);
+  assert.match(indexHtml, /writeCriticalScript\\("songs-initial\\.js"\\)/);
   assert.doesNotMatch(indexHtml, /<script src="word-data\\.js"><\\/script>/);
-  assert.match(scriptJs, /renderSong\\(\\);\\s*wordDataReady = loadDeferredWordData/);
-  assert.match(scriptJs, /await loadScript\\("word-data\\.js", "high"\\)/);
-  assert.match(scriptJs, /showWordLoading\\(token, anchor\\);\\s*await wordDataReady/);
+  const initialSandbox = { window: {} };
+  vm.runInNewContext(songsInitialJs, initialSandbox);
+  assert.ok(initialSandbox.window.songsInitial[0].lines.length > 0);
+  assert.ok(initialSandbox.window.songsInitial.slice(1).every((song) => song.lines.length === 0));
+  assert.ok(Buffer.byteLength(songsInitialJs) < Buffer.byteLength(songsJs));
+  assert.match(scriptJs, /ensureSearchReady:\\s*ensureFullSongs/);
+  assert.match(scriptJs, /await loadScript\\("songs\\.js", "high"\\)/);
+  assert.match(scriptJs, /renderSong\\(\\)/);
+  assert.match(scriptJs, /scheduleDeferredWordData\\(\\)/);
+  assert.match(scriptJs, /await loadScript\\("word-data\\.js", "low"\\)/);
+  assert.match(scriptJs, /window\\.addEventListener\\("load", start, \\{ once: true \\}\\)/);
+  assert.match(scriptJs, /showWordLoading\\(token, anchor\\);\\s*await ensureWordDataReady\\(\\)/);
+  assert.match(styleCss, /content-visibility:\\s*auto/);
   assert.ok(Buffer.byteLength(songsJs) < 520_000, \`critical songs.js too large: \${Buffer.byteLength(songsJs)}B\`);
 });
 
@@ -6839,6 +7044,18 @@ test("songs and word data are populated", () => {
   assert.ok(Object.keys(sandbox.window.wordEntries).length > 0);
 });
 
+test("bracketed lyrics with aligned translations remain lyrics, not speaker labels", () => {
+  if (${JSON.stringify(show.slug)} !== "mozart-opera-rock") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const lines = sandbox.window.songs.flatMap((song) => song.lines);
+  const backingVocal = lines.find((line) => line.id === "mozart-opera-rock-04-034");
+  assert.equal(backingVocal.original, "je suis une femme mi-lune mi-homme");
+  assert.equal(backingVocal.speaker, "");
+  assert.equal(backingVocal.zh, "我是半月女人，半男人");
+  assert.equal(lines.find((line) => line.id === "mozart-opera-rock-04-035").speaker, "");
+});
+
 test("visible song numbers are consecutive after empty tracks are removed", () => {
   const sandbox = { window: {} };
   vm.runInNewContext(songsJs, sandbox);
@@ -6873,6 +7090,18 @@ test("Phantom and Love Never Dies stay in separate source ranges", () => {
   assert.equal(songs.length, 26);
   assert.equal(Math.min(...songs.map((song) => song.sourceOrder)), 22);
   assert.match(songs[0].lines[0].id, /^phantom-of-the-opera-22-/);
+});
+
+test("Romeo Aimer keeps one opening lyric, not an expanded spelling duplicate", () => {
+  if (${JSON.stringify(show.slug)} !== "romeo-et-juliette") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const aimer = sandbox.window.songs.find((song) => song.sourceOrder === 18);
+  assert.deepEqual(
+    Array.from(aimer.lines.slice(0, 2), (line) => line.original),
+    ["Aimer, c'est ce qu'y a d'plus beau", "Aimer, c'est monter si haut"],
+  );
+  assert.equal(aimer.lines.some((line) => line.id === "romeo-et-juliette-18-004"), false);
 });
 
 test("reviewed OCR word fragments are reassembled", () => {
@@ -7032,6 +7261,16 @@ test("word-card IPA sits beside the word and translations keep English above Chi
   assert.match(styleCss, /h2\\s*\\{[\\s\\S]*font-size:\\s*clamp\\(1\\.55rem, 3vw, 2\\.65rem\\)/);
 });
 
+test("clicking a word opens its card and automatically plays its cached pronunciation once", () => {
+  assert.match(scriptJs, /showWord\\(token, anchor, \\{ autoplay: true \\}\\)/);
+  assert.match(scriptJs, /function showWord\\(token, anchor, \\{ autoplay = false \\} = \\{\\}\\)/);
+  assert.match(scriptJs, /const playWordPronunciation = \\(\\) => \\{[\\s\\S]*?audioController\\.runUserAction\\(/);
+  assert.match(scriptJs, /if \\(autoplay\\) playWordPronunciation\\(\\);/);
+  assert.doesNotMatch(scriptJs, /popover-speak/);
+  assert.match(scriptJs, /head\\.append\\(term\\)/);
+  assert.match(styleCss, /max-width:\\s*min\\(240px, calc\\(100vw - 24px\\)\\)/);
+});
+
 test("page includes an unobtrusive return-to-top control", () => {
   assert.match(indexHtml, /id="backToTop"/);
   assert.match(scriptJs, /function bindBackToTop/);
@@ -7042,6 +7281,8 @@ test("page includes an unobtrusive return-to-top control", () => {
 test("sentence and word audio prefer cached local MP3 files", () => {
   assert.match(scriptJs, /MusicalAudio\\.getCachedAudio\\(src\\)/);
   assert.match(scriptJs, /MusicalAudio\\.preloadLocalAudio/);
+  assert.match(scriptJs, /function withAudioVersion\\(path, speechText\\)/);
+  assert.match(scriptJs, /withAudioVersion\\([^\\n]+line\\.original\\)/);
   assert.match(scriptJs, /\\.mp3/);
   assert.match(scriptJs, /audio\\/lines/);
   assert.match(scriptJs, /audio\\/words/);

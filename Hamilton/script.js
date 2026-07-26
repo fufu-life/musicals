@@ -1118,7 +1118,7 @@ function renderEnglishTokens(text, wordClassName = "lyric-word", options = {}) {
         showLoadingPopover(part, button);
         await ensureWordDictionaryReady();
         if (!button.isConnected) return;
-        showPopover(getWordEntry(part), button);
+        showPopover(getWordEntry(part), button, { autoplay: true });
       });
 
       token.append(button);
@@ -1164,7 +1164,7 @@ function showLoadingPopover(term, anchor) {
   positionWordPopover(anchor);
 }
 
-function showPopover(word, anchor) {
+function showPopover(word, anchor, { autoplay = false } = {}) {
   refs.wordPopover.innerHTML = "";
 
   const head = document.createElement("div");
@@ -1178,28 +1178,21 @@ function showPopover(word, anchor) {
   ipa.className = "popover-ipa";
   ipa.textContent = word.ipa;
 
-  const speak = document.createElement("button");
-  speak.className = "popover-speak";
-  speak.type = "button";
-  speak.title = "播放发音";
-  speak.setAttribute("aria-label", `播放发音：${word.term}`);
-  speak.append(createSpeakerIcon());
   const wordAudioPath = getWordAudioPath(word.speak || word.term);
   window.MusicalAudio.preloadLocalAudio(wordAudioPath);
-  speak.addEventListener("click", (event) => {
-    event.stopPropagation();
+  const playWordPronunciation = () => {
     const text = word.speak || word.term;
-    audioController.runUserAction(speak, () => {
+    audioController.runUserAction(anchor, () => {
       const audioSession = analytics.audioClick({ audioType: "word", lineId: "" });
       return playEnglishAudio(wordAudioPath, text, { analyticsSession: audioSession });
     });
-  });
+  };
 
   const meaning = document.createElement("p");
   meaning.className = "popover-meaning";
   meaning.textContent = word.meaning;
 
-  head.append(title, ipa, speak);
+  head.append(title, ipa);
   refs.wordPopover.append(head, meaning);
   if (word.note) {
     const note = document.createElement("p");
@@ -1209,6 +1202,7 @@ function showPopover(word, anchor) {
   }
 
   positionWordPopover(anchor);
+  if (autoplay) playWordPronunciation();
 }
 
 function positionWordPopover(anchor) {

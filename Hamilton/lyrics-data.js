@@ -4228,7 +4228,7 @@ window.hamiltonLyricsRows = [
     "note": "",
     "source_file": "Hamilton (Original Broadway Cast Recording) (3367211).md",
     "speakers": [
-      "HAMILTON"
+      "ELIZA"
     ]
   },
   {
@@ -25820,7 +25820,7 @@ window.hamiltonLyricsRows = [
     "note": "",
     "source_file": "Hamilton (Original Broadway Cast Recording) (3367211).md",
     "speakers": [
-      "ELIZA"
+      "HAMILTON"
     ]
   },
   {
@@ -26555,7 +26555,7 @@ window.hamiltonLyricsRows = [
     "note": "",
     "source_file": "Hamilton (Original Broadway Cast Recording) (3367211).md",
     "speakers": [
-      "ELIZA"
+      "HAMILTON"
     ]
   },
   {

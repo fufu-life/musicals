@@ -17,6 +17,17 @@ test("library uses the requested title and introduction", () => {
   );
 });
 
+test("library provides an accessible copyright notice beside the title", () => {
+  assert.match(indexHtml, /id="copyrightNoticeButton"[^>]*aria-haspopup="dialog"[^>]*aria-controls="copyrightNotice"/);
+  assert.match(indexHtml, /<dialog class="copyright-dialog" id="copyrightNotice" aria-labelledby="copyrightNoticeTitle">/);
+  assert.match(indexHtml, /本站所展示的歌词内容，其原始版权归歌曲作者、词曲版权所有者、音乐发行公司及相关版权方所有。/);
+  assert.match(indexHtml, /莫里哀的中文翻译歌词由「扒喜扒拉字幕组」制作。/);
+  assert.match(indexHtml, /fulife@agent\.qq\.com/);
+  assert.match(indexHtml, /\.copyright-dialog::backdrop/);
+  assert.match(libraryScript, /copyrightNotice\.showModal\(\)/);
+  assert.match(libraryScript, /event\.target === copyrightNotice/);
+});
+
 test("library groups all twenty-five shows by language", () => {
   assert.deepEqual(libraryLanguages, [
     { id: "yue", label: "粤语音乐剧" },

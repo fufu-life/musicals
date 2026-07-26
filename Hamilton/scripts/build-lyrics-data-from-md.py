@@ -50,6 +50,9 @@ SPEAKER_LABELS = {
 }
 SPEAKER_LABELS_ZH = {"伯尔", "杰斐逊", "麦迪逊", "杰斐逊和伯尔", "杰斐逊/麦迪逊/伯尔"}
 SPEAKER_OVERRIDES = {
+    23: {
+        "183": ["HAMILTON"],
+    },
     32: {
         **{str(line_index): ["HAMILTON"] for line_index in range(61, 66)},
         **{str(line_index): ["HAMILTON", "WASHINGTON"] for line_index in range(66, 77)},

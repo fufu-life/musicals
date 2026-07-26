@@ -918,8 +918,7 @@ h1 {
   content: "";
 }
 
-.speak-button.is-audio-loading,
-.popover-speak.is-audio-loading {
+.speak-button.is-audio-loading {
   opacity: 0.56;
   pointer-events: none;
 }
@@ -943,9 +942,9 @@ h1 {
   display: grid;
   gap: 7px;
   width: fit-content;
-  min-width: min(210px, calc(100vw - 24px));
-  max-width: min(360px, calc(100vw - 24px));
-  padding: 14px;
+  min-width: min(150px, calc(100vw - 24px));
+  max-width: min(260px, calc(100vw - 24px));
+  padding: 11px 12px;
   border: 1px solid rgba(255, 216, 120, 0.48);
   border-radius: var(--radius);
   color: var(--ink);
@@ -992,37 +991,6 @@ h1 {
 
 .popover-note {
   font-size: 0.86rem;
-}
-
-.popover-speak {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 0;
-  color: var(--gold-bright);
-  background: rgba(255, 216, 120, 0.08);
-  cursor: pointer;
-}
-
-.popover-speak svg {
-  width: 14px;
-  height: 14px;
-  fill: currentColor;
-}
-
-.popover-speak svg path + path {
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-width: 1.8;
-}
-
-.popover-speak:disabled {
-  color: var(--muted);
-  cursor: not-allowed;
 }
 
 .empty {
