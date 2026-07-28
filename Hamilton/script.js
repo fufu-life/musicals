@@ -2,7 +2,6 @@ const SETTINGS_KEY = "hamilton-display-settings";
 const CURRENT_SONG_KEY = "hamilton-current-song-id";
 const SIDEBAR_KEY = "hamilton-sidebar-collapsed";
 const PLAYBACK_RATE_KEY = "hamilton-playback-rate";
-const CSV_PATH = "hamilton_lyrics_en_based.csv";
 const SEARCH_RESULT_LIMIT = 100;
 const LINE_IPA_OVERRIDES = {
   "ham-02-001": "/ˌsɛvənˈtin-ˌsɛvəti-ˈsɪks nu jɔrk sɪti/",
@@ -261,7 +260,7 @@ async function loadSongs() {
   if (rows.length) {
     return buildSongsFromRows(rows);
   }
-  return loadSongsFromCsv();
+  throw new Error("Hamilton initial lyric data is empty");
 }
 
 function getAvailableLyricsRows() {
@@ -285,15 +284,6 @@ function ensureFullLyricsReady() {
     });
   }
   return fullLyricsReady;
-}
-
-async function loadSongsFromCsv() {
-  const response = await fetch(CSV_PATH);
-  if (!response.ok) {
-    throw new Error(`Failed to load ${CSV_PATH}: ${response.status}`);
-  }
-  const rows = parseCsv(await response.text());
-  return buildSongsFromRows(rows);
 }
 
 function buildSongsFromRows(rows) {
@@ -1703,57 +1693,6 @@ function escapeHtml(value) {
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function parseCsv(text) {
-  const rows = [];
-  let row = [];
-  let field = "";
-  let quoted = false;
-  const cleanText = text.replace(/^\uFEFF/, "");
-
-  for (let index = 0; index < cleanText.length; index += 1) {
-    const char = cleanText[index];
-    const next = cleanText[index + 1];
-
-    if (quoted) {
-      if (char === '"' && next === '"') {
-        field += '"';
-        index += 1;
-      } else if (char === '"') {
-        quoted = false;
-      } else {
-        field += char;
-      }
-      continue;
-    }
-
-    if (char === '"') {
-      quoted = true;
-    } else if (char === ",") {
-      row.push(field);
-      field = "";
-    } else if (char === "\n") {
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = "";
-    } else if (char !== "\r") {
-      field += char;
-    }
-  }
-
-  if (field || row.length) {
-    row.push(field);
-    rows.push(row);
-  }
-
-  const headers = rows.shift() || [];
-  return rows
-    .filter((items) => items.some((item) => item.trim()))
-    .map((items) =>
-      Object.fromEntries(headers.map((header, index) => [header, items[index] || ""])),
-    );
 }
 
 function slugify(value) {
