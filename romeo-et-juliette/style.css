@@ -734,6 +734,19 @@ h2 {
   display: none;
 }
 
+.line-ipa {
+  margin: 3px 0 0;
+  color: color-mix(in srgb, var(--highlight), white 28%);
+  font-family: var(--lyric-font);
+  font-size: 0.72em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.line-ipa[hidden] {
+  display: none;
+}
+
 .lyric-word:hover,
 .lyric-word:focus-visible,
 .song-title-word:hover,

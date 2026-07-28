@@ -3,7 +3,7 @@ const test = require("node:test");
 
 const analytics = require("../analytics.js");
 
-function createEnvironment({ width = 1280, height = 800 } = {}) {
+function createEnvironment({ width = 1280, height = 800, protocol = "https:", hostname = "example.com" } = {}) {
   const listeners = new Map();
   const documentListeners = new Map();
   const timers = new Map();
@@ -13,6 +13,7 @@ function createEnvironment({ width = 1280, height = 800 } = {}) {
     innerHeight: height,
     scrollY: 0,
     dataLayer: [],
+    location: { protocol, hostname },
     document: {
       visibilityState: "visible",
       addEventListener(name, callback) {
@@ -68,6 +69,27 @@ test("viewport type follows mobile, tablet, and desktop breakpoints", () => {
   assert.equal(analytics.getViewportType({ innerWidth: 390 }), "mobile");
   assert.equal(analytics.getViewportType({ innerWidth: 900 }), "tablet");
   assert.equal(analytics.getViewportType({ innerWidth: 1280 }), "desktop");
+});
+
+test("local file pages do not initialize or send Google Analytics", () => {
+  const env = createEnvironment({ protocol: "file:" });
+  const tracker = analytics.createTracker({ showId: "hamilton", showName: "Hamilton" }, env.scope);
+  tracker.songRendered({ id: "01", title: "Alexander Hamilton", order: 1 });
+  tracker.featureUse("ipa_toggle");
+
+  assert.equal(analytics.isLocalFile(env.scope), true);
+  assert.equal(analytics.loadGoogleAnalytics(env.scope), false);
+  assert.deepEqual(env.scope.dataLayer, []);
+});
+
+test("localhost previews do not initialize or send Google Analytics", () => {
+  const env = createEnvironment({ hostname: "127.0.0.1" });
+  const tracker = analytics.createTracker({ showId: "hamilton", showName: "Hamilton" }, env.scope);
+  tracker.songRendered({ id: "01", title: "Alexander Hamilton", order: 1 });
+
+  assert.equal(analytics.isLocalFile(env.scope), true);
+  assert.equal(analytics.loadGoogleAnalytics(env.scope), false);
+  assert.deepEqual(env.scope.dataLayer, []);
 });
 
 test("show and song views are emitted once with allowlisted identifiers", () => {

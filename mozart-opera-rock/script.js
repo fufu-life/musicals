@@ -446,6 +446,7 @@ function getAlignedWordIpa(token, wordIndex, wordCount, ipaParts) {
 function formatLineIpaPart(value, wordIndex, wordCount) {
   const bare = stripIpaSlashes(value);
   if (!bare || /见|标题词/u.test(bare)) return "";
+  if (config.independentWordIpa) return `/${bare}/`;
   const prefix = wordIndex === 0 ? "/" : "";
   const suffix = wordIndex === wordCount - 1 ? "/" : "";
   return `${prefix}${bare}${suffix}`;
@@ -799,6 +800,7 @@ function initThemedCursor() {
 
   function addTrail(x, y, dx, dy) {
     const trail = effect.trail || "stoneDust";
+    if (trail === "none") return;
     const letters = String(config.title || "Lyrics").replace(/s+/g, "").split("");
     const base = {
       x,

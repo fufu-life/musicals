@@ -24,6 +24,17 @@
   let configured = false;
   let currentTracker = null;
 
+  function isLocalFile(scope = globalScope) {
+    const location = scope.location;
+    const hostname = String(location?.hostname || "").toLowerCase();
+    return location?.protocol === "file:"
+      || hostname === "localhost"
+      || hostname.endsWith(".localhost")
+      || hostname === "127.0.0.1"
+      || hostname === "::1"
+      || hostname === "[::1]";
+  }
+
   function cleanText(value, maxLength = 120) {
     return String(value ?? "").trim().slice(0, maxLength);
   }
@@ -53,6 +64,7 @@
   }
 
   function loadGoogleAnalytics(scope = globalScope) {
+    if (isLocalFile(scope)) return false;
     const gtag = ensureGtagQueue(scope);
     if (!configured) {
       configured = true;
@@ -76,6 +88,7 @@
     } else {
       scope.addEventListener?.("load", requestScript, { once: true });
     }
+    return true;
   }
 
   function filterPayload(eventName, params, scope = globalScope) {
@@ -95,6 +108,7 @@
   }
 
   function emit(eventName, params, scope = globalScope) {
+    if (isLocalFile(scope)) return false;
     const payload = filterPayload(eventName, params, scope);
     if (!payload) return false;
     try {
@@ -359,6 +373,7 @@
     STAY_SECONDS,
     READ_THRESHOLDS,
     FEATURE_NAMES,
+    isLocalFile,
     getViewportType,
     filterPayload,
     createTracker,

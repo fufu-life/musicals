@@ -314,6 +314,7 @@ function buildSongsFromRows(rows) {
         order,
         title,
         musical: "Hamilton",
+        collection: row.collection === "cut" ? "cut" : "album",
         lines: [],
       });
     }
@@ -955,15 +956,34 @@ function renderSongNav() {
   refs.songList.innerHTML = "";
   refs.songSelect.innerHTML = "";
 
-  songs.forEach((song) => {
-    const option = document.createElement("option");
-    option.value = song.id;
-    option.textContent = `${song.order}. ${song.title}`;
-    option.selected = song.id === current?.id;
-    refs.songSelect.append(option);
+  const groups = [
+    { id: "album", label: "原声曲目" },
+    { id: "cut", label: "删减／早期版本" },
+  ];
+  groups.forEach((group) => {
+    const groupSongs = songs.filter((song) => song.collection === group.id);
+    if (!groupSongs.length) return;
+    const optionGroup = document.createElement("optgroup");
+    optionGroup.label = group.label;
+    groupSongs.forEach((song) => {
+      const option = document.createElement("option");
+      option.value = song.id;
+      option.textContent = `${song.order}. ${song.title}`;
+      option.selected = song.id === current?.id;
+      optionGroup.append(option);
+    });
+    refs.songSelect.append(optionGroup);
   });
 
+  let previousCollection = "";
   songs.forEach((song) => {
+    if (song.collection !== previousCollection) {
+      const heading = document.createElement("p");
+      heading.className = "song-group-label";
+      heading.textContent = song.collection === "cut" ? "删减／早期版本" : "原声曲目";
+      refs.songList.append(heading);
+      previousCollection = song.collection;
+    }
     const button = document.createElement("button");
     button.className = "song-item";
     button.type = "button";

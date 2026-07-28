@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_MD = ROOT.parent.parent / "lyrics" / "Hamilton (Original Broadway Cast Recording) (3367211).md"
+CUT_SOURCE_MD = ROOT.parent.parent / "lyrics" / "Hamilton 删减曲歌词.md"
 OUTPUT_JS = ROOT / "lyrics-data.js"
 REFERENCE_ROOT = ROOT.parent.parent / "outputs" / "musicals" / "Hamilton"
 ACT_ONE_SCRIPT_MD = REFERENCE_ROOT / "script.md"
@@ -61,6 +62,15 @@ SPEAKER_OVERRIDES = {
         "84": ["COMPANY"],
         "86": ["COMPANY"],
     },
+    37: {
+        "44": ["JEFFERSON", "MADISON"],
+    },
+}
+EMBEDDED_SPEAKER_RE = re.compile(r"\([^():]{1,30}:\s")
+KNOWN_GLUE_RE = re.compile(r"lose-loseJefferson|chooseBut|Hamilton:\(", re.IGNORECASE)
+REVIEWED_LINE_INDEX_GAPS = {
+    "22": {27},
+    "32": {27},
 }
 
 
@@ -380,16 +390,106 @@ def parse_rows(markdown: str) -> list[dict[str, str]]:
                 "chinese_translation": chinese,
                 "note": note,
                 "source_file": SOURCE_MD.name,
+                "collection": "album",
             }
         )
 
     return rows
 
 
+def parse_cut_rows(markdown: str) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    current_order = ""
+    current_title = ""
+    current_zh_title = ""
+    headers: list[str] = []
+
+    for raw_line in markdown.splitlines():
+        line = raw_line.strip()
+        heading = SONG_HEADING_RE.match(line)
+        if heading:
+            current_order, current_title = heading.groups()
+            current_zh_title = ""
+            headers = []
+            continue
+        if line.startswith("中文歌名："):
+            current_zh_title = line.removeprefix("中文歌名：").strip()
+            continue
+
+        cells = split_markdown_row(line)
+        if not cells or is_separator_row(cells):
+            continue
+        if cells[:6] == ["行号", "角色", "英文歌词（校订）", "英文音标（IPA）", "中文翻译（校订）", "备注"]:
+            headers = cells
+            continue
+        if len(cells) < 6 or not headers or not current_order or not current_title:
+            continue
+
+        line_index, speaker, english, ipa, chinese, note = cells[:6]
+        if not line_index.isdigit() or not english.strip():
+            continue
+        speakers = [normalize_speaker(item) for item in re.split(r"\s*(?:/|&|、)\s*", speaker) if item.strip()]
+        if not speakers:
+            raise RuntimeError(f"Missing cut-song speaker for track {current_order}, line {line_index}")
+        rows.append(
+            {
+                "song_order": str(int(current_order)),
+                "song_title": current_title,
+                "song_title_zh": current_zh_title,
+                "song_id": slugify(f"{int(current_order):02d}-{current_title}"),
+                "line_index": str(int(line_index)),
+                "english": strip_line_metadata(english),
+                "ipa": strip_line_metadata(ipa),
+                "chinese_translation": strip_line_metadata(chinese),
+                "note": note,
+                "source_file": CUT_SOURCE_MD.name,
+                "collection": "cut",
+                "speakers": speakers,
+            }
+        )
+    return rows
+
+
+def validate_rows(rows: list[dict[str, object]]) -> None:
+    problems: list[str] = []
+    rows_by_song: dict[str, list[dict[str, object]]] = {}
+    for row in rows:
+        rows_by_song.setdefault(str(row["song_order"]), []).append(row)
+        english = str(row["english"])
+        ipa = str(row["ipa"])
+        if EMBEDDED_SPEAKER_RE.search(english):
+            problems.append(f"{row['song_order']}:{row['line_index']} embedded speaker label")
+        if KNOWN_GLUE_RE.search(english):
+            problems.append(f"{row['song_order']}:{row['line_index']} glued lyric text")
+        if len(max(re.findall(r"\([^)]*\)", english), key=len, default="")) > 140:
+            problems.append(f"{row['song_order']}:{row['line_index']} oversized parenthetical")
+        if english.count("(") != english.count(")"):
+            problems.append(f"{row['song_order']}:{row['line_index']} unbalanced parentheses")
+        if not re.fullmatch(r"/[^/]+/", ipa):
+            problems.append(f"{row['song_order']}:{row['line_index']} invalid or empty IPA")
+
+    for order, song_rows in rows_by_song.items():
+        indices = [int(str(row["line_index"])) for row in song_rows]
+        if len(indices) != len(set(indices)):
+            problems.append(f"{order} duplicate line indices")
+        missing = set(range(1, max(indices, default=0) + 1)) - set(indices)
+        if missing != REVIEWED_LINE_INDEX_GAPS.get(order, set()):
+            problems.append(
+                f"{order} unexplained line-index gaps: "
+                + ", ".join(str(index) for index in sorted(missing))
+            )
+
+    if problems:
+        raise RuntimeError("Hamilton content freeze failed:\n- " + "\n- ".join(problems))
+
+
 def main() -> None:
     markdown = SOURCE_MD.read_text(encoding="utf-8")
     rows = parse_rows(markdown)
     align_speakers(rows, load_speaker_references())
+    if CUT_SOURCE_MD.exists():
+        rows.extend(parse_cut_rows(CUT_SOURCE_MD.read_text(encoding="utf-8")))
+    validate_rows(rows)
     song_count = len({row["song_order"] for row in rows})
 
     payload = "window.hamiltonLyricsRows = "

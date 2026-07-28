@@ -111,7 +111,7 @@ test("song header uses an unframed show logo and soft switching", () => {
   assert.match(indexHtml, /class="home-button" href="\.\.\/index\.html" aria-label="返回音乐剧展示架"/);
   assert.match(indexHtml, /class="show-visual"/);
   assert.doesNotMatch(indexHtml, /show-visual-inner/);
-  assert.match(indexHtml, /class="show-visual-image" src="assets\/show-logo\.(?:png|svg)"/);
+  assert.match(indexHtml, /class="show-visual-image" src="assets\/show-logo\.(?:png|svg|webp|jpg)"/);
   assert.match(styleCss, /\.hero/);
   assert.match(styleCss, /\.show-visual/);
   assert.match(scriptJs, /function renderCurrentSongWithTransition/);
@@ -177,6 +177,20 @@ test("songs and word data are populated", () => {
   assert.ok(Object.keys(sandbox.window.wordEntries).length > 0);
 });
 
+test("Dear Evan Hansen keeps slash-delimited line IPA and its upper-left note hotspot", () => {
+  if ("mozart-opera-rock" !== "dear-evan-hansen") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const lines = sandbox.window.songs.flatMap((song) => song.lines);
+  assert.ok(lines.every((line) => /^\/[^/].*[^/]\/$/u.test(line.ipa)));
+  assert.match(indexHtml, /"independentWordIpa": true/);
+  assert.match(scriptJs, /showPhonetics: true/);
+  assert.doesNotMatch(scriptJs, /className = "line-ipa"/);
+  assert.match(styleCss, /.word-phonetic/);
+  assert.ok(cursorJs.includes('"hotspot":[0.27,0.27]'));
+  assert.ok(cursorJs.includes('"rotation":-0.785398'));
+});
+
 test("bracketed lyrics with aligned translations remain lyrics, not speaker labels", () => {
   if ("mozart-opera-rock" !== "mozart-opera-rock") return;
   const sandbox = { window: {} };
@@ -235,6 +249,19 @@ test("Romeo Aimer keeps one opening lyric, not an expanded spelling duplicate", 
     ["Aimer, c'est ce qu'y a d'plus beau", "Aimer, c'est monter si haut"],
   );
   assert.equal(aimer.lines.some((line) => line.id === "romeo-et-juliette-18-004"), false);
+});
+
+test("Notre-Dame speaker metadata never enters the lyric IPA or speech input", () => {
+  if ("mozart-opera-rock" !== "notre-dame-de-paris") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const line = sandbox.window.songs
+    .find((song) => song.sourceOrder === 49)
+    .lines.find((item) => item.lineIndex === 1);
+  assert.equal(line.speaker, "Quasimodo");
+  assert.equal(line.original, "Frollo");
+  assert.equal(line.ipa, "/fʁɔlo/");
+  assert.doesNotMatch(line.ipa, /kazimodo/u);
 });
 
 test("reviewed OCR word fragments are reassembled", () => {

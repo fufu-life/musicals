@@ -432,38 +432,11 @@ h2 {
   background: var(--highlight);
 }
 
-.musical-name-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 12px;
+.musical-name {
   margin: 0 0 10px;
-}
-
-.musical-name,
-.moliere-translation-credit {
-  margin: 0;
   text-transform: uppercase;
   font-size: 0.78rem;
   letter-spacing: 0.22em;
-}
-
-.moliere-translation-credit {
-  color: var(--muted);
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-.moliere-translation-credit a {
-  color: inherit;
-  text-decoration-color: color-mix(in srgb, currentColor, transparent 48%);
-  text-underline-offset: 0.18em;
-}
-
-.moliere-translation-credit a:hover,
-.moliere-translation-credit a:focus-visible {
-  color: var(--highlight);
-  outline: none;
 }
 
 .song-subtitle {
@@ -758,6 +731,19 @@ h2 {
 }
 
 .word-phonetic[hidden] {
+  display: none;
+}
+
+.line-ipa {
+  margin: 3px 0 0;
+  color: color-mix(in srgb, var(--highlight), white 28%);
+  font-family: var(--lyric-font);
+  font-size: 0.72em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.line-ipa[hidden] {
   display: none;
 }
 

@@ -4,7 +4,7 @@ const { spawnSync } = require("node:child_process");
 const vm = require("node:vm");
 
 const ROOT = path.resolve(__dirname, "..");
-const CURSOR_ASSET_VERSION = "20260715-reference-6";
+const CURSOR_ASSET_VERSION = "20260728-deh-1";
 const LYRICS_ROOT = path.resolve(ROOT, "..", "lyrics");
 const ROUGE_SCRIPT = path.join(ROOT, "rouge-et-noir", "script.js");
 const ROUGE_SONGS = path.join(ROOT, "rouge-et-noir", "songs.js");
@@ -32,6 +32,7 @@ const INSTRUMENTAL_MARKERS = new Set([
   "器乐",
   "器乐曲",
 ]);
+const existingLineIpaCache = new Map();
 
 const SHOWS = [
   {
@@ -255,9 +256,8 @@ const SHOWS = [
     language: "en",
     voice: "en-us",
     audioVoice: "Samantha",
-    logo: "assets/show-logo.svg",
+    logo: "assets/show-logo.png",
     showEnglishToggle: false,
-    reviewedWordCardsOnly: true,
     effect: { icon: "star", trail: "cabaretGlow", click: "marqueeBurst", primary: "#c51f2b", secondary: "#f3d39a" },
     theme: {
       bg: "#080708",
@@ -284,13 +284,12 @@ const SHOWS = [
     source: "Dear Evan Hansen (Original Motion Picture Soundtrack) (133703534)/Dear Evan Hansen (Original Motion Picture Soundtrack) (133703534).md",
     sourceFormat: "paired-english",
     title: "Dear Evan Hansen",
-    titleZh: "亲爱的埃文·汉森",
+    titleZh: "致埃文·汉森",
     language: "en",
     voice: "en-us",
     audioVoice: "Samantha",
-    logo: "assets/show-logo.svg",
+    logo: "assets/show-logo.png",
     showEnglishToggle: false,
-    reviewedWordCardsOnly: true,
     effect: { icon: "key", trail: "letters", click: "letterfall", primary: "#2676a8", secondary: "#edf5f7" },
     theme: {
       bg: "#07141b",
@@ -321,9 +320,8 @@ const SHOWS = [
     language: "en",
     voice: "en-us",
     audioVoice: "Samantha",
-    logo: "assets/show-logo.svg",
+    logo: "assets/show-logo.webp",
     showEnglishToggle: false,
-    reviewedWordCardsOnly: true,
     effect: { icon: "star", trail: "neonTrail", click: "starBurst", primary: "#d52ba6", secondary: "#f2c94c" },
     theme: {
       bg: "#10051c",
@@ -354,9 +352,8 @@ const SHOWS = [
     language: "en",
     voice: "en-us",
     audioVoice: "Samantha",
-    logo: "assets/show-logo.svg",
+    logo: "assets/show-logo.png",
     showEnglishToggle: false,
-    reviewedWordCardsOnly: true,
     effect: { icon: "flag", trail: "letters", click: "dawnRays", primary: "#f0c62b", secondary: "#7e4fa1" },
     theme: {
       bg: "#12100b",
@@ -387,10 +384,9 @@ const SHOWS = [
     language: "en",
     voice: "en-us",
     audioVoice: "Samantha",
-    logo: "assets/show-logo.svg",
+    logo: "assets/show-logo.jpg",
     showEnglishToggle: false,
-    reviewedWordCardsOnly: true,
-    effect: { icon: "moon", trail: "goldDust", click: "sunHalo", primary: "#d78024", secondary: "#f1d7a2" },
+    effect: { icon: "moon", trail: "none", click: "sunHalo", primary: "#d78024", secondary: "#f1d7a2" },
     theme: {
       bg: "#070707",
       panel: "#171310",
@@ -549,7 +545,7 @@ const SHOWS = [
     language: "en",
     voice: "en-us",
     audioVoice: "Samantha",
-    logo: "assets/show-logo.png",
+    logo: "assets/show-title-logo.webp",
     sourceOrderMin: 22,
     showEnglishToggle: false,
     effect: { icon: "rose", trail: "candleSmoke", click: "chandelierGlow", primary: "#4c9cc0", secondary: "#e8f4f7" },
@@ -570,17 +566,11 @@ const SHOWS = [
       bodyPattern: "repeating-radial-gradient(circle at 86% 8%, transparent 0 34px, rgba(226, 177, 93, 0.045) 35px 36px), radial-gradient(ellipse at 18% 0%, rgba(116, 84, 174, 0.28), transparent 34rem)",
       heroPattern: "repeating-radial-gradient(circle at 88% 10%, transparent 0 26px, rgba(226, 177, 93, 0.075) 27px 28px), linear-gradient(125deg, rgba(116, 84, 174, 0.22), transparent 58%)",
       visualPattern: "repeating-radial-gradient(circle at 50% 16%, transparent 0 22px, rgba(226, 177, 93, 0.12) 23px 24px), linear-gradient(180deg, rgba(116, 84, 174, 0.16), transparent 74%)",
-      visualFit: "cover",
-      visualPosition: "50% 0%",
-      visualWidth: "min(360px, 100%)",
-      visualHeight: "100%",
-      visualDesktopHeight: "128px",
-      visualTabletHeight: "132px",
-      visualMobileHeight: "128px",
-      visualMinHeight: "128px",
-      visualPadding: "0px",
-      visualFrameRadius: "8px",
-      visualFilter: "saturate(1.04) contrast(1.04)",
+      visualFit: "contain",
+      visualPosition: "50% 50%",
+      visualWidth: "min(250px, 100%)",
+      visualHeight: "96px",
+      visualFilter: "drop-shadow(0 10px 16px rgba(2, 0, 24, 0.42)) saturate(1.04) contrast(1.04)",
     },
   },
   {
@@ -657,6 +647,30 @@ const SHOWS = [
       visualFilter: "saturate(0.88) contrast(1.08)",
     },
   },
+  {
+    slug: "les-miserables-1980",
+    source: "Les Misérables (1980法语原创概念专辑) 网页数据源.md",
+    title: "Les Misérables",
+    titleZh: "悲惨世界（1980法语原创概念专辑）",
+    language: "fr",
+    voice: "fr-fr",
+    audioVoice: "Audrey",
+    logo: "assets/show-logo.jpg",
+    effect: { icon: "flag", trail: "smoke", click: "dawnRays", primary: "#b33a35", secondary: "#e6c472" },
+    theme: { bg: "#1a1110", panel: "#2a1815", accent: "#b33a35", highlight: "#e6c472", ink: "#fff3df", muted: "rgba(255, 243, 223, 0.7)", serif: 'Garamond, "Times New Roman", "Songti SC", serif' },
+  },
+  {
+    slug: "les-miserables-cityprod-2017",
+    source: "Les Misérables (2017 Cityprod法语版) 网页数据源.md",
+    title: "Les Misérables en Concert",
+    titleZh: "悲惨世界（2017 Cityprod法语版）",
+    language: "fr",
+    voice: "fr-fr",
+    audioVoice: "Audrey",
+    logo: "assets/show-logo.jpg",
+    effect: { icon: "flag", trail: "letters", click: "dawnRays", primary: "#9d2733", secondary: "#ead9aa" },
+    theme: { bg: "#0c1420", panel: "#172335", accent: "#b33a35", highlight: "#ead9aa", ink: "#f6f2e8", muted: "rgba(246, 242, 232, 0.7)", serif: 'Garamond, "Times New Roman", "Songti SC", serif' },
+  },
 ];
 const WAVE2_SHOW_SLUGS = new Set([
   "moulin-rouge",
@@ -672,6 +686,8 @@ const WAVE2_SHOW_SLUGS = new Set([
   "six-the-musical",
   "suffs",
   "sunset-boulevard",
+  "les-miserables-1980",
+  "les-miserables-cityprod-2017",
 ]);
 
 const SONG_TITLE_TRANSLATIONS = {
@@ -1067,6 +1083,21 @@ const SHOW_WORD_OVERRIDES = {
   "notre-dame-de-paris": {
     "porterait-elle": ["会穿着吗", "would it wear", "Porterait-elle", "/pɔʁtəʁɛtɛl/"],
     protégeront: ["将保护", "will protect", "protégeront", "/pʁoteʒʁɔ̃/"],
+  },
+  "les-miserables-1980": {
+    fra: ["会做；将会", "will do", "f'ra", "/fʁa/"],
+    fsait: ["做；制造（口语省略）", "did / made", "f'sait", "/fəzɛ/"],
+    jmennuie: ["我感到无聊", "I am bored", "j'm'ennuie", "/ʒmɑ̃nɥi/"],
+    pauvmonsieur: ["可怜的先生", "poor sir", "Pauv'monsieur", "/pov məsjø/"],
+    prouvra: ["将证明", "will prove", "prouv'ra", "/pʁuvʁa/"],
+    quce: ["这；那（口语省略）", "this / that", "qu'ce", "/k sə/"],
+    quchez: ["在……家；在……那里（口语省略）", "at / in", "qu'chez", "/k ʃe/"],
+    qujaffranchisse: ["让我去启蒙；教化", "that I enlighten", "qu'j'affranchisse", "/k ʒafʁɑ̃ʃis/"],
+    "qulà-haut": ["在上头；在天上", "up there", "qu'là-haut", "/k la o/"],
+    qule: ["这；那；定冠词（口语省略）", "the / that", "qu'le", "/k lə/"],
+    rvoir: ["再见到；再看见", "see again", "r'voir", "/ʁəvwaʁ/"],
+    "vlà": ["瞧；来了（口语）", "there is / here comes", "v'là", "/vla/"],
+    votbon: ["你的善心", "your good heart", "vot'bon", "/vɔ bɔ̃/"],
   },
   "le-roi-soleil": {
     acoustique: ["原声的；不插电的", "acoustic", "acoustique"],
@@ -2060,6 +2091,7 @@ function main() {
     }
     const sourcePath = path.join(LYRICS_ROOT, show.source);
     const songs = parseMarkdown(sourcePath, show);
+    assertLyricsReadyForGeneration(songs, show);
     if (dryRun) {
       const lines = songs.flatMap((song) => song.lines);
       const missingTitles = songs.filter((song) => !song.titleZh).map((song) => song.title);
@@ -2092,8 +2124,14 @@ function main() {
       return;
     }
     const glossaryShow = show.contentSlug ? { ...show, slug: show.contentSlug } : show;
-    const wordEntries = buildWordEntries(glossaryShow, songs, rougeGlossary, freedictGlossary, englishGlossary);
     const outDir = path.join(ROOT, show.slug);
+    let previousWordEntries = {};
+    try {
+      previousWordEntries = loadWindowObject(path.join(outDir, "word-data.js"), "wordEntries");
+    } catch {
+      // A new show has no prior generated dictionary to reuse.
+    }
+    const wordEntries = buildWordEntries(glossaryShow, songs, rougeGlossary, freedictGlossary, englishGlossary, previousWordEntries);
 
     fs.mkdirSync(path.join(outDir, "scripts"), { recursive: true });
     fs.mkdirSync(path.join(outDir, "tests"), { recursive: true });
@@ -2124,6 +2162,47 @@ function main() {
   console.table(summary);
 }
 
+function findStructuralLyricCandidates(songs) {
+  const candidates = [];
+  songs.forEach((song) => {
+    (song.lines || []).forEach((line) => {
+      const text = String(line.original || "");
+      const reasons = [];
+      if (/\([^():]{1,30}:\s/u.test(text)) {
+        reasons.push("embedded-speaker-label");
+      }
+      if (text.match(/\([^)]*\)/gu)?.some((value) => value.length > 140)) {
+        reasons.push("oversized-parenthetical");
+      }
+      if ((text.match(/\(/gu) || []).length !== (text.match(/\)/gu) || []).length) {
+        reasons.push("unbalanced-parentheses");
+      }
+      if (reasons.length) {
+        candidates.push({
+          song: song.order,
+          line: line.id,
+          text,
+          reasons,
+        });
+      }
+    });
+  });
+  return candidates;
+}
+
+function assertLyricsReadyForGeneration(songs, show) {
+  const candidates = findStructuralLyricCandidates(songs);
+  if (!candidates.length) return;
+  const details = candidates
+    .slice(0, 20)
+    .map((item) => `${item.line} [${item.reasons.join(", ")}] ${item.text}`)
+    .join("\n");
+  throw new Error(
+    `${show.slug} has ${candidates.length} unresolved structural lyric candidates. `
+    + `Review parallel voices and line segmentation before page or audio generation:\n${details}`,
+  );
+}
+
 function loadWindowArray(file, key) {
   const sandbox = { window: {} };
   vm.createContext(sandbox);
@@ -2135,8 +2214,36 @@ function loadWindowArray(file, key) {
   return value;
 }
 
+function loadWindowObject(file, key) {
+  const sandbox = { window: {} };
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(file, "utf8"), sandbox);
+  const value = sandbox.window[key];
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`No ${key} object found in ${file}`);
+  }
+  return value;
+}
+
 function buildInitialSongs(songs) {
   return songs.map((song, index) => index === 0 ? song : { ...song, lines: [] });
+}
+
+function existingLineIpa(show, lineId, original) {
+  if (!existingLineIpaCache.has(show.slug)) {
+    const file = path.join(ROOT, show.slug, "songs.js");
+    const cache = new Map();
+    try {
+      loadWindowArray(file, "songs").forEach((song) => song.lines.forEach((line) => {
+        cache.set(line.id, { original: line.original, ipa: line.ipa });
+      }));
+    } catch {
+      // A first generation has no prior page data to reuse.
+    }
+    existingLineIpaCache.set(show.slug, cache);
+  }
+  const previous = existingLineIpaCache.get(show.slug).get(lineId);
+  return previous?.original === original && previous.ipa ? previous.ipa : "";
 }
 
 function loadRougeGlossary() {
@@ -2188,12 +2295,34 @@ function loadFreedictGlossary() {
 }
 
 function loadEnglishGlossary() {
-  if (!fs.existsSync(GOOGLE_ENGLISH_GLOSSARY)) return {};
+  const glossary = {};
   try {
-    return JSON.parse(fs.readFileSync(GOOGLE_ENGLISH_GLOSSARY, "utf8"));
+    if (fs.existsSync(GOOGLE_ENGLISH_GLOSSARY)) {
+      mergeGlossaryObject(glossary, JSON.parse(fs.readFileSync(GOOGLE_ENGLISH_GLOSSARY, "utf8")));
+    }
   } catch {
-    return {};
+    // The per-show dictionaries below remain usable when the shared cache is absent.
   }
+  SHOWS.filter((show) => show.language === "en").forEach((show) => {
+    const file = path.join(ROOT, show.slug, "word-data.js");
+    if (!fs.existsSync(file)) return;
+    try {
+      const entries = loadWindowObject(file, "wordEntries");
+      Object.entries(entries).forEach(([key, entry]) => {
+        if (entry.needsReview || !entry.meaning || !entry.en || !entry.ipa || !entry.speak) return;
+        if (/专有名词|proper noun|暂未收录|词义：|结合本句|语境/i.test(`${entry.meaning} ${entry.en}`)) return;
+        addGlossaryEntry(glossary, entry.speak || key, {
+          zh: entry.meaning,
+          en: entry.en,
+          ipa: entry.ipa,
+          speak: entry.speak || key,
+        });
+      });
+    } catch {
+      // One malformed generated dictionary must not block the remaining shows.
+    }
+  });
+  return glossary;
 }
 
 function mergeGlossaryObject(target, source) {
@@ -2292,7 +2421,7 @@ function parseMarkdown(file, show) {
 
     const row = rowByHeader(header, cells);
     const original = row["法语歌词（校订）"] || row["德语歌词（校订）"] || row["英文歌词（校订）"] || "";
-    const note = cleanCell(row["备注"] || "");
+    const note = cleanReleaseNote(row["备注"] || "");
     const noteSpeaker = extractNoteSpeaker(note);
     if (!original.trim()) {
       pendingSpeaker = noteSpeaker || pendingSpeaker;
@@ -2305,14 +2434,21 @@ function parseMarkdown(file, show) {
       || cleanCell(row["中文翻译（校订）"] || "")
       || cleanCell(row["English Translation"] || ""),
     );
-    const speakerCell = bracketedLyric && hasAlignedText
+    const speakerCell = bracketedLyric && hasAlignedText && !isStandaloneBracketedSpeakerRow(original, row)
       ? { speaker: "", text: (bracketedLyric[1] || bracketedLyric[2] || "").trim() }
       : extractSpeaker(original);
     if (!speakerCell.text) {
       pendingSpeaker = speakerCell.speaker || pendingSpeaker;
       return;
     }
-    const speaker = speakerCell.speaker || noteSpeaker;
+    const zhSource = bracketedLyric ? stripOuterBrackets(row["中文翻译（校订）"] || "") : (row["中文翻译（校订）"] || "");
+    const enSource = bracketedLyric ? stripOuterBrackets(row["English Translation"] || "") : (row["English Translation"] || "");
+    const zhTranslationSpeaker = extractTranslationSpeaker(zhSource);
+    const enTranslationSpeaker = extractTranslationSpeaker(enSource);
+    const translationSpeaker = speakerCell.speaker || noteSpeaker
+      ? { speaker: "", text: "" }
+      : [zhTranslationSpeaker, enTranslationSpeaker].find((entry) => entry.speaker) || { speaker: "", text: "" };
+    const speaker = speakerCell.speaker || noteSpeaker || translationSpeaker.speaker;
     const cleanedOriginal = cleanLineCell(contentShow, speakerCell.text, "original");
     if (!cleanedOriginal) return;
 
@@ -2324,13 +2460,17 @@ function parseMarkdown(file, show) {
       lineIndex: lineNumber,
       speaker: speaker || pendingSpeaker,
       original: cleanedOriginal,
-      ipa: cleanCell(row["法语音标（IPA）"] || row["德语音标（IPA）"] || row["英文音标（IPA）"] || ""),
-      zh: normalizeGeneratedLineText(contentShow, textOverride.zh ?? cleanLineCell(contentShow, stripTranslationSpeaker(
-        bracketedLyric ? stripOuterBrackets(row["中文翻译（校订）"] || "") : (row["中文翻译（校订）"] || ""),
+      ipa: stripSpeakerIpaPrefix(
+        contentShow,
+        row["法语音标（IPA）"] || row["德语音标（IPA）"] || row["英文音标（IPA）"] || "",
+        speaker,
+      ),
+      zh: normalizeGeneratedLineText(contentShow, textOverride.zh ?? cleanLineCell(contentShow, zhTranslationSpeaker.speaker ? zhTranslationSpeaker.text : stripTranslationSpeaker(
+        zhSource,
         speaker,
       ), "zh"), "zh"),
-      en: normalizeGeneratedLineText(contentShow, textOverride.en ?? cleanLineCell(contentShow, stripTranslationSpeaker(
-        bracketedLyric ? stripOuterBrackets(row["English Translation"] || "") : (row["English Translation"] || ""),
+      en: normalizeGeneratedLineText(contentShow, textOverride.en ?? cleanLineCell(contentShow, enTranslationSpeaker.speaker ? enTranslationSpeaker.text : stripTranslationSpeaker(
+        enSource,
         speaker,
       ), "en"), "en"),
       note: noteSpeaker ? "" : note,
@@ -2365,17 +2505,21 @@ function parsePairedEnglishMarkdown(file, show) {
         pendingSpeaker = speakerCell.speaker || pendingSpeaker;
         continue;
       }
-      const speaker = speakerCell.speaker || pendingSpeaker;
+      const translationSpeaker = speakerCell.speaker
+        ? { speaker: "", text: "" }
+        : extractTranslationSpeaker(translationRaw);
+      const speaker = speakerCell.speaker || translationSpeaker.speaker || pendingSpeaker;
       const original = cleanLineCell(show, speakerCell.text, "original");
-      const zh = cleanLineCell(show, stripTranslationSpeaker(translationRaw, speaker), "zh");
+      const zh = cleanLineCell(show, translationSpeaker.speaker ? translationSpeaker.text : stripTranslationSpeaker(translationRaw, speaker), "zh");
       if (!original || !zh) continue;
       const lineIndex = index / 2 + 1;
+      const lineId = `${show.slug}-${String(current.order).padStart(2, "0")}-${String(lineIndex).padStart(3, "0")}`;
       current.lines.push({
-        id: `${show.slug}-${String(current.order).padStart(2, "0")}-${String(lineIndex).padStart(3, "0")}`,
+        id: lineId,
         lineIndex,
         speaker,
         original,
-        ipa: ipaFor(original, show.voice),
+        ipa: existingLineIpa(show, lineId, original) || ipaFor(original, show.voice),
         zh,
         en: "",
         note: "",
@@ -2732,6 +2876,12 @@ function cleanCell(value) {
     .replace(/(?:\[\d{1,2}:\d{2}(?:\.\d+)?\])+/gu, "")
     .replace(/<br\s*\/?>/gi, " ")
     .replace(/\\\|/g, "|")
+    .replace(/&apos;|&#0*39;|&#x0*27;/giu, "'")
+    .replace(/&quot;|&#0*34;|&#x0*22;/giu, '"')
+    .replace(/&amp;/giu, "&")
+    .replace(/&lt;/giu, "<")
+    .replace(/&gt;/giu, ">")
+    .replace(/&#8203;|&#x200b;/giu, "")
     .replace(/\u00b4/gu, "'")
     .replace(/(\p{Script=Latin}),(?=\p{Script=Latin})/gu, "$1, ")
     .replace(/(\p{Script=Latin})([.!?;:])(?=\p{Script=Latin})/gu, "$1$2 ")
@@ -2750,11 +2900,40 @@ function stripSongTitleVersionSuffix(value) {
   return title;
 }
 
-const SPEAKER_HINT = /(?:judge|lucheni|toten|sophie|ludovika|max|\bfj\b|rudolf|\btod\b|chor|sisi|herzog|verwandt|ehepaar|schwager|helene|gouvernante|erzherzog|graf|kardinal|franz|mutter|fürst|hochzeit|gräfin|hofdame|zofe|friseuse|männer|frauen|menge|aristokrat|professor|journalist|student|bohemien|poet|cafégast|arzt|baron|rauscher|richter|elisabeth|eisabeth|gäste|leopold|zinzendorf|salieri|waldstätten|nannerl|mesmer|wolfgang|chamberlain|arco|ensemble|anna|händlerin|gemüsefrau|gewürzhändlerin|obstfrau|passanten|schikaneder|colloredo|constanze|constance|cecilia|aloysia|josephine|raoul|andre|confidante|fop|firmin|countess|attilio|carlotta|phantom|meg|christine|chief|firemen|marksman|voice|don juan|passarino|aminta|giry|stagehand|sadia|johnny|marie-jeanne|roger|gourou|stella|zéro|clapman|cristal|speakerine|clients|both|all|chorus|\bp\b|\br\b|\bmj\b|\bgel\b|ge-l)/iu;
+const SPEAKER_HINT = /(?:judge|lucheni|toten|sophie|ludovika|max|\bfj\b|rudolf|\btod\b|chor|sisi|herzog|verwandt|ehepaar|schwager|helene|gouvernante|erzherzog|graf|kardinal|franz|mutter|fürst|fürsten|hochzeit|gräfin|hofdame|zofe|friseuse|männer|frauen|menge|aristokrat|professor|journalist|student|bohemien|poet|cafégast|arzt|baron|rauscher|richter|elisabeth|eisabeth|gäste|leopold|zinzendorf|salieri|waldstätten|nannerl|mesmer|wolfgang|mozart|chamberlain|arco|ensemble|anna|händlerin|gemüsefrau|gewürzhändlerin|obstfrau|passanten|schikaneder|colloredo|constanze|constance|cecilia|aloysia|josephine|raoul|andre|confidante|fop|firmin|countess|attilio|carlotta|phantom|meg|christine|chief|firemen|marksman|voice|don juan|passarino|aminta|giry|stagehand|sadia|johnny|marie-jeanne|roger|gourou|stella|zéro|clapman|cristal|speakerine|clients|both|\ball\b|chorus|\bp\b|\br\b|\bmj\b|\bgel\b|ge-l)/iu;
+
+const SPEAKER_IPA_PREFIXES = {
+  "notre-dame-de-paris": {
+    quasimodo: "kazimodo",
+    frollo: "fʁɔlo",
+    esmeralda: "ɛsmeʁalda",
+    gringoire: "ɡʁɛ̃ɡwaʁ",
+    phoebus: "febys",
+    clopin: "klɔpɛ̃",
+  },
+};
+
+function isStandaloneBracketedSpeakerRow(original, row) {
+  const label = cleanCell(original).match(/^\s*(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)\s*$/u)?.slice(1).find(Boolean)?.trim() || "";
+  if (!label || /[()!?！？]/u.test(label) || !SPEAKER_HINT.test(label)) return false;
+  const parallelTranslations = [row["中文翻译（校订）"], row["English Translation"]]
+    .filter((value) => cleanCell(value));
+  return parallelTranslations.length > 0
+    && parallelTranslations.every((value) => /^\s*(?:\[[^\]]{1,500}\]|【[^】]{1,500}】)\s*$/u.test(cleanCell(value)));
+}
 
 function extractSpeaker(value) {
   const clean = cleanCell(value);
   if (clean === "_Die") return { speaker: "", text: "" };
+  const inlineRoles = [...clean.matchAll(/(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)/gu)]
+    .map((match) => (match[1] || match[2] || "").trim())
+    .filter(Boolean);
+  if (inlineRoles.length > 1 && inlineRoles.every((role) => SPEAKER_HINT.test(role))) {
+    return {
+      speaker: [...new Set(inlineRoles)].join(" / "),
+      text: clean.replace(/(?:\[[^\]]{1,48}\]|【[^】]{1,48}】)\s*/gu, " ").replace(/\s+/gu, " ").trim(),
+    };
+  }
   const bracketed = clean.match(/^\s*(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)\s*[:：]?\s*(.*)$/u);
   if (bracketed) {
     return { speaker: (bracketed[1] || bracketed[2] || "").trim(), text: (bracketed[3] || "").trim() };
@@ -2763,8 +2942,13 @@ function extractSpeaker(value) {
   const labelled = clean.match(/^([^:：]{1,48})[:：]\s*(.*)$/u);
   if (!labelled) return { speaker: "", text: clean };
   const label = labelled[1].trim();
+  // Some English sources annotate a role in the label (for example
+  // "NORMA, on the phone:"). Keep the role, not the staging direction, out
+  // of the lyric line.
+  const stagedRole = label.match(/^([A-Z][A-Z .'-]*(?:\s+and\s+[A-Z][A-Z .'-]*)?)\s*,\s*(?:spoken|on the phone|off stage)\b/iu);
+  if (stagedRole) return { speaker: stagedRole[1].trim(), text: labelled[2].trim() };
   if (/[()!?]/u.test(label)) return { speaker: "", text: clean };
-  const upper = label === label.toLocaleUpperCase() && /\p{L}/u.test(label);
+  const upper = label === label.toLocaleUpperCase() && /[A-Z]/u.test(label);
   const titleCase = label.split(/\s+/u).every((word) => /^[A-Z][\p{L}'’.-]*$/u.test(word));
   if (!upper && !titleCase && !SPEAKER_HINT.test(label)) return { speaker: "", text: clean };
   return { speaker: label, text: labelled[2].trim() };
@@ -2781,16 +2965,52 @@ function extractNoteSpeaker(value) {
   return match ? match[1].trim() : "";
 }
 
+function extractTranslationSpeaker(value) {
+  const clean = cleanCell(value);
+  const match = clean.match(/^([^:：]{1,24})[:：]\s*(.*)$/u);
+  if (!match) return { speaker: "", text: clean };
+  const speaker = match[1].trim();
+  const knownChineseRole = /^(?:众|合唱|爸爸|妈妈|姐姐|弟弟|发辫|沙粒|亚瑟|莫扎特|康斯坦斯|沃尔夫冈|凯瑞|爱丽丝|萝丝|多丽丝|乔|诺玛|麦克斯|贝蒂)$/u.test(speaker);
+  const upper = speaker === speaker.toLocaleUpperCase() && /[A-Z]/u.test(speaker);
+  const titleCase = speaker.split(/\s+/u).every((word) => /^[A-Z][\p{L}'’.-]*$/u.test(word));
+  if (!knownChineseRole && !upper && !titleCase && !SPEAKER_HINT.test(speaker)) {
+    return { speaker: "", text: clean };
+  }
+  return { speaker, text: match[2].trim() };
+}
+
 function stripTranslationSpeaker(value, sourceSpeaker) {
   const clean = cleanCell(value);
   if (!sourceSpeaker) return clean;
+  if (sourceSpeaker.includes(" / ")) {
+    return clean
+      .replace(/(?:\[[^\]]{1,48}\]|【[^】]{1,48}】|（[^（）]{1,12}）|\([^()]{1,12}\))\s*/gu, " ")
+      .replace(/\s+/gu, " ")
+      .trim();
+  }
   const withoutBracketedSpeaker = clean.replace(/^\s*(?:\[[^\]]{1,48}\]|【[^】]{1,48}】)\s*/u, "");
   if (withoutBracketedSpeaker !== clean) return withoutBracketedSpeaker.trim();
   return clean.replace(/^\s*[^:：]{1,48}[:：]\s*/u, "").trim();
 }
 
+function stripSpeakerIpaPrefix(show, value, sourceSpeaker) {
+  const ipa = cleanCell(value);
+  const normalizedSpeaker = sourceSpeaker
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/gu, "")
+    .toLocaleLowerCase();
+  const phoneticName = SPEAKER_IPA_PREFIXES[show.slug]?.[normalizedSpeaker];
+  if (!phoneticName) return ipa;
+  return ipa.replace(new RegExp(`^/(?:${phoneticName})\\s+`, "u"), "/");
+}
+
 function cleanLineCell(show, value, field) {
   let cleaned = cleanCell(value);
+  // A malformed Markdown table row in the Arthur source left a literal closing
+  // bracket before a repeated vocalization. It is never lyric text.
+  cleaned = cleaned.replace(/^\]\s*/u, "");
+  cleaned = cleaned.replace(/[\[\]【】]/gu, "");
+  cleaned = cleaned.replace(/([.!?;:])(?=\p{Lu})/gu, "$1 ");
   if (show.slug === "le-roi-soleil" && (field === "original" || field === "en")) {
     cleaned = cleaned
       .replace(/\s*，\s*/gu, ", ")
@@ -2829,21 +3049,28 @@ function cleanLineCell(show, value, field) {
   return normalizeGeneratedLineText(show, cleaned, field);
 }
 
-function buildWordEntries(show, songs, rougeGlossary, freedictGlossary, englishGlossary) {
+function cleanReleaseNote(value) {
+  return cleanCell(value)
+    .replace(/(?:原文件该行未找到中文译文，已用机器翻译补中文。?|原文件缺中文，已用机器翻译补齐。?|机器翻译补中文。?|原文件原文和中文挤在同一行，已拆分。?)/gu, "")
+    .replace(/^[；;、\s]+|[；;、\s]+$/gu, "")
+    .trim();
+}
+
+function buildWordEntries(show, songs, rougeGlossary, freedictGlossary, englishGlossary, previousEntries = {}) {
   const entries = {};
   const common = show.language === "en"
     ? COMMON_ENGLISH
     : show.language === "de" ? COMMON_GERMAN : COMMON_FRENCH;
 
   songs.forEach((song) => {
-    collectTokens(song.title).forEach((token) => addEntry(entries, token, show, common, rougeGlossary, freedictGlossary, englishGlossary, {
+      collectTokens(song.title).forEach((token) => addEntry(entries, token, show, common, rougeGlossary, freedictGlossary, englishGlossary, previousEntries, {
       zh: song.titleZh || show.titleZh,
       en: song.title,
       proper: false,
     }));
 
     song.lines.forEach((line) => {
-      collectTokens(line.original).forEach((token) => addEntry(entries, token, show, common, rougeGlossary, freedictGlossary, englishGlossary, {
+      collectTokens(line.original).forEach((token) => addEntry(entries, token, show, common, rougeGlossary, freedictGlossary, englishGlossary, previousEntries, {
         zh: line.zh,
         en: line.en,
         proper: false,
@@ -2851,13 +3078,10 @@ function buildWordEntries(show, songs, rougeGlossary, freedictGlossary, englishG
     });
   });
 
-  const reviewedEntries = show.reviewedWordCardsOnly
-    ? Object.entries(entries).filter(([, entry]) => !entry.needsReview)
-    : Object.entries(entries);
-  return Object.fromEntries(reviewedEntries.sort(([a], [b]) => a.localeCompare(b, "fr")));
+  return Object.fromEntries(Object.entries(entries).sort(([a], [b]) => a.localeCompare(b, "fr")));
 }
 
-function addEntry(entries, token, show, common, rougeGlossary, freedictGlossary, englishGlossary, context) {
+function addEntry(entries, token, show, common, rougeGlossary, freedictGlossary, englishGlossary, previousEntries, context) {
   const key = normalizeKey(token);
   if (!key || entries[key]) return;
 
@@ -2870,6 +3094,7 @@ function addEntry(entries, token, show, common, rougeGlossary, freedictGlossary,
   const showOverride = SHOW_WORD_OVERRIDES[show.slug]?.[key];
   const manualEntry = loadManualWordGlossary(show.slug, key);
   const autoEntry = loadAutoWordGlossary(show.slug, key);
+  const priorEntry = previousEntries[key];
 
   if (showOverride) {
     entries[key] = {
@@ -2898,6 +3123,11 @@ function addEntry(entries, token, show, common, rougeGlossary, freedictGlossary,
       en: shortEnglishGloss(autoEntry.en),
       speak,
     };
+    return;
+  }
+
+  if (priorEntry && !priorEntry.needsReview && priorEntry.ipa && priorEntry.meaning && priorEntry.en && priorEntry.speak) {
+    entries[key] = { ...priorEntry };
     return;
   }
 
@@ -2942,6 +3172,7 @@ function addEntry(entries, token, show, common, rougeGlossary, freedictGlossary,
   }
 
   entries[key] = guessEntry(speak, show, context);
+  if (priorEntry?.ipa) entries[key].ipa = priorEntry.ipa;
 }
 
 let autoWordGlossaryCache;
@@ -3182,6 +3413,27 @@ function ipaFor(text, voice) {
   const overrides = {
     a: "/a/",
     "à": "/a/",
+    "v'la": "/vla/",
+    "mam'zelle": "/mamzɛl/",
+    apothicaire: "/apɔtikɛʁ/",
+    thunes: "/tyn/",
+    pontmercy: "/pɔ̃mɛʁsi/",
+    feuilly: "/fœji/",
+    joly: "/ʒɔli/",
+    goliath: "/ɡɔlja/",
+    "f'ra": "/fʁa/",
+    "f'sait": "/fəzɛ/",
+    "j'm'ennuie": "/ʒmɑ̃nɥi/",
+    "pauv'monsieur": "/pov məsjø/",
+    "prouv'ra": "/pʁuvʁa/",
+    "qu'ce": "/k sə/",
+    "qu'chez": "/k ʃe/",
+    "qu'j'affranchisse": "/k ʒafʁɑ̃ʃis/",
+    "qu'là-haut": "/k la o/",
+    "qu'le": "/k lə/",
+    "r'voir": "/ʁəvwaʁ/",
+    "v'là": "/vla/",
+    "vot'bon": "/vɔ bɔ̃/",
   };
   if (overrides[normalized]) return overrides[normalized];
 
@@ -3189,9 +3441,16 @@ function ipaFor(text, voice) {
     encoding: "utf8",
     maxBuffer: 1024 * 1024,
   });
-  let ipa = (result.stdout || "").replace(/\s+/g, " ").trim();
+  let ipa = (result.stdout || "")
+    .replace(/[\u200b-\u200f\u2060\ufeff]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
   if (String(voice).startsWith("fr")) {
-    ipa = ipa.replace(/[ˈˌ-]/gu, "").replace(/\s+/g, " ").trim();
+    ipa = ipa
+      .replace(/\((?:en|fr|de)\)/giu, "")
+      .replace(/[ˈˌ-]/gu, "")
+      .replace(/\s+/g, " ")
+      .trim();
   }
   return ipa ? `/${ipa}/` : "";
 }
@@ -3378,6 +3637,7 @@ function renderIndex(show) {
         slug: show.slug,
         language: show.language,
         showEnglishToggle: show.showEnglishToggle !== false,
+        independentWordIpa: show.independentWordIpa === true,
         effect: show.effect,
       }, null, 8)};
     </script>
@@ -4150,6 +4410,19 @@ h2 {
 }
 
 .word-phonetic[hidden] {
+  display: none;
+}
+
+.line-ipa {
+  margin: 3px 0 0;
+  color: color-mix(in srgb, var(--highlight), white 28%);
+  font-family: var(--lyric-font);
+  font-size: 0.72em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.line-ipa[hidden] {
   display: none;
 }
 
@@ -5165,6 +5438,7 @@ function initThemedCursor() {
 
   function addTrail(x, y, dx, dy) {
     const trail = effect.trail || "stoneDust";
+    if (trail === "none") return;
     const letters = String(config.title || "Lyrics").replace(/\s+/g, "").split("");
     const base = {
       x,
@@ -5734,7 +6008,9 @@ function getReferenceCursorConfig(show) {
       emitDistance: 18,
       clickOn: "down",
       burstParticles: 3,
-      hotspot: [0.5, 0.5],
+      // The note's rotated upper tip is the actual click position.
+      hotspot: [0.27, 0.27],
+      rotation: -Math.PI / 4,
     },
     "six-the-musical": {
       motif: "neonCrown",
@@ -5774,6 +6050,32 @@ function getReferenceCursorConfig(show) {
       clickOn: "down",
       burstParticles: 3,
       hotspot: [0.5, 0.5],
+    },
+    "les-miserables-1980": {
+      motif: "revolutionFlag",
+      trail: "magicDust",
+      burst: "crispShockwave",
+      motion: "still",
+      accent: "#e6c472",
+      size: 54,
+      follow: 0.52,
+      emitDistance: 16,
+      clickOn: "down",
+      burstParticles: 4,
+      hotspot: [0.24, 0.78],
+    },
+    "les-miserables-cityprod-2017": {
+      motif: "concertFlag",
+      trail: "diamondDust",
+      burst: "softDiamondGlow",
+      motion: "still",
+      accent: "#ead9aa",
+      size: 52,
+      follow: 0.48,
+      emitDistance: 18,
+      clickOn: "down",
+      burstParticles: 3,
+      hotspot: [0.25, 0.76],
     },
   };
   return {
@@ -6306,7 +6608,7 @@ function renderReferenceCursor(show) {
       cacheCtx.fill();
       cacheCtx.stroke();
     } else if (config.motif === "castNote") {
-      cacheCtx.rotate(-0.13);
+      cacheCtx.rotate(Number.isFinite(config.rotation) ? config.rotation : -0.13);
       cacheCtx.fillStyle = "#ecf5f6";
       cacheCtx.strokeStyle = "#8fc5d4";
       cacheCtx.lineWidth = 1.3;
@@ -6387,6 +6689,69 @@ function renderReferenceCursor(show) {
       cacheCtx.quadraticCurveTo(34, 29, 28, 39);
       cacheCtx.strokeStyle = "#f1d7a2";
       cacheCtx.stroke();
+    } else if (config.motif === "revolutionFlag") {
+      cacheCtx.translate(-8, 7);
+      cacheCtx.strokeStyle = "rgba(230,196,114,0.95)";
+      cacheCtx.lineWidth = 2.2;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-18, 22);
+      cacheCtx.lineTo(-18, -28);
+      cacheCtx.stroke();
+      cacheCtx.beginPath();
+      cacheCtx.arc(-18, -30, 3.2, 0, Math.PI * 2);
+      cacheCtx.fillStyle = "#e6c472";
+      cacheCtx.fill();
+      const flag = cacheCtx.createLinearGradient(-17, -25, 22, 14);
+      flag.addColorStop(0, "#29458a");
+      flag.addColorStop(0.34, "#f4ecd7");
+      flag.addColorStop(0.67, "#c13a3d");
+      flag.addColorStop(1, "#772329");
+      cacheCtx.fillStyle = flag;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-16, -24);
+      cacheCtx.bezierCurveTo(-2, -29, 11, -19, 23, -22);
+      cacheCtx.lineTo(20, 11);
+      cacheCtx.bezierCurveTo(8, 8, -3, 0, -16, 7);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.strokeStyle = "rgba(255,243,216,0.7)";
+      cacheCtx.lineWidth = 0.75;
+      cacheCtx.stroke();
+    } else if (config.motif === "concertFlag") {
+      cacheCtx.translate(-8, 8);
+      cacheCtx.strokeStyle = "rgba(234,217,170,0.98)";
+      cacheCtx.lineWidth = 2.1;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-17, 22);
+      cacheCtx.lineTo(-17, -27);
+      cacheCtx.stroke();
+      cacheCtx.beginPath();
+      cacheCtx.arc(-17, -29, 3, 0, Math.PI * 2);
+      cacheCtx.fillStyle = "#ead9aa";
+      cacheCtx.fill();
+      const flag = cacheCtx.createLinearGradient(-15, -23, 24, 10);
+      flag.addColorStop(0, "#203f91");
+      flag.addColorStop(0.48, "#f7f2dd");
+      flag.addColorStop(1, "#b12635");
+      cacheCtx.fillStyle = flag;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-15, -23);
+      cacheCtx.bezierCurveTo(-2, -28, 12, -18, 24, -21);
+      cacheCtx.lineTo(20, 10);
+      cacheCtx.bezierCurveTo(8, 7, -3, 0, -15, 7);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.strokeStyle = "rgba(255,255,255,0.84)";
+      cacheCtx.lineWidth = 0.8;
+      cacheCtx.stroke();
+      cacheCtx.strokeStyle = "rgba(255,238,184,0.92)";
+      cacheCtx.lineWidth = 0.7;
+      [-11, -5, 1, 7, 13].forEach((x) => {
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(x, -17);
+        cacheCtx.lineTo(x - 2.5, 4);
+        cacheCtx.stroke();
+      });
     }
     cacheCtx.restore();
   }
@@ -6978,7 +7343,7 @@ test("song header uses an unframed show logo and soft switching", () => {
   assert.match(indexHtml, /class="home-button" href="\\.\\.\\/index\\.html" aria-label="返回音乐剧展示架"/);
   assert.match(indexHtml, /class="show-visual"/);
   assert.doesNotMatch(indexHtml, /show-visual-inner/);
-  assert.match(indexHtml, /class="show-visual-image" src="assets\\/show-logo\\.(?:png|svg)"/);
+  assert.match(indexHtml, /class="show-visual-image" src="assets\\/show(?:-title)?-logo\\.(?:png|svg|webp|jpg)"/);
   assert.match(styleCss, /\\.hero/);
   assert.match(styleCss, /\\.show-visual/);
   assert.match(scriptJs, /function renderCurrentSongWithTransition/);
@@ -7044,6 +7409,24 @@ test("songs and word data are populated", () => {
   assert.ok(Object.keys(sandbox.window.wordEntries).length > 0);
 });
 
+test("Dear Evan Hansen keeps slash-delimited line IPA and its upper-left note hotspot", () => {
+  if (${JSON.stringify(show.slug)} !== "dear-evan-hansen") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const lines = sandbox.window.songs.flatMap((song) => song.lines);
+  assert.ok(lines.every((line) => /^\\/[^/].*[^/]\\/$/u.test(line.ipa)));
+  assert.ok(lines.every((line) => [...line.ipa].filter((character) => character === "/").length === 2));
+  assert.match(indexHtml, /"independentWordIpa": false/);
+  assert.match(scriptJs, /showPhonetics: true/);
+  assert.doesNotMatch(scriptJs, /className = "line-ipa"/);
+  assert.equal(scriptJs.includes("if (config.independentWordIpa)"), false);
+  assert.ok(scriptJs.includes('const prefix = wordIndex === 0 ? "/" : "";'));
+  assert.ok(scriptJs.includes('const suffix = wordIndex === wordCount - 1 ? "/" : "";'));
+  assert.match(styleCss, /\.word-phonetic/);
+  assert.ok(cursorJs.includes('"hotspot":[0.27,0.27]'));
+  assert.ok(cursorJs.includes('"rotation":-0.785398'));
+});
+
 test("bracketed lyrics with aligned translations remain lyrics, not speaker labels", () => {
   if (${JSON.stringify(show.slug)} !== "mozart-opera-rock") return;
   const sandbox = { window: {} };
@@ -7102,6 +7485,19 @@ test("Romeo Aimer keeps one opening lyric, not an expanded spelling duplicate", 
     ["Aimer, c'est ce qu'y a d'plus beau", "Aimer, c'est monter si haut"],
   );
   assert.equal(aimer.lines.some((line) => line.id === "romeo-et-juliette-18-004"), false);
+});
+
+test("Notre-Dame speaker metadata never enters the lyric IPA or speech input", () => {
+  if (${JSON.stringify(show.slug)} !== "notre-dame-de-paris") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const line = sandbox.window.songs
+    .find((song) => song.sourceOrder === 49)
+    .lines.find((item) => item.lineIndex === 1);
+  assert.equal(line.speaker, "Quasimodo");
+  assert.equal(line.original, "Frollo");
+  assert.equal(line.ipa, "/fʁɔlo/");
+  assert.doesNotMatch(line.ipa, /kazimodo/u);
 });
 
 test("reviewed OCR word fragments are reassembled", () => {
@@ -7349,4 +7745,8 @@ module.exports = {
   isInstrumentalPlaceholderLine,
   parsePairedEnglishMarkdown,
   parseMarkdown,
+  extractSpeaker,
+  extractTranslationSpeaker,
+  findStructuralLyricCandidates,
+  assertLyricsReadyForGeneration,
 };

@@ -199,6 +199,7 @@ function runBuild({
   const force = process.argv.includes("--force");
   const listOnly = process.argv.includes("--list");
   const smoke = process.argv.includes("--smoke");
+  const adoptExisting = process.argv.includes("--adopt-existing");
   const idsArgument = process.argv.find((argument) => argument.startsWith("--ids="));
   const requestedIds = new Set(
     String(idsArgument?.slice("--ids=".length) || process.env.MUSICAL_AUDIO_IDS || "")
@@ -231,6 +232,27 @@ function runBuild({
     console.log(`line_jobs=${lineJobs.length}`);
     console.log(`word_jobs=${wordJobs.length}`);
     console.log(`selected_jobs=${targetedJobs.length}`);
+    return;
+  }
+
+  if (adoptExisting) {
+    let adopted = 0;
+    let alreadyTracked = 0;
+    let missing = 0;
+    targetedJobs.forEach((job) => {
+      if (!isValidDelivery(job.delivery)) {
+        missing += 1;
+        return;
+      }
+      if (manifest.jobs[job.manifestKey] === job.speechVersion) {
+        alreadyTracked += 1;
+        return;
+      }
+      manifest.jobs[job.manifestKey] = job.speechVersion;
+      adopted += 1;
+    });
+    writeAudioManifest(manifest);
+    console.log(`Audio manifest adoption complete. adopted=${adopted}, tracked=${alreadyTracked}, missing=${missing}`);
     return;
   }
 

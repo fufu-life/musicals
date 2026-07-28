@@ -16,6 +16,7 @@
     "notre-dame-de-paris": "B", "mozart-opera-rock": "Y", "romeo-et-juliette": "L",
     "le-roi-soleil": "T", "1789-les-amants-de-la-bastille": "#", "don-juan": "T",
     "moliere-le-spectacle-musical": "M", "cyrano-de-bergerac": "D",
+    "les-miserables-1980": "B", "les-miserables-cityprod-2017": "B",
   };
   const pinyinCollator = new Intl.Collator("zh-Hans-CN-u-co-pinyin", { sensitivity: "base" });
 
@@ -165,6 +166,12 @@
     backToTop.classList.toggle("is-visible", window.scrollY > 420);
   }
 
+  function setLibraryCursorMode(active) {
+    document.body.classList.toggle("library-cursor-active", active);
+    const cursor = document.querySelector(".spotlight-mouse");
+    if (cursor) cursor.style.opacity = active ? "" : "0";
+  }
+
   function renderLibrary() {
     const availableShows = window.location.protocol === "file:"
       ? window.libraryShows
@@ -186,7 +193,11 @@
   renderLibrary();
   window.addEventListener("scroll", updateActiveNavigation, { passive: true });
   backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
-  copyrightNoticeButton.addEventListener("click", () => copyrightNotice.showModal());
+  copyrightNoticeButton.addEventListener("click", () => {
+    copyrightNotice.showModal();
+    setLibraryCursorMode(false);
+  });
+  copyrightNotice.addEventListener("close", () => setLibraryCursorMode(true));
   copyrightNotice.addEventListener("click", (event) => {
     if (event.target === copyrightNotice) copyrightNotice.close();
   });

@@ -33,7 +33,7 @@ function listAudioFiles(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const target = path.join(directory, entry.name);
     if (entry.isDirectory()) return listAudioFiles(target);
-    return entry.isFile() ? [target] : [];
+    return entry.isFile() && entry.name !== ".DS_Store" && entry.name !== "audio-manifest.json" ? [target] : [];
   });
 }
 
@@ -68,7 +68,7 @@ function readDisplayedLyricText(show) {
 }
 
 test("all show pages load the shared audio guard and expose a playlist button", () => {
-  assert.equal(libraryShows.length, 25);
+  assert.equal(libraryShows.length, 27);
   libraryShows.forEach((show) => {
     const { index, script, style } = readShowFiles(show);
     assert.match(index, /\.\.\/shared\/audio-playback\.js/, `${show.id}: shared audio controller`);
@@ -119,7 +119,7 @@ test("all show deployment trees contain only compact MP3 audio", () => {
     files.forEach((file) => assert.equal(path.extname(file).toLowerCase(), ".mp3", `${show.id}: ${file}`));
     total += files.length;
   });
-  assert.equal(total, 53751);
+  assert.equal(total, 68498);
 });
 
 test("future audio builds write external WAV masters and deploy MP3 automatically", () => {
@@ -163,7 +163,8 @@ test("dazhuangwang excludes lines without local audio from whole-song playback",
   assert.equal(line.noAudio, true);
   assert.equal(line.jyutping, "");
   assert.equal(line.audio, "");
-  assert.match(script, /items: song\.lines\.filter\(\(line\) => line\.audio && !line\.noAudio\)/);
+  assert.match(script, /const playableLines = song\.lines\.filter\(\(line\) => line\.audio && !line\.noAudio\)/);
+  assert.match(script, /items: playableLines/);
   const song12 = sandbox.window.dazhuangwangSongs.find((song) => song.order === 12);
   const sanskritLines = song12.lines.filter((item) => item.noJyutping);
   assert.equal(sanskritLines.length, 13);
@@ -230,12 +231,23 @@ test("all song changes reset the new page to the top", () => {
   });
 });
 
-test("all playlist buttons stay directly in the inline song-title flow", () => {
+test("all playlist buttons stay adjacent to their song title", () => {
   libraryShows.forEach((show) => {
-    const { style } = readShowFiles(show);
-    assert.match(style, /\.song-title-row\s*\{[\s\S]*?display:\s*block;/, `${show.id}: title row uses normal text flow`);
-    assert.match(style, /\.song-title-row h[12]\s*\{[\s\S]*?display:\s*inline;/, `${show.id}: title is inline`);
-    assert.match(style, /\.song-play-button\s*\{[\s\S]*?margin-inline-start:\s*0\.32em;/, `${show.id}: button follows the final title character`);
+    const { style, index } = readShowFiles(show);
+    if (show.id === "dazhuangwang") {
+      assert.match(style, /\.song-title-row\s*\{[\s\S]*?display:\s*flex;/, `${show.id}: title row uses its paired heading layout`);
+      assert.match(style, /\.song-title-heading\s*\{[\s\S]*?display:\s*inline-flex;/, `${show.id}: title heading stays inline`);
+      assert.match(style, /\.song-play-button\s*\{[\s\S]*?margin-inline-start:\s*0;/, `${show.id}: button remains adjacent to heading tools`);
+      return;
+    }
+    const inlineTitleFlow = /\.song-title-row\s*\{[\s\S]*?display:\s*block;/.test(style)
+      && /\.song-title-row h[12]\s*\{[\s\S]*?display:\s*inline;/.test(style)
+      && /\.song-play-button\s*\{[\s\S]*?margin-inline-start:\s*0\.32em;/.test(style);
+    const titleToolbar = /\.toolbar-playback-tools\s*\{[\s\S]*?display:\s*inline-flex;/.test(style)
+      && /class="toolbar-playback-tools"[^>]*>[\s\S]*?id="songPlayButton"/.test(index);
+    const titleToolGroup = /\.song-title-row\s*\{[\s\S]*?display:\s*flex;/.test(style)
+      && /class="song-title-row"[^>]*>[\s\S]*?class="song-playback-tools"[^>]*>[\s\S]*?id="songPlayButton"/.test(index);
+    assert.ok(inlineTitleFlow || titleToolbar || titleToolGroup, `${show.id}: title-adjacent playback flow`);
   });
 });
 

@@ -258,6 +258,17 @@
         backdrop-filter: blur(3px);
       }
 
+      body:has(.copyright-dialog[open]),
+      body:has(.copyright-dialog[open]) a,
+      body:has(.copyright-dialog[open]) button {
+        cursor: auto !important;
+      }
+
+      body:has(.copyright-dialog[open]) .spotlight-mouse,
+      body:has(.copyright-dialog[open]) .spotlight-spark {
+        opacity: 0 !important;
+      }
+
       .copyright-dialog-inner {
         max-height: inherit;
         overflow: auto;
@@ -951,6 +962,6 @@
     <script>writeCriticalScript("shared/analytics.js");</script>
     <script>writeCriticalScript("shows.js");</script>
     <script>writeCriticalScript("library.js");</script>
-    <script src="library-cursor.js?v=20260723-spotlight-2"></script>
+    <script src="library-cursor.js?v=20260728-spotlight-3"></script>
   </body>
 </html>

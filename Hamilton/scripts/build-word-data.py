@@ -193,6 +193,16 @@ def load_overrides() -> dict[str, dict[str, str]]:
     }
 
 
+def load_prior_entries() -> dict[str, dict[str, str]]:
+    if not OUTPUT_JS.exists():
+        return {}
+    prefix = "window.hamiltonWordEntries = "
+    text = OUTPUT_JS.read_text(encoding="utf-8").strip()
+    if not text.startswith(prefix):
+        raise ValueError(f"{OUTPUT_JS} does not look like generated Hamilton word data")
+    return json.loads(text[len(prefix) :].strip().removesuffix(";"))
+
+
 def load_dictionary(path: Path) -> dict[str, dict[str, str]]:
     if not path.exists():
         raise FileNotFoundError(
@@ -354,6 +364,7 @@ def main() -> None:
     dictionary = load_dictionary(dictionary_path)
     rows = extract_rows()
     overrides = load_overrides()
+    prior_entries = load_prior_entries()
     dropped_g_keys = {
         normalize_token(match.group(1))
         for row in rows
@@ -369,6 +380,10 @@ def main() -> None:
 
     word_entries = {}
     for key, token in sorted(original_tokens.items()):
+        prior = prior_entries.get(key)
+        if prior and all(str(prior.get(field, "")).strip() for field in ("ipa", "meaning", "speak")):
+            word_entries[key] = prior
+            continue
         entry = lookup_meaning(
             key,
             token,

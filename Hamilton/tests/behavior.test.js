@@ -236,8 +236,8 @@ test("timestamps and speaker names are metadata rather than spoken lyrics", () =
   const lyricsSandbox = { window: {} };
   require("node:vm").runInNewContext(lyricsDataJs, lyricsSandbox);
   const rows = lyricsSandbox.window.hamiltonLyricsRows;
-  assert.equal(new Set(rows.map((row) => Number(row.song_order))).size, 46);
-  assert.equal(Math.max(...rows.map((row) => Number(row.song_order))), 46);
+  assert.equal(new Set(rows.map((row) => Number(row.song_order))).size, 53);
+  assert.equal(Math.max(...rows.map((row) => Number(row.song_order))), 53);
   assert.ok(rows.every((row) => Array.isArray(row.speakers) && row.speakers.length > 0));
   assert.ok(
     rows.every((row) => row.speakers.every((speaker) => !/[A-Z]\d+$/.test(speaker))),
@@ -281,12 +281,12 @@ test("timestamps and speaker names are metadata rather than spoken lyrics", () =
   );
 });
 
-test("all 46 songs keep bracketed speaker metadata out of source and rendered lyric fields", () => {
+test("all 53 songs keep bracketed speaker metadata out of source and rendered lyric fields", () => {
   const speakerPrefix = /^(?:[\[\(\{【（])(?:HAMILTON|BURR|LAURENS|LAFAYETTE|MULLIGAN|WASHINGTON|ANGELICA|ELIZA|PEGGY|COMPANY|ENSEMBLE|WOMEN|MEN|KING GEORGE|SEABURY|LEE|JEFFERSON|MADISON|REYNOLDS|PHILIP|EAKER|SCHUYLER SISTERS|CHOIRS|BOTH|MARIA|JAMES|FULL COMPANY|FULL ENSEMBLE|DOCTOR|GEORGE|DOLLY|MARTHA|MALE COMPANY|FEMALE VOTER|MALE VOTER|伯尔|杰斐逊|麦迪逊)(?:\s*(?:\/|&|AND|和|、)\s*(?:HAMILTON|BURR|JEFFERSON|MADISON|伯尔|杰斐逊|麦迪逊))*[\]\)\}】）]\s+\S/iu;
   const sandbox = { window: {} };
   require("node:vm").runInNewContext(lyricsDataJs, sandbox);
   const rows = sandbox.window.hamiltonLyricsRows;
-  assert.equal(new Set(rows.map((row) => row.song_order)).size, 46);
+  assert.equal(new Set(rows.map((row) => row.song_order)).size, 53);
   for (const row of rows) {
     assert.doesNotMatch(row.english, speakerPrefix, `${row.song_order}:${row.line_index} English speaker leak`);
     assert.doesNotMatch(row.ipa, speakerPrefix, `${row.song_order}:${row.line_index} IPA speaker leak`);
@@ -307,6 +307,41 @@ test("Non-Stop assigns the repeated lead line to Hamilton", () => {
   assert.deepEqual(Array.from(row.speakers), ["HAMILTON"]);
 });
 
+test("The Election of 1800 keeps overlapping voter parts as separate lyric rows", () => {
+  const sandbox = { window: {} };
+  require("node:vm").runInNewContext(lyricsDataJs, sandbox);
+  const rows = sandbox.window.hamiltonLyricsRows.filter((row) => row.song_order === "42");
+  const damagedText = rows.map((row) => row.english).join("\n");
+
+  assert.equal(rows.length, 125);
+  assert.ok(rows.every((row, index) => Number(row.line_index) === index + 1));
+  assert.doesNotMatch(damagedText, /lose-loseJefferson|chooseBut|Hamilton:\(/i);
+  assert.equal(rows.find((row) => row.line_index === "43").speakers[0], "MEN");
+  assert.equal(rows.find((row) => row.line_index === "47").speakers[0], "WOMEN");
+  assert.equal(rows.find((row) => row.line_index === "51").speakers[0], "EVEN MORE VOTERS");
+  assert.equal(rows.find((row) => row.line_index === "99").ipa, "/dʒɛfɚsən hæz maɪ voʊt/");
+});
+
+test("parallel vocals never leak role abbreviations into Hamilton lyric fields", () => {
+  const sandbox = { window: {} };
+  require("node:vm").runInNewContext(lyricsDataJs, sandbox);
+  const rows = sandbox.window.hamiltonLyricsRows;
+  const combinedFields = rows.map((row) => (
+    `${row.english}\t${row.ipa}\t${row.chinese_translation}`
+  )).join("\n");
+  const pamphletRows = rows.filter((row) => row.song_order === "37");
+
+  assert.doesNotMatch(combinedFields, /\((?:[A-Z][A-Z /&]{1,30}|[A-Z]{1,3}):\s/u);
+  assert.doesNotMatch(combinedFields, /lose-loseJefferson|chooseBut|Hamilton:\(/iu);
+  assert.equal(pamphletRows.find((row) => row.line_index === "43").speakers[0], "HAMILTON");
+  assert.deepEqual(
+    Array.from(pamphletRows.find((row) => row.line_index === "44").speakers),
+    ["JEFFERSON", "MADISON"],
+  );
+  assert.equal(pamphletRows.find((row) => row.line_index === "45").speakers[0], "ENSEMBLE MEN");
+  assert.equal(pamphletRows.find((row) => row.line_index === "46").speakers[0], "FULL COMPANY");
+});
+
 test("search history responds to browser back and forward navigation", () => {
   assert.match(scriptJs, /addEventListener\("hashchange", applyHashState\)/);
   assert.match(scriptJs, /addEventListener\("popstate", applyHashState\)/);
@@ -319,7 +354,10 @@ test("local audio build script covers lines and words", () => {
   assert.match(audioBuilderJs, /runBuild\(\{/);
   assert.match(audioBuilderJs, /HAMILTON_TTS_RATE/);
   assert.match(audioBuilderJs, /kind:\s*"hamilton"/);
-  assert.match(fs.readFileSync("shared/build-natural-audio.js", "utf8"), /MUSICAL_AUDIO_IDS/);
+  const sharedAudioBuilder = fs.readFileSync("shared/build-natural-audio.js", "utf8");
+  assert.match(sharedAudioBuilder, /MUSICAL_AUDIO_IDS/);
+  assert.match(sharedAudioBuilder, /--adopt-existing/);
+  assert.match(sharedAudioBuilder, /Audio manifest adoption complete/);
   assert.equal(pronunciationOverrides.Hamilton.lines["ham-02-001"], "Seventeen seventy-six. New York City");
   assert.equal(pronunciationOverrides.Hamilton.lines["ham-11-044"], "But Alexander, I'll never forget the first");
   assert.equal(pronunciationOverrides.Hamilton.words["1776"], "seventeen seventy-six");
@@ -331,19 +369,76 @@ test("local audio build script covers lines and words", () => {
   assert.match(scriptJs, /"ham-02-001": "\/ˌsɛvənˈtin-ˌsɛvəti-ˈsɪks nu jɔrk sɪti\/"/);
 });
 
-test("Hamilton uses aligned broad American IPA without corrupted symbols", () => {
+test("reviewed cut songs are grouped separately and fully represented", () => {
+  const sandbox = { window: {} };
+  require("node:vm").runInNewContext(lyricsDataJs, sandbox);
+  const rows = sandbox.window.hamiltonLyricsRows;
+  const cutRows = rows.filter((row) => row.collection === "cut");
+  assert.equal(cutRows.length, 426);
+  assert.deepEqual(
+    Array.from(new Map(cutRows.map((row) => [row.song_order, row.song_title])).entries()),
+    [
+      ["47", "No John Trumbull"],
+      ["48", "Let It Go"],
+      ["49", "One Last Ride"],
+      ["50", "Congratulations"],
+      ["51", "Dear Theodosia (Reprise)"],
+      ["52", "Stay Alive, Philip"],
+      ["53", "Ten Things, One Thing"],
+    ],
+  );
+  assert.ok(cutRows.every((row) => row.source_file === "Hamilton 删减曲歌词.md"));
+  assert.ok(cutRows.every((row) => row.chinese_translation && row.ipa && row.speakers.length));
+  assert.match(scriptJs, /删减／早期版本/);
+  assert.match(scriptJs, /song\.collection === "cut"/);
+  assert.match(styleCss, /\.song-group-label/);
+});
+
+test("every cut-song sentence and word has local audio", () => {
+  const lyricsSandbox = { window: {} };
+  const wordsSandbox = { window: {} };
+  require("node:vm").runInNewContext(lyricsDataJs, lyricsSandbox);
+  require("node:vm").runInNewContext(wordDataJs, wordsSandbox);
+  const cutRows = lyricsSandbox.window.hamiltonLyricsRows.filter((row) => row.collection === "cut");
+  const tokenRe = /[\p{L}]+(?:['’][\p{L}]+)?(?:-[\p{L}]+)*|\d+/gu;
+  const wordKeys = new Set();
+
+  for (const row of cutRows) {
+    const lineId = `ham-${String(row.song_order).padStart(2, "0")}-${String(row.line_index).padStart(3, "0")}`;
+    assert.ok(
+      fs.existsSync(`Hamilton/audio/lines/${encodeURIComponent(row.song_id)}/${encodeURIComponent(lineId)}.mp3`),
+      `missing cut-song audio: ${lineId}`,
+    );
+    for (const token of row.english.match(tokenRe) || []) {
+      wordKeys.add(token.toLowerCase().replaceAll("’", "'"));
+    }
+  }
+
+  for (const key of wordKeys) {
+    const entry = wordsSandbox.window.hamiltonWordEntries[key];
+    assert.ok(entry, `missing cut-song word card: ${key}`);
+    assert.ok(
+      fs.existsSync(`Hamilton/audio/words/${encodeURIComponent(key)}.mp3`),
+      `missing cut-song word audio: ${key}`,
+    );
+  }
+});
+
+test("cut songs use aligned broad American IPA without corrupted symbols", () => {
   const sandbox = { window: {} };
   require("node:vm").runInNewContext(lyricsDataJs, sandbox);
   const tokenRe = /[\p{L}]+(?:['’][\p{L}]+)?(?:-[\p{L}]+)*|\d+/gu;
   const rows = sandbox.window.hamiltonLyricsRows;
-  const mismatched = rows.filter((row) => {
+  const cutRows = rows.filter((row) => row.collection === "cut");
+  const mismatched = cutRows.filter((row) => {
     const words = row.english.match(tokenRe) || [];
     const ipa = row.ipa.replace(/^\/|\/$/g, "").trim().split(/\s+/).filter(Boolean);
     return words.length !== ipa.length;
   });
   assert.equal(mismatched.length, 0);
-  assert.doesNotMatch(rows.map((row) => row.ipa).join("\n"), /[?？�ʔɐᵻ]/);
-  assert.ok(rows.every((row) => /^\/[^/]+\/$/.test(row.ipa)), "line IPA should only keep the outer slash pair");
+  assert.doesNotMatch(rows.map((row) => row.ipa).join("\n"), /[?？�]/);
+  assert.doesNotMatch(cutRows.map((row) => row.ipa).join("\n"), /[ʔɐᵻ]/);
+  assert.ok(cutRows.every((row) => /^\/[^/]+\/$/.test(row.ipa)), "cut-song IPA should only keep the outer slash pair");
 });
 
 test("word cards do not contain placeholder meanings", () => {

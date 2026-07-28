@@ -3,13 +3,29 @@
 
   const cursor = document.querySelector(".spotlight-mouse");
   if (!cursor) return;
+  const copyrightNotice = document.querySelector("#copyrightNotice");
   let initialized = false;
   let lastSparkAt = 0;
   let activeSparks = 0;
 
-  document.body.classList.add("library-cursor-active");
+  function syncCursorWithDialog() {
+    const dialogOpen = Boolean(copyrightNotice?.open);
+    document.body.classList.toggle("library-cursor-active", !dialogOpen);
+    cursor.style.opacity = dialogOpen || !initialized ? "0" : "1";
+  }
+
+  syncCursorWithDialog();
+
+  if (copyrightNotice) {
+    new MutationObserver(syncCursorWithDialog).observe(copyrightNotice, {
+      attributes: true,
+      attributeFilter: ["open"],
+    });
+    copyrightNotice.addEventListener("close", syncCursorWithDialog);
+  }
 
   document.addEventListener("mousemove", (event) => {
+    if (copyrightNotice?.open) return;
     if (!initialized) {
       cursor.style.opacity = "1";
       initialized = true;
