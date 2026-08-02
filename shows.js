@@ -113,6 +113,7 @@ const libraryShows = [
   },
 {
     id: "phantom-of-the-opera",
+    deployed: true,
     language: "en",
     cardClass: "phantom",
     href: "phantom-of-the-opera/index.html",
@@ -123,6 +124,7 @@ const libraryShows = [
   },
 {
     id: "love-never-dies",
+    deployed: true,
     language: "en",
     cardClass: "love-never-dies",
     href: "love-never-dies/index.html",
