@@ -397,6 +397,74 @@ window.referenceCursorActive = true;
       cacheCtx.beginPath();
       cacheCtx.arc(0, 0, 1.8, 0, Math.PI * 2);
       cacheCtx.fill();
+    } else if (config.motif === "passionCrossHalo") {
+      cacheCtx.translate(0, 1);
+      const bronze = cacheCtx.createLinearGradient(-24, -28, 24, 28);
+      bronze.addColorStop(0, "#fff1a8");
+      bronze.addColorStop(0.42, "#d8a33d");
+      bronze.addColorStop(0.72, "#8b351f");
+      bronze.addColorStop(1, "#f1ce72");
+      cacheCtx.strokeStyle = bronze;
+      cacheCtx.lineWidth = 3;
+      cacheCtx.shadowColor = "rgba(218,168,72,0.65)";
+      cacheCtx.shadowBlur = 6;
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 3, 24, -Math.PI * 0.84, Math.PI * 0.06);
+      cacheCtx.arc(0, 3, 24, Math.PI * 0.16, Math.PI * 1.06);
+      cacheCtx.stroke();
+      cacheCtx.lineWidth = 4.2;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, -31);
+      cacheCtx.lineTo(0, 31);
+      cacheCtx.moveTo(-14, -13);
+      cacheCtx.lineTo(14, -13);
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.strokeStyle = "#fff0aa";
+      cacheCtx.lineWidth = 0.9;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-1, -29);
+      cacheCtx.lineTo(-1, 28);
+      cacheCtx.moveTo(-12, -14);
+      cacheCtx.lineTo(12, -14);
+      cacheCtx.stroke();
+    } else if (config.motif === "littlePrinceScarf") {
+      cacheCtx.translate(0, 3);
+      cacheCtx.strokeStyle = "#f4d976";
+      cacheCtx.fillStyle = "#f4d976";
+      cacheCtx.shadowColor = "rgba(240,215,131,0.55)";
+      cacheCtx.shadowBlur = 5;
+      cacheCtx.beginPath();
+      cacheCtx.arc(-5, -22, 6, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-10, -15);
+      cacheCtx.quadraticCurveTo(-16, 2, -12, 22);
+      cacheCtx.lineTo(4, 22);
+      cacheCtx.quadraticCurveTo(8, 2, 0, -15);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.fillStyle = "#df6b3f";
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-8, -13);
+      cacheCtx.bezierCurveTo(5, -10, 18, -7, 30, -14);
+      cacheCtx.bezierCurveTo(19, -1, 8, 1, -7, -7);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.strokeStyle = "#f6e49c";
+      cacheCtx.lineWidth = 2.1;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-10, 22);
+      cacheCtx.lineTo(-18, 33);
+      cacheCtx.moveTo(3, 22);
+      cacheCtx.lineTo(9, 34);
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#9ecbe8";
+      [[23,-28,2.2],[-25,-17,1.6],[24,19,1.4]].forEach((star) => {
+        cacheCtx.beginPath();
+        cacheCtx.arc(star[0], star[1], star[2], 0, Math.PI * 2);
+        cacheCtx.fill();
+      });
     } else if (config.motif === "posterMoon") {
       const halo = cacheCtx.createRadialGradient(0, 0, 12, 0, 0, 29);
       halo.addColorStop(0, "rgba(239,236,255,0.16)");
@@ -732,6 +800,7 @@ window.referenceCursorActive = true;
       this.alpha = 0.92;
       this.spin = (Math.random() - 0.5) * 0.18;
       this.angle = movementAngle + (Math.random() - 0.5) * 0.55;
+      this.fade = null;
       this.color = index % 3 === 0 ? config.accent : index % 2 ? config.primary : config.secondary;
       this.variant = index % 2;
       if (config.trail === "goldSparkleRosePetal") {
@@ -750,10 +819,16 @@ window.referenceCursorActive = true;
         this.color = index % 2 ? "#e2b15d" : "#9b78d0";
       }
       if (config.trail === "crystalGlint") {
-        this.vx *= burst ? 0.62 : 0.32;
-        this.vy = burst ? this.vy * 0.62 : 0.03 + Math.random() * 0.16;
-        this.radius = burst ? 1.15 + Math.random() * 1.25 : 0.85 + Math.random() * 1.05;
-        this.alpha = burst ? 0.9 : 0.76;
+        this.vx = this.vx * (burst ? 0.62 : 0.42) + (Math.random() - 0.5) * (burst ? 0.22 : 0.42);
+        this.vy = this.vy * (burst ? 0.62 : 0.42) + (Math.random() - 0.5) * (burst ? 0.18 : 0.3);
+        this.radius = burst ? 1.1 + Math.random() * 1.4 : 0.65 + Math.random() * 1.45;
+        this.alpha = burst ? 0.9 : 0.52 + Math.random() * 0.3;
+        this.fade = burst ? 0.019 + Math.random() * 0.009 : 0.012 + Math.random() * 0.009;
+        this.phase = Math.random() * Math.PI * 2;
+        this.wobble = 0.08 + Math.random() * 0.18;
+        this.twinkle = 0.04 + Math.random() * 0.08;
+        this.spin = (Math.random() - 0.5) * 0.3;
+        this.variant = Math.random() > 0.42;
         this.color = index % 3 === 0 ? "#ffffff" : index % 2 ? "#bfe8f5" : "#efdca4";
       }
       if (config.trail === "moonMist") {
@@ -768,14 +843,31 @@ window.referenceCursorActive = true;
         this.vy = burst ? this.vy * 1.7 : 0.4 + Math.random() * 0.75;
         this.color = index % 3 ? "#d4af37" : "#ffffff";
       }
+      if (config.trail === "thornEmbers") {
+        this.vx *= burst ? 1.15 : 0.5;
+        this.vy = burst ? this.vy * 1.15 : -0.18 - Math.random() * 0.28;
+        this.radius = 0.75 + Math.random() * 1.15;
+        this.color = index % 3 === 0 ? "#8b351f" : index % 2 ? "#d8a33d" : "#fff0aa";
+      }
+      if (config.trail === "b612Stars") {
+        this.vx *= burst ? 0.9 : 0.35;
+        this.vy *= burst ? 0.9 : 0.35;
+        this.radius = 0.7 + Math.random() * 1.05;
+        this.color = index % 3 === 0 ? "#9ecbe8" : index % 2 ? "#f4d976" : "#ffffff";
+      }
     }
     update() {
       this.x += this.vx;
       this.y += this.vy;
       this.vx *= config.trail === "magicDust" ? 0.97 : 0.93;
       this.vy *= config.trail === "magicDust" ? 0.97 : 0.93;
+      if (config.trail === "crystalGlint") {
+        this.phase += this.wobble;
+        this.x += Math.sin(this.phase) * 0.12;
+        this.y += Math.cos(this.phase * 0.83) * 0.08;
+      }
       this.angle += this.spin;
-      this.alpha -= config.trail === "glitchPixel" ? 0.055 : config.trail === "magicDust" ? 0.018 : config.trail === "moonMist" ? 0.016 : config.trail === "crystalGlint" ? 0.024 : 0.03;
+      this.alpha -= this.fade ?? (config.trail === "glitchPixel" ? 0.055 : config.trail === "magicDust" ? 0.018 : config.trail === "moonMist" ? 0.016 : config.trail === "crystalGlint" ? 0.024 : config.trail === "b612Stars" ? 0.022 : 0.03);
     }
     draw() {
       ctx.save();
@@ -807,23 +899,63 @@ window.referenceCursorActive = true;
         ctx.arc(this.x, this.y, this.radius * (config.trail === "magicDust" ? 0.85 : 0.7), 0, Math.PI * 2);
         ctx.fill();
       } else if (config.trail === "crystalGlint") {
-        ctx.shadowBlur = 4;
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
-        drawDiamond(ctx, 0, 0, this.radius * 1.8);
-        ctx.fill();
-        ctx.globalAlpha *= 0.72;
-        ctx.lineWidth = 0.75;
+        const twinkle = 0.72 + Math.sin(this.phase) * 0.28;
+        const glowRadius = this.radius * (3.8 + twinkle * 2.2);
+        ctx.globalCompositeOperation = "screen";
+        const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, glowRadius);
+        glow.addColorStop(0, this.color);
+        glow.addColorStop(0.3, this.color);
+        glow.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.globalAlpha *= 0.2 + twinkle * 0.12;
+        ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.moveTo(-this.radius * 3.3, 0);
-        ctx.lineTo(this.radius * 3.3, 0);
-        ctx.moveTo(0, -this.radius * 2.7);
-        ctx.lineTo(0, this.radius * 2.7);
-        ctx.stroke();
+        ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha *= 0.9 + twinkle * 0.2;
+        ctx.shadowBlur = 5 + twinkle * 4;
+        drawDiamond(ctx, 0, 0, this.radius * (1.45 + twinkle * 0.42));
+        ctx.fill();
+        if (this.variant) {
+          ctx.globalAlpha *= 0.38 + twinkle * 0.2;
+          ctx.lineWidth = 0.55 + twinkle * 0.35;
+          const ray = this.radius * (2.2 + twinkle * 1.6);
+          ctx.beginPath();
+          ctx.moveTo(-ray, 0);
+          ctx.lineTo(ray, 0);
+          ctx.moveTo(0, -ray * 0.82);
+          ctx.lineTo(0, ray * 0.82);
+          ctx.stroke();
+        }
       } else if (config.trail === "moonMist") {
         ctx.shadowBlur = 2.5;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (config.trail === "thornEmbers") {
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.beginPath();
+        ctx.moveTo(-this.radius * 2.2, 0);
+        ctx.lineTo(this.radius * 2.2, 0);
+        ctx.moveTo(0, 0);
+        ctx.lineTo(this.radius * 0.9, -this.radius * 1.5);
+        ctx.stroke();
+      } else if (config.trail === "b612Stars") {
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        const outer = this.radius * 2.1;
+        const inner = this.radius * 0.8;
+        ctx.beginPath();
+        for (let point = 0; point < 10; point += 1) {
+          const angle = -Math.PI / 2 + point * Math.PI / 5;
+          const distance = point % 2 ? inner : outer;
+          const x = Math.cos(angle) * distance;
+          const y = Math.sin(angle) * distance;
+          if (point === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
         ctx.fill();
       }
       ctx.restore();
@@ -942,6 +1074,30 @@ window.referenceCursorActive = true;
         ctx.shadowColor = "#d4af37";
         ctx.shadowBlur = 8;
         ctx.stroke();
+      } else if (config.burst === "cruciformHalo") {
+        ctx.strokeStyle = "#d8a33d";
+        ctx.shadowColor = "#d8a33d";
+        ctx.shadowBlur = 7;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.72, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, -radius);
+        ctx.lineTo(0, radius);
+        ctx.moveTo(-radius * 0.55, -radius * 0.28);
+        ctx.lineTo(radius * 0.55, -radius * 0.28);
+        ctx.stroke();
+      } else if (config.burst === "planetOrbit") {
+        ctx.strokeStyle = "#9ecbe8";
+        ctx.shadowColor = "#f4d976";
+        ctx.shadowBlur = 5;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radius, radius * 0.42, -0.35, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = "#f4d976";
+        ctx.beginPath();
+        ctx.arc(Math.cos(progress * Math.PI * 2) * radius, Math.sin(progress * Math.PI * 2) * radius * 0.42, 2.4, 0, Math.PI * 2);
+        ctx.fill();
       }
       ctx.restore();
     }

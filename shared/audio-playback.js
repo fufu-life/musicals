@@ -3,8 +3,156 @@
   const SEQUENCE_GAP_MS = 500;
   const BUSY_DELAY_MS = 160;
   const AUDIO_CACHE_LIMIT = 96;
+  const SPEECH_VOICE_WAIT_MS = 800;
   const audioCache = new Map();
   const preloadRequests = new WeakSet();
+  const guardedSyntheses = new WeakSet();
+  const SPEECH_LANGUAGE_TAGS = Object.freeze({
+    de: "de-DE",
+    en: "en-US",
+    es: "es-ES",
+    fr: "fr-FR",
+    it: "it-IT",
+    ja: "ja-JP",
+    ko: "ko-KR",
+    pt: "pt-BR",
+    yue: "zh-HK",
+    zh: "zh-CN",
+  });
+  const PREFERRED_SPEECH_VOICES = Object.freeze({
+    de: ["Anna", "Petra", "Katja", "Marlene", "Vicki"],
+    en: ["Samantha", "Ava", "Allison", "Kathy", "Karen", "Moira", "Tessa", "Microsoft Jenny", "Microsoft Aria"],
+    es: ["Mónica", "Monica", "Paulina", "Luciana"],
+    fr: ["Audrey", "Amélie", "Amelie", "Marie", "Denise", "Hortense", "Julie", "Céline", "Lea", "Léa"],
+    it: ["Alice", "Federica", "Elsa"],
+    ja: ["Kyoko", "O-Ren", "Hina"],
+    ko: ["Yuna", "Sora", "SunHi", "Heami"],
+    pt: ["Luciana", "Joana", "Fernanda"],
+    yue: ["Sinji", "Sin-Ji", "善怡"],
+    zh: ["Tingting", "Ting-Ting", "Meijia", "Mei-Jia", "婷婷", "美佳"],
+  });
+  const FEMALE_VOICE_HINT = /female|woman|girl|samantha|audrey|anna|yuna|sinji|tingting|meijia/i;
+  const REJECTED_VOICE_HINT = /albert|alex|daniel|fred|ralph|thomas|nicolas|markus|hans|aaron|arthur|jorge|diego|paul|david|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|junior|organ|superstar|trinoids|whisper|wobble|zarvox/i;
+
+  function getSpeechLanguage(language) {
+    const value = String(language || "en").trim().replace(/_/gu, "-");
+    const lower = value.toLocaleLowerCase("en-US");
+    if (lower === "yue" || lower.startsWith("yue-") || lower === "zh-hk") return "zh-HK";
+    if (lower.includes("-")) {
+      const [base, region] = lower.split("-");
+      return region ? `${base}-${region.toLocaleUpperCase("en-US")}` : value;
+    }
+    return SPEECH_LANGUAGE_TAGS[lower] || value || "en-US";
+  }
+
+  function getVoiceProfile(language) {
+    const tag = getSpeechLanguage(language).toLocaleLowerCase("en-US");
+    if (tag === "zh-hk") return "yue";
+    return tag.split("-")[0];
+  }
+
+  function selectPreferredVoice(voices, language) {
+    const targetLanguage = getSpeechLanguage(language);
+    const targetLower = targetLanguage.toLocaleLowerCase("en-US");
+    const targetBase = targetLower.split("-")[0];
+    const candidates = Array.from(voices || []).filter((voice) => (
+      String(voice?.lang || "").replace(/_/gu, "-").toLocaleLowerCase("en-US").split("-")[0] === targetBase
+    ));
+    const ordered = [
+      ...candidates.filter((voice) => String(voice.lang).replace(/_/gu, "-").toLocaleLowerCase("en-US") === targetLower),
+      ...candidates.filter((voice) => String(voice.lang).replace(/_/gu, "-").toLocaleLowerCase("en-US") !== targetLower),
+    ];
+    const preferredNames = PREFERRED_SPEECH_VOICES[getVoiceProfile(targetLanguage)] || [];
+    for (const preferredName of preferredNames) {
+      const match = ordered.find((voice) => String(voice.name || "").toLocaleLowerCase("en-US").includes(
+        preferredName.toLocaleLowerCase("en-US"),
+      ));
+      if (match) return match;
+    }
+    return (
+      ordered.find((voice) => FEMALE_VOICE_HINT.test(String(voice.name || ""))) ||
+      ordered.find((voice) => voice.localService && !REJECTED_VOICE_HINT.test(String(voice.name || ""))) ||
+      ordered.find((voice) => !REJECTED_VOICE_HINT.test(String(voice.name || ""))) ||
+      null
+    );
+  }
+
+  function installPreferredSpeechVoice(synthesis, options = {}) {
+    if (
+      !synthesis ||
+      typeof synthesis.speak !== "function" ||
+      typeof synthesis.getVoices !== "function" ||
+      guardedSyntheses.has(synthesis)
+    ) {
+      return false;
+    }
+
+    const waitMs = options.waitMs ?? SPEECH_VOICE_WAIT_MS;
+    const schedule = options.schedule || ((callback, ms) => globalScope.setTimeout(callback, ms));
+    const cancelSchedule = options.cancelSchedule || ((timer) => globalScope.clearTimeout(timer));
+    const nativeSpeak = synthesis.speak.bind(synthesis);
+    const nativeCancel = typeof synthesis.cancel === "function" ? synthesis.cancel.bind(synthesis) : null;
+    const pending = new Set();
+
+    function availableVoices() {
+      try {
+        return synthesis.getVoices() || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function applyVoice(utterance) {
+      const language = getSpeechLanguage(utterance?.lang);
+      const voice = selectPreferredVoice(availableVoices(), language);
+      if (utterance) utterance.lang = language;
+      if (utterance && voice) {
+        utterance.voice = voice;
+        utterance.lang = voice.lang || language;
+      }
+      return voice;
+    }
+
+    function clearPending(item) {
+      if (!pending.has(item)) return;
+      pending.delete(item);
+      if (item.timer !== null) cancelSchedule(item.timer);
+      synthesis.removeEventListener?.("voiceschanged", item.onVoicesChanged);
+    }
+
+    synthesis.speak = (utterance) => {
+      const voice = applyVoice(utterance);
+      const voicesLoaded = availableVoices().length > 0;
+      if (voice || voicesLoaded || waitMs <= 0) {
+        nativeSpeak(utterance);
+        return;
+      }
+
+      const item = { timer: null, onVoicesChanged: null };
+      const finish = () => {
+        clearPending(item);
+        applyVoice(utterance);
+        nativeSpeak(utterance);
+      };
+      item.onVoicesChanged = () => {
+        if (availableVoices().length) finish();
+      };
+      pending.add(item);
+      synthesis.addEventListener?.("voiceschanged", item.onVoicesChanged);
+      item.timer = schedule(finish, waitMs);
+    };
+
+    if (nativeCancel) {
+      synthesis.cancel = () => {
+        [...pending].forEach(clearPending);
+        return nativeCancel();
+      };
+    }
+
+    guardedSyntheses.add(synthesis);
+    availableVoices();
+    return true;
+  }
 
   function trimAudioCache() {
     for (const [key, audio] of audioCache) {
@@ -239,11 +387,16 @@
     SEQUENCE_GAP_MS,
     BUSY_DELAY_MS,
     AUDIO_CACHE_LIMIT,
+    SPEECH_VOICE_WAIT_MS,
     createController,
     getCachedAudio,
     preloadLocalAudio,
     clearAudioCache,
+    getSpeechLanguage,
+    selectPreferredVoice,
+    installPreferredSpeechVoice,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   globalScope.MusicalAudio = api;
+  if (globalScope.speechSynthesis) installPreferredSpeechVoice(globalScope.speechSynthesis);
 })(typeof window !== "undefined" ? window : globalThis);

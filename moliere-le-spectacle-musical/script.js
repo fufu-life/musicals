@@ -661,7 +661,7 @@ function playSpeech(text, waitForEnd, { rateControlled = false, analyticsSession
   }
   stopCurrentPlayback();
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = config.language === "en" ? "en-US" : config.language === "de" ? "de-DE" : "fr-FR";
+  utterance.lang = window.MusicalAudio.getSpeechLanguage(config.language);
   utterance.rate = rateControlled ? pageTools.getRate() : 1;
   utterance.onstart = () => {
     if (analyticsSession) analytics.audioStart(analyticsSession);

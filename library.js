@@ -17,6 +17,7 @@
     "le-roi-soleil": "T", "1789-les-amants-de-la-bastille": "#", "don-juan": "T",
     "moliere-le-spectacle-musical": "M", "cyrano-de-bergerac": "D",
     "les-miserables-1980": "B", "les-miserables-cityprod-2017": "B",
+    "jesus-christ-superstar-1996-london": "Y", "le-petit-prince-2cd": "X",
   };
   const pinyinCollator = new Intl.Collator("zh-Hans-CN-u-co-pinyin", { sensitivity: "base" });
 

@@ -6,7 +6,7 @@ const libraryLanguages = [
 ];
 
 const libraryShows = [
-  {
+{
     id: "dazhuangwang",
     deployed: true,
     language: "yue",
@@ -19,7 +19,7 @@ const libraryShows = [
     originalTitle: "An impossible trial",
     meta: ["粤语", "粤拼", "注释"],
   },
-  {
+{
     id: "hamilton",
     deployed: true,
     language: "en",
@@ -30,7 +30,17 @@ const libraryShows = [
     prefetch: ["Hamilton/lyrics-initial.js"],
     meta: ["英语", "IPA", "中文对照"],
   },
-  {
+{
+    id: "jesus-christ-superstar-1996-london",
+    language: "en",
+    cardClass: "jesus-christ-superstar",
+    href: "jesus-christ-superstar-1996-london/index.html",
+    title: "耶稣基督万世巨星",
+    image: "jesus-christ-superstar-1996-london/assets/show-logo.png",
+    originalTitle: "Jesus Christ Superstar · 1996 London Cast",
+    meta: ["英语", "IPA", "中文对照"],
+  },
+{
     id: "les-miserables",
     language: "en",
     cardClass: "lesmis",
@@ -41,7 +51,7 @@ const libraryShows = [
     originalTitle: "Les Misérables",
     meta: ["英语", "IPA", "中文对照"],
   },
-  {
+{
     id: "moulin-rouge",
     language: "en",
     cardClass: "moulin",
@@ -51,7 +61,7 @@ const libraryShows = [
     originalTitle: "Moulin Rouge! The Musical",
     meta: ["英语", "IPA", "中文对照"],
   },
-  {
+{
     id: "chicago",
     language: "en",
     cardClass: "chicago",
@@ -61,7 +71,7 @@ const libraryShows = [
     originalTitle: "Chicago",
     meta: ["英语", "IPA", "中文对照"],
   },
-  {
+{
     id: "dear-evan-hansen",
     language: "en",
     cardClass: "dear-evan-hansen",
@@ -71,7 +81,7 @@ const libraryShows = [
     originalTitle: "Dear Evan Hansen",
     meta: ["英语", "IPA", "中文对照"],
   },
-  {
+{
     id: "six-the-musical",
     language: "en",
     cardClass: "six-the-musical",
@@ -81,7 +91,7 @@ const libraryShows = [
     originalTitle: "SIX",
     meta: ["英语", "IPA", "中文对照"],
   },
-  {
+{
     id: "suffs",
     language: "en",
     cardClass: "suffs",
@@ -91,7 +101,7 @@ const libraryShows = [
     originalTitle: "Suffs",
     meta: ["英语", "IPA", "中文对照"],
   },
-  {
+{
     id: "sunset-boulevard",
     language: "en",
     cardClass: "sunset-boulevard",
@@ -101,7 +111,7 @@ const libraryShows = [
     originalTitle: "Sunset Boulevard",
     meta: ["英语", "IPA", "中文对照"],
   },
-  {
+{
     id: "phantom-of-the-opera",
     language: "en",
     cardClass: "phantom",
@@ -111,7 +121,7 @@ const libraryShows = [
     originalTitle: "The Phantom of the Opera",
     meta: ["英语", "IPA", "中文对照"],
   },
-  {
+{
     id: "love-never-dies",
     language: "en",
     cardClass: "love-never-dies",
@@ -121,7 +131,7 @@ const libraryShows = [
     originalTitle: "Love Never Dies",
     meta: ["英语", "IPA", "中文对照"],
   },
-  {
+{
     id: "elisabeth-das-musical",
     language: "de",
     cardClass: "elisabeth",
@@ -131,7 +141,7 @@ const libraryShows = [
     originalTitle: "Elisabeth",
     meta: ["德语", "IPA", "中英对照"],
   },
-  {
+{
     id: "mozart-das-musical",
     language: "de",
     cardClass: "mozart-musical",
@@ -141,7 +151,7 @@ const libraryShows = [
     originalTitle: "Mozart! Das Musical",
     meta: ["德语", "IPA", "中英对照"],
   },
-  {
+{
     id: "rouge-et-noir",
     deployed: true,
     language: "fr",
@@ -154,7 +164,17 @@ const libraryShows = [
     originalTitle: "Le Rouge et le Noir",
     meta: ["法语", "IPA", "中英对照"],
   },
-  {
+{
+    id: "le-petit-prince-2cd",
+    language: "fr",
+    cardClass: "le-petit-prince",
+    href: "le-petit-prince-2cd/index.html",
+    title: "小王子",
+    image: "le-petit-prince-2cd/assets/show-logo.png",
+    originalTitle: "Le Petit Prince · 2CD访华首演纪念盘",
+    meta: ["法语", "IPA", "中英对照"],
+  },
+{
     id: "starmania",
     language: "fr",
     cardClass: "starmania",
@@ -164,7 +184,7 @@ const libraryShows = [
     originalTitle: "Starmania",
     meta: ["法语", "IPA", "中英对照"],
   },
-  {
+{
     id: "les-souliers-rouges",
     language: "fr",
     cardClass: "souliers",
@@ -174,7 +194,7 @@ const libraryShows = [
     originalTitle: "Les Souliers Rouges",
     meta: ["法语", "IPA", "中英对照"],
   },
-  {
+{
     id: "la-legende-du-roi-arthur",
     language: "fr",
     cardClass: "arthur",
@@ -184,7 +204,7 @@ const libraryShows = [
     originalTitle: "La Légende du Roi Arthur",
     meta: ["法语", "IPA", "中英对照"],
   },
-  {
+{
     id: "notre-dame-de-paris",
     language: "fr",
     cardClass: "ndp",
@@ -195,7 +215,7 @@ const libraryShows = [
     originalTitle: "Notre-Dame de Paris",
     meta: ["法语", "IPA", "中英对照"],
   },
-  {
+{
     id: "mozart-opera-rock",
     deployed: true,
     language: "fr",
@@ -208,7 +228,7 @@ const libraryShows = [
     originalTitle: "Mozart, l'opéra rock",
     meta: ["法语", "IPA", "中英对照"],
   },
-  {
+{
     id: "romeo-et-juliette",
     deployed: true,
     language: "fr",
@@ -221,7 +241,7 @@ const libraryShows = [
     originalTitle: "Roméo et Juliette",
     meta: ["法语", "IPA", "中英对照"],
   },
-  {
+{
     id: "le-roi-soleil",
     language: "fr",
     cardClass: "soleil",
@@ -232,7 +252,7 @@ const libraryShows = [
     originalTitle: "Le Roi Soleil",
     meta: ["法语", "IPA", "中英对照"],
   },
-  {
+{
     id: "1789-les-amants-de-la-bastille",
     language: "fr",
     cardClass: "bastille",
@@ -243,7 +263,7 @@ const libraryShows = [
     originalTitle: "Les Amants de la Bastille",
     meta: ["法语", "IPA", "中英对照"],
   },
-  {
+{
     id: "don-juan",
     language: "fr",
     cardClass: "donjuan",
@@ -254,7 +274,7 @@ const libraryShows = [
     originalTitle: "Don Juan",
     meta: ["法语", "IPA", "中英对照"],
   },
-  {
+{
     id: "moliere-le-spectacle-musical",
     deployed: true,
     language: "fr",
@@ -267,7 +287,7 @@ const libraryShows = [
     originalTitle: "Molière",
     meta: ["法语", "IPA", "中英对照"],
   },
-  {
+{
     id: "cyrano-de-bergerac",
     language: "fr",
     cardClass: "cyrano",
@@ -278,7 +298,7 @@ const libraryShows = [
     originalTitle: "Cyrano de Bergerac",
     meta: ["法语", "IPA", "中英对照"],
   },
-  {
+{
     id: "les-miserables-1980",
     language: "fr",
     cardClass: "lesmis-1980",
@@ -289,7 +309,7 @@ const libraryShows = [
     originalTitle: "Les Misérables",
     meta: ["法语", "IPA", "中英对照"],
   },
-  {
+{
     id: "les-miserables-cityprod-2017",
     language: "fr",
     cardClass: "lesmis-cityprod",
