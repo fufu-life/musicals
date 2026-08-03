@@ -219,6 +219,27 @@
         gap: 10px 14px;
       }
 
+      .library-update-notice {
+        flex: 1 1 420px;
+        min-width: 0;
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.5;
+        white-space: nowrap;
+      }
+
+      .library-update-notice a {
+        color: var(--gold);
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.18em;
+      }
+
+      .library-update-notice a:hover,
+      .library-update-notice a:focus-visible {
+        color: var(--ink);
+      }
+
       .copyright-notice-trigger {
         flex: 0 0 auto;
         padding: 4px 9px;
@@ -788,6 +809,11 @@
           margin-top: 18px;
         }
 
+        .library-update-notice {
+          flex-basis: 100%;
+          white-space: normal;
+        }
+
         .copyright-dialog-inner {
           padding: 20px 18px 22px;
         }
@@ -836,6 +862,7 @@
           <div class="library-title-row">
             <h1>阿浮的音乐剧歌词集</h1>
             <button class="copyright-notice-trigger" id="copyrightNoticeButton" type="button" aria-haspopup="dialog" aria-controls="copyrightNotice">版权声明</button>
+            <span class="library-update-notice">剧目更新动态可以关注<a href="https://xhslink.cn/m/5oUCF9o85fs" target="_blank" rel="noopener noreferrer">小红书</a>，进群反馈更实时噢～多多四连，阿浮更有动力上新呀！</span>
           </div>
           <p class="intro">感谢剧场让我们的轨迹短暂交叠，行走在志同道合的路上，愿我们一直望着<span class="no-break">同一个月亮。</span></p>
           <nav class="library-nav" id="languageNav" aria-label="按语种快速定位"></nav>
