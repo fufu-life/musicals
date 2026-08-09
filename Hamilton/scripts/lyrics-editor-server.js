@@ -3,6 +3,7 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
+const { writeFileAtomic } = require("../../scripts/generator-write-guard.js");
 
 const musicalsRoot = path.resolve(__dirname, "..", "..");
 const hamiltonRoot = path.resolve(__dirname, "..");
@@ -45,12 +46,12 @@ function saveLine(payload) {
     break;
   }
   if (!updated) throw new Error("未在原始 Markdown 中找到该歌词行");
-  fs.writeFileSync(sourcePath, lines.join("\n"), "utf8");
+  writeFileAtomic(sourcePath, lines.join("\n"), "Hamilton authoritative Markdown editor");
 
-  run("python3", ["Hamilton/scripts/build-lyrics-data-from-md.py"]);
+  run("python3", ["Hamilton/scripts/build-lyrics-data-from-md.py", "--write"]);
   const englishChanged = String(payload.previousEnglish || "") !== payload.english;
   if (englishChanged) {
-    run("python3", ["Hamilton/scripts/build-word-data.py"]);
+    run("python3", ["Hamilton/scripts/build-word-data.py", "--write"]);
     const id = `ham-${String(order).padStart(2, "0")}-${String(lineIndex).padStart(3, "0")}`;
     run(process.execPath, ["Hamilton/scripts/build-audio.js", "--force", `--ids=${id}`]);
   }

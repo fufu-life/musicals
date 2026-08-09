@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from difflib import SequenceMatcher
 from pathlib import Path
+
+from generator_write_guard import write_or_check
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -290,7 +293,9 @@ def align_speakers(
                 row["speakers"] = [normalize_speaker(explicit.group(1))]
                 continue
 
-            counts = {speaker: hits[row_index].count(speaker) for speaker in set(hits[row_index])}
+            counts: dict[str, int] = {}
+            for speaker in hits[row_index]:
+                counts[speaker] = counts.get(speaker, 0) + 1
             if counts:
                 row["speakers"] = [
                     speaker
@@ -495,9 +500,14 @@ def main() -> None:
     payload = "window.hamiltonLyricsRows = "
     payload += json.dumps(rows, ensure_ascii=False, separators=(",", ":"))
     payload += ";\n"
-    OUTPUT_JS.write_text(payload, encoding="utf-8")
-
-    print(f"Wrote {OUTPUT_JS} with {len(rows)} rows from {song_count} songs")
+    changed = write_or_check(
+        OUTPUT_JS,
+        payload,
+        sys.argv[1:],
+        label="Hamilton authoritative Markdown lyric build",
+    )
+    action = "Wrote" if "--write" in sys.argv[1:] and changed else "Verified"
+    print(f"{action} {OUTPUT_JS} with {len(rows)} rows from {song_count} songs")
 
 
 if __name__ == "__main__":

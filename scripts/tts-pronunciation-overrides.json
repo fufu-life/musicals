@@ -22,9 +22,24 @@
       "chicago-08-016": "Nineteen twenty"
     }
   },
+  "come-from-away": {
+    "lines": {
+      "come-from-away-03-002": "September 11th, two thousand one.",
+      "come-from-away-16-035": "Nineteen eighty-six, the first female American captain in history",
+      "come-from-away-21-005": "On September 11th, two thousand eleven",
+      "come-from-away-22-041": "It's about four metres long and one thousand two hundred kilograms"
+    }
+  },
   "six-the-musical": {
     "lines": {
       "six-the-musical-03-004": "Fifteen twenty-two, came straight to the U.K."
+    }
+  },
+  "tick-tick-boom": {
+    "lines": {
+      "tick-tick-boom-01-018": "Turn thirty nineteen ninety—bang, you're dead",
+      "tick-tick-boom-01-038": "Turn thirty nineteen ninety—",
+      "tick-tick-boom-01-060": "Fuck"
     }
   },
   "suffs": {
@@ -50,6 +65,22 @@
   "starmania": {
     "lines": {
       "starmania-03-057": "Quand viendra l'an deux mille"
+    }
+  },
+  "le-petit-prince-2cd": {
+    "lines": {
+      "le-petit-prince-2cd-02-004": "trente décembre mille neuf cent trente-cinq.",
+      "le-petit-prince-2cd-07-005": "qu'une seule fois en mille neuf cent neuf",
+      "le-petit-prince-2cd-07-013": "à son peuple en mille neuf cent vingt de"
+    }
+  },
+  "les-dix-commandements": {
+    "lines": {
+      "les-dix-commandements-13-002": "Soit pour maintenant ou pour dans mille ans",
+      "les-dix-commandements-13-021": "Ou pour dans mille ans",
+      "les-dix-commandements-13-042": "Ou pour dans mille ans",
+      "les-dix-commandements-13-059": "Ou pour dans mille ans",
+      "les-dix-commandements-13-063": "Ou pour dans mille ans"
     }
   },
   "love-never-dies": {

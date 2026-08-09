@@ -12,6 +12,26 @@ func fail(_ message: String) -> Never {
     exit(1)
 }
 
+func runProcess(_ executable: String, _ arguments: [String]) throws {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: executable)
+    process.arguments = arguments
+    try process.run()
+    process.waitUntilExit()
+    if process.terminationStatus != 0 {
+        throw NSError(domain: "BatchTTS", code: Int(process.terminationStatus), userInfo: [
+            NSLocalizedDescriptionKey: "\(executable) failed with status \(process.terminationStatus)",
+        ])
+    }
+}
+
+func synthesizeWithSay(_ text: String, voiceName: String, outputURL: URL) throws {
+    let temporaryURL = outputURL.appendingPathExtension("aiff")
+    defer { try? FileManager.default.removeItem(at: temporaryURL) }
+    try runProcess("/usr/bin/say", ["-v", voiceName, text, "-o", temporaryURL.path])
+    try runProcess("/usr/bin/afconvert", ["-f", "WAVE", "-d", "LEI16@22050", temporaryURL.path, outputURL.path])
+}
+
 guard CommandLine.arguments.count == 4 else {
     fail("Usage: batch-system-tts.swift <jobs.json> <voice-name> <rate>")
 }
@@ -35,6 +55,7 @@ guard let voice = AVSpeechSynthesisVoice.speechVoices().first(where: { $0.name =
 }
 
 let synthesizer = AVSpeechSynthesizer()
+let useSayEngine = ProcessInfo.processInfo.environment["MUSICAL_TTS_ENGINE"] == "say"
 var failed = 0
 
 for (index, job) in jobs.enumerated() {
@@ -58,7 +79,16 @@ for (index, job) in jobs.enumerated() {
     var done = false
     var writeError: Error?
 
-    synthesizer.write(utterance) { buffer in
+    if useSayEngine {
+        do {
+            try synthesizeWithSay(job.text, voiceName: voiceName, outputURL: outputURL)
+            frameCount = 1
+            done = true
+        } catch {
+            writeError = error
+        }
+    } else {
+        synthesizer.write(utterance) { buffer in
         guard let pcm = buffer as? AVAudioPCMBuffer else {
             done = true
             return
@@ -102,12 +132,26 @@ for (index, job) in jobs.enumerated() {
             writeError = error
             done = true
         }
-    }
+        }
 
-    while !done {
-        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+        let callbackDeadline = Date(timeIntervalSinceNow: 10)
+        while !done && Date() < callbackDeadline {
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+        }
+        audioFile = nil
+
+        if !done {
+            synthesizer.stopSpeaking(at: .immediate)
+            try? FileManager.default.removeItem(at: outputURL)
+            do {
+                try synthesizeWithSay(job.text, voiceName: voiceName, outputURL: outputURL)
+                frameCount = 1
+                done = true
+            } catch {
+                writeError = error
+            }
+        }
     }
-    audioFile = nil
 
     if let writeError {
         FileHandle.standardError.write(Data(("Write error for \(job.id): \(writeError)\n").utf8))

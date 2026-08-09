@@ -9,17 +9,25 @@ const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const scriptJs = fs.readFileSync(path.join(root, "script.js"), "utf8");
 const styleCss = fs.readFileSync(path.join(root, "style.css"), "utf8");
 const songsJs = fs.readFileSync(path.join(root, "songs.js"), "utf8");
+const criticalSongsJs = fs.readFileSync(path.join(root, "songs.js"), "utf8");
 const songsInitialJs = fs.readFileSync(path.join(root, "songs-initial.js"), "utf8");
 const wordDataJs = fs.readFileSync(path.join(root, "word-data.js"), "utf8");
 const audioBuilderJs = fs.readFileSync(path.join(root, "scripts", "build-audio.js"), "utf8");
 const cursorJs = fs.readFileSync(path.join(root, "..", "shared", "cursors", "romeo-et-juliette.js"), "utf8");
 const cursorMarker = "preRenderPureBlockRose";
+const cursorProfile = {"primary":"#b91932","secondary":"#3159b7"};
 
 test("page uses the shared analytics module", () => {
   assert.match(indexHtml, /writeCriticalScript\("\.\.\/shared\/analytics\.js"\)/);
   assert.match(scriptJs, /window\.MusicalAnalytics\.initShow/);
   assert.match(scriptJs, /showId:\s*config\.slug/);
   assert.doesNotMatch(indexHtml, /function gtag\(\)/);
+});
+
+test("page uses the show-specific cursor profile", () => {
+  assert.match(cursorJs, new RegExp(`"motif":"${cursorProfile.motif}"`));
+  assert.match(cursorJs, new RegExp(`"trail":"${cursorProfile.trail}"`));
+  assert.match(cursorJs, new RegExp(`"burst":"${cursorProfile.burst}"`));
 });
 
 test("lyrics do not contain OCR acute apostrophes or glued Latin punctuation", () => {
@@ -51,6 +59,7 @@ test("Chinese, IPA, and optional English toggles exist", () => {
   assert.ok(indexHtml.indexOf('data-toggle="showIpa"') < indexHtml.indexOf('id="feedbackButton"'));
   if (false) {
     assert.doesNotMatch(indexHtml, /data-toggle="showEn"/);
+    assert.doesNotMatch(indexHtml, /data-toggle="showIpa"[^>]*>音标<\/button>\n[ \t]+\n[ \t]+<button[^>]*id="feedbackButton"/);
   } else {
     assert.match(indexHtml, /data-toggle="showEn"/);
     assert.ok(indexHtml.indexOf('data-toggle="showEn"') < indexHtml.indexOf('id="feedbackButton"'));
@@ -103,7 +112,7 @@ test("first-screen lyrics do not wait for the word dictionary", () => {
   assert.match(scriptJs, /window\.addEventListener\("load", start, \{ once: true \}\)/);
   assert.match(scriptJs, /showWordLoading\(token, anchor\);\s*await ensureWordDataReady\(\)/);
   assert.match(styleCss, /content-visibility:\s*auto/);
-  assert.ok(Buffer.byteLength(songsJs) < 520_000, `critical songs.js too large: ${Buffer.byteLength(songsJs)}B`);
+  assert.ok(Buffer.byteLength(criticalSongsJs) < 520_000, `critical songs.js too large: ${Buffer.byteLength(songsJs)}B`);
 });
 
 test("song header uses an unframed show logo and soft switching", () => {
@@ -111,7 +120,7 @@ test("song header uses an unframed show logo and soft switching", () => {
   assert.match(indexHtml, /class="home-button" href="\.\.\/index\.html" aria-label="返回音乐剧展示架"/);
   assert.match(indexHtml, /class="show-visual"/);
   assert.doesNotMatch(indexHtml, /show-visual-inner/);
-  assert.match(indexHtml, /class="show-visual-image" src="assets\/show-logo\.(?:png|svg|webp|jpg)"/);
+  assert.match(indexHtml, /class="show-visual-image" src="assets\/show(?:-title)?-logo\.(?:png|svg|webp|jpg)"/);
   assert.match(styleCss, /\.hero/);
   assert.match(styleCss, /\.show-visual/);
   assert.match(scriptJs, /function renderCurrentSongWithTransition/);
@@ -177,15 +186,49 @@ test("songs and word data are populated", () => {
   assert.ok(Object.keys(sandbox.window.wordEntries).length > 0);
 });
 
+test("The Greatest Show compresses the opening vocalization and shows its repeat count", () => {
+  if ("romeo-et-juliette" !== "the-greatest-showman") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const opening = sandbox.window.songs.find((song) => song.sourceOrder === 1);
+  assert.equal(opening.lines[0].original, "Woah");
+  assert.equal(opening.lines[0].repeatCount, 9);
+  assert.equal(opening.lines[1].id, "the-greatest-showman-01-010");
+  assert.match(scriptJs, /lyric-repeat/);
+  assert.match(styleCss, /\.lyric-repeat/);
+});
+
+test("Epic keeps all 40 songs and removes non-lyric stage directions", () => {
+  if ("romeo-et-juliette" !== "epic-the-musical") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const songs = sandbox.window.songs;
+  assert.equal(songs.length, 40);
+  assert.deepEqual(Array.from(songs, (song) => song.sourceOrder), Array.from({ length: 40 }, (_value, index) => index + 1));
+  const lines = songs.flatMap((song) => song.lines);
+  assert.ok(lines.every((line) => line.original && line.zh && line.ipa));
+  assert.doesNotMatch(lines.map((line) => line.original).join("\n"), /Instrumental (?:Interlude|Break)|opens the door|picks up .*trident|drops the trident/iu);
+  assert.equal(songs[0].titleZh, "木马与婴儿");
+  assert.equal(songs.at(-1).titleZh, "你还会再次爱上我吗");
+  assert.match(cursorJs, /preRenderOdysseyTrident/);
+  assert.match(cursorJs, /config.motif === "odysseyTrident"/);
+  assert.match(cursorJs, /config.trail === "seaStarlight"/);
+  assert.match(cursorJs, /config.burst === "oceanWave"/);
+});
+
 test("Dear Evan Hansen keeps slash-delimited line IPA and its upper-left note hotspot", () => {
   if ("romeo-et-juliette" !== "dear-evan-hansen") return;
   const sandbox = { window: {} };
   vm.runInNewContext(songsJs, sandbox);
   const lines = sandbox.window.songs.flatMap((song) => song.lines);
   assert.ok(lines.every((line) => /^\/[^/].*[^/]\/$/u.test(line.ipa)));
-  assert.match(indexHtml, /"independentWordIpa": true/);
+  assert.ok(lines.every((line) => [...line.ipa].filter((character) => character === "/").length === 2));
+  assert.match(indexHtml, /"independentWordIpa": false/);
   assert.match(scriptJs, /showPhonetics: true/);
   assert.doesNotMatch(scriptJs, /className = "line-ipa"/);
+  assert.equal(scriptJs.includes("if (config.independentWordIpa)"), false);
+  assert.ok(scriptJs.includes('const prefix = wordIndex === 0 ? "/" : "";'));
+  assert.ok(scriptJs.includes('const suffix = wordIndex === wordCount - 1 ? "/" : "";'));
   assert.match(styleCss, /.word-phonetic/);
   assert.ok(cursorJs.includes('"hotspot":[0.27,0.27]'));
   assert.ok(cursorJs.includes('"rotation":-0.785398'));
@@ -232,6 +275,14 @@ test("Phantom and Love Never Dies stay in separate source ranges", () => {
     assert.equal(songs[0].title, "Prologue");
     assert.equal(songs[0].titleZh, "序幕");
     assert.ok(songs.every((song) => !/live|现场/iu.test(song.title) && !/live|现场/iu.test(song.titleZh)));
+    const allAskOfYou = songs.filter((song) => song.sourceOrder === 12 || song.sourceOrder === 13);
+    assert.equal(allAskOfYou.length, 2);
+    assert.equal(allAskOfYou[0].id, "12-all-i-ask-of-you-live");
+    assert.equal(allAskOfYou[0].title, "All I Ask Of You");
+    assert.equal(allAskOfYou[0].titleZh, "我对你唯一的请求");
+    assert.equal(allAskOfYou[1].id, "13-all-i-ask-of-you-live");
+    assert.equal(allAskOfYou[1].title, "All I Ask Of You (Reprise)");
+    assert.equal(allAskOfYou[1].titleZh, "我对你唯一的请求（重唱）");
     return;
   }
   assert.equal(songs.length, 26);

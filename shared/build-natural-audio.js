@@ -67,7 +67,10 @@ function loadPronunciationOverrides(root) {
 }
 
 function collectGeneratedJobs(root, masterRoot, lineSpeechOverrides = {}, wordSpeechOverrides = {}) {
-  const data = loadWindowData([path.join(root, "songs.js"), path.join(root, "word-data.js")]);
+  const songsFile = fs.existsSync(path.join(root, "songs-full.js"))
+    ? path.join(root, "songs-full.js")
+    : path.join(root, "songs.js");
+  const data = loadWindowData([songsFile, path.join(root, "word-data.js")]);
   const lineJobs = (data.songs || []).flatMap((song) => (song.lines || []).map((line) => {
     const text = cleanSpeechText(lineSpeechOverrides[line.id] || line.original);
     if (!text) return null;
@@ -268,7 +271,9 @@ function runBuild({
     console.log(`Audio build complete. voice=${voice}, generated=0, skipped=${selected.length}`);
     return;
   }
-  const synthesisJobs = force ? jobs : jobs.filter((job) => !isValidFile(job.output));
+  const synthesisJobs = force ? jobs : jobs.filter((job) => (
+    !isValidFile(job.output) || manifest.jobs[job.manifestKey] !== job.speechVersion
+  ));
 
   const tempRoot = path.join(root, ".audio-tmp");
   const jobsFile = path.join(tempRoot, "jobs.json");

@@ -641,6 +641,18 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.lyric-repeat {
+  display: inline-block;
+  margin-left: 0.22em;
+  color: color-mix(in srgb, var(--highlight), white 22%);
+  font-family: var(--ui-font);
+  font-size: 0.54em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  vertical-align: super;
+}
+
 .line-speaker {
   margin: 0 0 2px;
   color: var(--highlight);

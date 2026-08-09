@@ -104,6 +104,43 @@ test("the eight new shows use distinct motif, trail, and click-burst profiles", 
   assert.equal(burstNames.size, 8);
 });
 
+test("the six newly added shows use show-specific cursor motifs", () => {
+  const expected = {
+    "come-from-away.js": ["comeFromAwayPlane", "airRoute", "flightPath"],
+    "rent.js": ["rentGraffiti", "neonSpark", "subtleRipple"],
+    "tick-tick-boom.js": ["tickClock", "clockTicks", "clockShockwave"],
+    "wicked.js": ["wickedHat", "magicDust", "crispShockwave"],
+    "hadestown.js": ["hadestownFlower", "thornEmbers", "crispShockwave"],
+    "les-dix-commandements.js": ["stoneTablets", "goldDust", "sunHalo"],
+  };
+  const motifs = new Set();
+  Object.entries(expected).forEach(([file, [motif, trail, burst]]) => {
+    const source = fs.readFileSync(path.join(cursorRoot, file), "utf8");
+    assert.match(source, new RegExp(`"motif":"${motif}"`));
+    assert.match(source, new RegExp(`"trail":"${trail}"`));
+    assert.match(source, new RegExp(`"burst":"${burst}"`));
+    const marker = motif[0].toUpperCase() + motif.slice(1);
+    assert.match(source, new RegExp(`function preRender${marker}\\(`));
+    motifs.add(motif);
+  });
+  assert.equal(motifs.size, 6);
+});
+
+test("the six new cursors use refined route and clock interactions", () => {
+  const come = fs.readFileSync(path.join(cursorRoot, "come-from-away.js"), "utf8");
+  const tick = fs.readFileSync(path.join(cursorRoot, "tick-tick-boom.js"), "utf8");
+  assert.match(come, /"trail":"airRoute"/);
+  assert.match(come, /"burst":"flightPath"/);
+  assert.match(come, /config\.trail === "airRoute"/);
+  assert.match(come, /config\.burst === "flightPath"/);
+  assert.match(tick, /"trail":"clockTicks"/);
+  assert.match(tick, /"burst":"clockShockwave"/);
+  assert.match(tick, /config\.trail === "clockTicks"/);
+  assert.match(tick, /config\.burst === "clockShockwave"/);
+  assert.match(tick, /for \(let index = 0; index < 12; index \+= 1\)/);
+  assert.match(tick, /config\.icon === "clock"|clockShockwave/);
+});
+
 test("the eight new cursors preserve the supplied show-specific reference motifs", () => {
   const source = fs.readFileSync(path.join(cursorRoot, "phantom-of-the-opera.js"), "utf8");
   assert.match(source, /preRenderGrandChandelier/);
@@ -154,9 +191,25 @@ test("Phantom chandelier uses a visible crystal trail and lights from its center
   assert.match(source, /chandelierLight = 1/);
   assert.match(source, /drawChandelierLightPulse\(size, false\)/);
   assert.match(source, /drawChandelierLightPulse\(size, true\)/);
-  assert.match(source, /this\.alpha = burst \? 0\.9 : 0\.76/);
+  assert.match(source, /this\.fade = burst \? 0\.019 \+ Math\.random\(\) \* 0\.009 : 0\.012 \+ Math\.random\(\) \* 0\.009/);
+  assert.match(source, /this\.phase = Math\.random\(\) \* Math\.PI \* 2/);
+  assert.match(source, /this\.variant = Math\.random\(\) > 0\.42/);
+  assert.match(source, /const twinkle = 0\.72 \+ Math\.sin\(this\.phase\) \* 0\.28/);
+  assert.match(source, /ctx\.globalCompositeOperation = "screen"/);
+  assert.match(source, /if \(this\.variant\)/);
   assert.match(source, /createRadialGradient\(0, 0, 0, 0, 0, lightRadius\)/);
   assert.doesNotMatch(source, /createRadialGradient\(0, -18/);
+});
+
+test("Les Misérables flag cursors click from the middle of their flagpoles", () => {
+  const revolution = fs.readFileSync(path.join(cursorRoot, "les-miserables-1980.js"), "utf8");
+  const concert = fs.readFileSync(path.join(cursorRoot, "les-miserables-cityprod-2017.js"), "utf8");
+  assert.match(revolution, /"motif":"revolutionFlag"/);
+  assert.match(revolution, /"hotspot":\[0\.24,0\.54\]/);
+  assert.match(concert, /"motif":"concertFlag"/);
+  assert.match(concert, /"hotspot":\[0\.25,0\.56\]/);
+  assert.doesNotMatch(revolution, /"hotspot":\[0\.24,0\.78\]/);
+  assert.doesNotMatch(concert, /"hotspot":\[0\.25,0\.76\]/);
 });
 
 test("refined cursors use high-resolution vector caches and page-matched artwork", () => {

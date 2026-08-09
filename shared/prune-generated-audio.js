@@ -3,16 +3,18 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const projectRoot = path.resolve(__dirname, "..");
-const shows = process.argv.slice(2);
+const writeRequested = process.argv.includes("--write");
+const shows = process.argv.slice(2).filter((argument) => argument !== "--write");
 
 if (!shows.length) {
-  throw new Error("Usage: node shared/prune-generated-audio.js <show> [...show]");
+  throw new Error("Usage: node shared/prune-generated-audio.js [--write] <show> [...show]");
 }
 
 function loadShowData(root) {
   const context = { window: {} };
   vm.createContext(context);
-  for (const file of ["songs.js", "word-data.js"]) {
+  const songsFile = fs.existsSync(path.join(root, "songs-full.js")) ? "songs-full.js" : "songs.js";
+  for (const file of [songsFile, "word-data.js"]) {
     vm.runInContext(fs.readFileSync(path.join(root, file), "utf8"), context);
   }
   return context.window;
@@ -42,6 +44,6 @@ for (const show of shows) {
   }
 
   const orphaned = walkDeliveryAudio(path.join(root, "audio")).filter((file) => !expected.has(file));
-  orphaned.forEach((file) => fs.rmSync(file));
-  console.log(`${show}: removed=${orphaned.length}`);
+  if (writeRequested) orphaned.forEach((file) => fs.rmSync(file));
+  console.log(`${show}: ${writeRequested ? "removed" : "wouldRemove"}=${orphaned.length}`);
 }

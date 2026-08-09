@@ -8,6 +8,9 @@ const {
   createController,
   preloadLocalAudio,
   clearAudioCache,
+  getSpeechLanguage,
+  selectPreferredVoice,
+  installPreferredSpeechVoice,
 } = require("../audio-playback.js");
 
 function makeButton() {
@@ -42,6 +45,109 @@ test("uses an 800ms minimum interval", () => {
 
 test("uses a half-second breath between sequence items", () => {
   assert.equal(SEQUENCE_GAP_MS, 500);
+});
+
+test("maps every supported page language to its real speech locale", () => {
+  assert.equal(getSpeechLanguage("en"), "en-US");
+  assert.equal(getSpeechLanguage("fr"), "fr-FR");
+  assert.equal(getSpeechLanguage("de"), "de-DE");
+  assert.equal(getSpeechLanguage("ko"), "ko-KR");
+  assert.equal(getSpeechLanguage("yue"), "zh-HK");
+  assert.equal(getSpeechLanguage("ja-JP"), "ja-JP");
+});
+
+test("prefers the installed female voice for English, French, German, and Korean", () => {
+  const voices = [
+    { name: "Daniel", lang: "en-GB", localService: true },
+    { name: "Samantha", lang: "en-US", localService: true },
+    { name: "Thomas", lang: "fr-FR", localService: true },
+    { name: "Audrey", lang: "fr-FR", localService: true },
+    { name: "Markus", lang: "de-DE", localService: true },
+    { name: "Anna", lang: "de-DE", localService: true },
+    { name: "Yuna", lang: "ko-KR", localService: true },
+  ];
+
+  assert.equal(selectPreferredVoice(voices, "en").name, "Samantha");
+  assert.equal(selectPreferredVoice(voices, "fr").name, "Audrey");
+  assert.equal(selectPreferredVoice(voices, "de").name, "Anna");
+  assert.equal(selectPreferredVoice(voices, "ko").name, "Yuna");
+});
+
+test("waits for delayed browser voices before speaking and applies the female voice", () => {
+  let voices = [];
+  let voicesChanged;
+  let timer;
+  const spoken = [];
+  const synthesis = {
+    speak(utterance) {
+      spoken.push(utterance);
+    },
+    cancel() {},
+    getVoices() {
+      return voices;
+    },
+    addEventListener(name, listener) {
+      if (name === "voiceschanged") voicesChanged = listener;
+    },
+    removeEventListener() {},
+  };
+
+  installPreferredSpeechVoice(synthesis, {
+    schedule(callback) {
+      timer = callback;
+      return 1;
+    },
+    cancelSchedule() {
+      timer = null;
+    },
+  });
+  const utterance = { lang: "fr" };
+  synthesis.speak(utterance);
+  assert.equal(spoken.length, 0);
+
+  voices = [
+    { name: "Thomas", lang: "fr-FR", localService: true },
+    { name: "Audrey", lang: "fr-FR", localService: true },
+  ];
+  voicesChanged();
+  assert.equal(spoken.length, 1);
+  assert.equal(utterance.voice.name, "Audrey");
+  assert.equal(utterance.lang, "fr-FR");
+  assert.equal(timer, null);
+});
+
+test("cancel prevents a delayed fallback utterance from starting later", () => {
+  let timer;
+  let cancelled = 0;
+  const spoken = [];
+  const synthesis = {
+    speak(utterance) {
+      spoken.push(utterance);
+    },
+    cancel() {
+      cancelled += 1;
+    },
+    getVoices() {
+      return [];
+    },
+    addEventListener() {},
+    removeEventListener() {},
+  };
+
+  installPreferredSpeechVoice(synthesis, {
+    schedule(callback) {
+      timer = callback;
+      return 1;
+    },
+    cancelSchedule() {
+      timer = null;
+    },
+  });
+  synthesis.speak({ lang: "de" });
+  synthesis.cancel();
+  assert.equal(cancelled, 1);
+  assert.equal(timer, null);
+  assert.deepEqual(spoken, []);
 });
 
 test("delays the loading treatment so fast cached playback does not flash busy", async () => {

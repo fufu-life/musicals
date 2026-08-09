@@ -28,14 +28,14 @@ test("library provides an accessible copyright notice beside the title", () => {
   assert.match(libraryScript, /event\.target === copyrightNotice/);
 });
 
-test("library groups all twenty-five shows by language", () => {
+test("library groups all forty-one shows by language", () => {
   assert.deepEqual(libraryLanguages, [
     { id: "yue", label: "粤语音乐剧" },
     { id: "en", label: "英语音乐剧" },
     { id: "de", label: "德语音乐剧" },
     { id: "fr", label: "法语音乐剧" },
   ]);
-  assert.equal(libraryShows.length, 25);
+  assert.equal(libraryShows.length, 41);
   assert.match(indexHtml, /id="languageGroups"/);
   assert.match(
     indexHtml,
@@ -75,7 +75,7 @@ test("every shelf card uses a local title-bearing show logo", () => {
 test("every show card links directly to its page instead of a folder", () => {
   const links = libraryShows.map((show) => show.href);
 
-  assert.equal(links.length, 25);
+  assert.equal(links.length, 41);
   assert.ok(links.every((href) => href.endsWith("/index.html")));
   for (const href of links) {
     assert.ok(fs.existsSync(path.join(root, href)), `Missing show page: ${href}`);
@@ -88,6 +88,8 @@ test("online library renders only explicitly deployed shows without network prob
     [
       "dazhuangwang",
       "hamilton",
+      "phantom-of-the-opera",
+      "love-never-dies",
       "rouge-et-noir",
       "mozart-opera-rock",
       "romeo-et-juliette",
@@ -127,7 +129,7 @@ test("deployed cards prefetch their first-screen data without probing undeployed
   assert.doesNotMatch(libraryScript, /window\.libraryShows\.flatMap\([^)]*prefetch/);
 });
 
-test("library and all twenty-five show pages use the shared analytics module", () => {
+test("library and all forty-one show pages use the shared analytics module", () => {
   const pages = [
     ["library", indexHtml],
     ...libraryShows.map((show) => [
@@ -143,7 +145,7 @@ test("library and all twenty-five show pages use the shared analytics module", (
   assert.match(libraryScript, /analytics\.trackLibraryEntry/);
 });
 
-test("all twenty-five show runtimes report songs, audio lifecycle, and features through the shared module", () => {
+test("all forty-one show runtimes report songs, audio lifecycle, and features through the shared module", () => {
   const customInline = new Set(["dazhuangwang"]);
   const customScripts = new Map([
     ["hamilton", "Hamilton/script.js"],

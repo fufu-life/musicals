@@ -15,7 +15,7 @@ function runAudit() {
 
 test("every four-digit year line has an explicit pronunciation", () => {
   const report = runAudit();
-  assert.equal(report.fourDigitLines.length, 21);
+  assert.equal(report.fourDigitLines.length, 35);
   assert.deepEqual(report.uncoveredFourDigitLines, []);
   report.fourDigitLines.forEach((line) => assert.ok(line.speak, `${line.show}: ${line.lineId}`));
 });
@@ -23,12 +23,18 @@ test("every four-digit year line has an explicit pronunciation", () => {
 test("Hamilton year word cards use year readings instead of raw numbers", () => {
   const report = runAudit();
   assert.deepEqual(report.numericWordEntries.map((entry) => entry.key), ["1776", "1780", "1781", "1789", "1800"]);
-  assert.deepEqual(overrides.Hamilton.words, {
+  const expectedReadings = {
     1776: "seventeen seventy-six",
     1780: "seventeen eighty",
     1781: "seventeen eighty-one",
     1789: "seventeen eighty-nine",
     1800: "eighteen hundred",
+  };
+  assert.deepEqual(overrides.Hamilton.words, expectedReadings);
+  report.numericWordEntries.forEach((entry) => {
+    assert.equal(entry.speak, expectedReadings[entry.key], entry.key);
+    assert.equal(entry.effectiveSpeak, expectedReadings[entry.key], entry.key);
+    assert.match(entry.ipa, /^\/.+\/$/, entry.key);
   });
 });
 

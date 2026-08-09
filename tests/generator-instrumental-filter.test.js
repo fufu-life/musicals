@@ -16,6 +16,34 @@ test("instrumental markers are recognized without matching real dialogue", () =>
   assert.equal(isInstrumentalMarkerText("JOE, spoken: What a lovely sight"), false);
 });
 
+test("page parser rejects a declared lyric track that silently resolves to zero lines", () => {
+  const markdown = `# Example
+
+## 01. Complete Song
+中文歌名：完整歌曲
+| 行号 | 德语歌词（校订） | 德语音标（IPA） | 中文翻译（校订） | English Translation | 备注 |
+| ---: | --- | --- | --- | --- | --- |
+| 1 | Eine Zeile | /aɪnə tsaɪlə/ | 一行歌词 | One line | |
+
+## 02. Missing Song
+中文歌名：缺失歌曲
+| 行号 | 德语歌词（校订） | 德语音标（IPA） | 中文翻译（校订） | English Translation | 备注 |
+| ---: | --- | --- | --- | --- | --- |
+`;
+  const temporaryDir = fs.mkdtempSync(path.join(os.tmpdir(), "empty-track-guard-"));
+  const sourcePath = path.join(temporaryDir, "example.md");
+  fs.writeFileSync(sourcePath, markdown);
+
+  try {
+    assert.throws(
+      () => parseMarkdown(sourcePath, { slug: "example", language: "de", voice: "de" }),
+      /example track 02 "Missing Song" has no lyric rows/u,
+    );
+  } finally {
+    fs.rmSync(temporaryDir, { recursive: true, force: true });
+  }
+});
+
 test("page parser excludes flagged tracks and keeps dialogue from mixed tracks", () => {
   const markdown = `# Example
 
@@ -35,6 +63,10 @@ test("page parser excludes flagged tracks and keeps dialogue from mixed tracks",
 | 行号 | 英文歌词（校订） | 英文音标（IPA） | 中文翻译（校订） | 备注 |
 | --- | --- | --- | --- | --- |
 | 1 | INSTRUMENTAL | | 纯音乐，请欣赏 | |
+
+## 04. Exit Music (Instrumental)
+| 行号 | 英文歌词（校订） | 英文音标（IPA） | 中文翻译（校订） | 备注 |
+| --- | --- | --- | --- | --- |
 `;
   const temporaryDir = fs.mkdtempSync(path.join(os.tmpdir(), "instrumental-filter-"));
   const sourcePath = path.join(temporaryDir, "example.md");

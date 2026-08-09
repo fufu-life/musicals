@@ -5,10 +5,13 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import urllib.parse
 import urllib.request
 from html import unescape
 from pathlib import Path
+
+from generator_write_guard import write_or_check
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -113,8 +116,18 @@ def extract_song(order: str, title: str, filename: str, page: str) -> dict[str, 
 
 def main() -> None:
     songs = [extract_song(*source) for source in SOURCES]
-    OUTPUT.write_text(json.dumps(songs, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"Wrote {OUTPUT} with {len(songs)} songs and {sum(len(song['lines']) for song in songs)} lines")
+    line_count = sum(len(song["lines"]) for song in songs)
+    if not songs or not line_count:
+        raise RuntimeError("Hamilton cut-song import produced no lyrics; refusing to overwrite source JSON")
+    payload = json.dumps(songs, ensure_ascii=False, indent=2) + "\n"
+    changed = write_or_check(
+        OUTPUT,
+        payload,
+        sys.argv[1:],
+        label="Hamilton cut-song reviewed-source import",
+    )
+    action = "Wrote" if "--write" in sys.argv[1:] and changed else "Verified"
+    print(f"{action} {OUTPUT} with {len(songs)} songs and {line_count} lines")
 
 
 if __name__ == "__main__":

@@ -77,6 +77,10 @@
   opacity: 0;
 }
 
+.lyrics-tools-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
 .lyrics-tools-search.is-open input {
   flex: 1 1 auto;
   width: auto;
@@ -165,6 +169,12 @@
   margin: 0;
 }
 
+.lyrics-tools-results-header h2 {
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
 .lyrics-tools-results-summary {
   margin-top: 7px;
   color: var(--muted);
@@ -206,6 +216,7 @@
 
 .lyrics-tools-result-line small {
   color: var(--muted);
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
 }
 
 .lyrics-tools-results mark {

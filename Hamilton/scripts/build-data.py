@@ -4,9 +4,6 @@ import json
 import re
 from pathlib import Path
 
-from pypdf import PdfReader
-
-
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = Path("/Users/jady/Documents/03_Areas/剧院与现场/Hamilton中英歌词")
 OUTPUT = ROOT / "songs.js"
@@ -270,6 +267,8 @@ def clean_line(line: str) -> str:
 
 
 def extract_english_lines(pdf_path: Path) -> list[str]:
+    from pypdf import PdfReader
+
     reader = PdfReader(str(pdf_path))
     raw_lines: list[str] = []
     for page in reader.pages:
@@ -391,6 +390,10 @@ def build_song(pdf_path: Path) -> dict:
 
 
 def main() -> None:
+    raise RuntimeError(
+        "LEGACY_GENERATOR_DISABLED: build-data.py reads the retired PDF corpus and must not "
+        "overwrite Hamilton/songs.js. Use build-lyrics-data-from-md.py for displayed lyrics."
+    )
     songs = [build_song(path) for path in sorted(SOURCE_ROOT.glob("*.pdf"))]
     songs.sort(key=lambda song: song["order"])
     payload = "const hamiltonSongs = "

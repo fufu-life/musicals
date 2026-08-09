@@ -7,6 +7,8 @@ import sys
 from csv import DictReader
 from pathlib import Path
 
+from generator_write_guard import write_or_check
+
 
 ROOT = Path(__file__).resolve().parents[1]
 INPUT_JS = ROOT / "lyrics-data.js"
@@ -14,7 +16,7 @@ OUTPUT_JS = ROOT / "word-data.js"
 OVERRIDES_JSON = ROOT / "word-overrides.json"
 DEFAULT_DICT = Path("/tmp/ecdict.csv")
 
-TOKEN_RE = re.compile(r"[^\W\d_]+(?:['’][^\W\d_]+)?(?:-[^\W\d_]+)*", re.UNICODE)
+TOKEN_RE = re.compile(r"\d{4}|[^\W\d_]+(?:['’][^\W\d_]+)?(?:-[^\W\d_]+)*", re.UNICODE)
 DROPPED_G_RE = re.compile(r"\b([A-Za-z]+in)['’](?=\W|$)", re.IGNORECASE)
 DOMAIN_LABEL_RE = re.compile(r"\[(?:计|医|化|经|法)\][^；;]*")
 
@@ -184,13 +186,17 @@ def extract_rows() -> list[dict[str, str]]:
 
 def load_overrides() -> dict[str, dict[str, str]]:
     raw = json.loads(OVERRIDES_JSON.read_text(encoding="utf-8"))
-    return {
-        normalize_token(key): {
+    overrides = {}
+    for key, value in raw.items():
+        entry = {
             "meaning": value["meaning"],
             "en": value.get("en", "Hamilton lyric usage"),
         }
-        for key, value in raw.items()
-    }
+        for field in ("ipa", "speak"):
+            if value.get(field):
+                entry[field] = value[field]
+        overrides[normalize_token(key)] = entry
+    return overrides
 
 
 def load_prior_entries() -> dict[str, dict[str, str]]:
@@ -205,10 +211,11 @@ def load_prior_entries() -> dict[str, dict[str, str]]:
 
 def load_dictionary(path: Path) -> dict[str, dict[str, str]]:
     if not path.exists():
-        raise FileNotFoundError(
-            f"Missing {path}. Download ECDICT first, for example: "
-            "curl -L https://raw.githubusercontent.com/skywind3000/ECDICT/master/ecdict.csv -o /tmp/ecdict.csv"
-        )
+        # The checked-in word data and reviewed overrides are sufficient for a
+        # read-only reproducibility check.  Keep the offline path deterministic
+        # and let lookup_meaning report a real unresolved token if a future
+        # source change actually needs a dictionary entry.
+        return {}
 
     entries: dict[str, dict[str, str]] = {}
     with path.open(encoding="utf-8", newline="") as file:
@@ -392,17 +399,25 @@ def main() -> None:
             prefer_restored_ing=key in dropped_g_keys,
         )
         word_entries[key] = {
-            "ipa": ipa_for_word(token),
+            "ipa": entry.get("ipa") or ipa_for_word(token),
             "meaning": entry["meaning"],
             "en": entry["en"],
-            "speak": token,
+            "speak": entry.get("speak") or token,
         }
 
     payload = "window.hamiltonWordEntries = "
     payload += json.dumps(word_entries, ensure_ascii=False, separators=(",", ":"))
     payload += ";\n"
-    OUTPUT_JS.write_text(payload, encoding="utf-8")
-    print(f"Wrote {OUTPUT_JS} with {len(word_entries)} word entries")
+    if not word_entries:
+        raise RuntimeError("Hamilton word build produced zero entries; refusing to overwrite word-data.js")
+    changed = write_or_check(
+        OUTPUT_JS,
+        payload,
+        sys.argv[1:],
+        label="Hamilton word-card build",
+    )
+    action = "Wrote" if "--write" in sys.argv[1:] and changed else "Verified"
+    print(f"{action} {OUTPUT_JS} with {len(word_entries)} word entries")
 
 
 if __name__ == "__main__":

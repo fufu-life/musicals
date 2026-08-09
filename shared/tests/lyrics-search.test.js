@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const test = require("node:test");
 
 const {
@@ -63,4 +64,16 @@ test("highlight ranges map normalized apostrophe-free queries back to source tex
   const value = "I'm not throwing away my shot";
   const ranges = getHighlightRanges(value, "im throwing");
   assert.deepEqual(ranges.map((range) => value.slice(range.start, range.end)), ["I'm", "throwing"]);
+});
+
+test("search translation previews use the shared Chinese lyric font", () => {
+  const css = fs.readFileSync(require.resolve("../lyrics-page-tools.css"), "utf8");
+  assert.match(css, /\.lyrics-tools-results-header h2\s*\{[\s\S]*font-family:\s*"Songti SC",\s*"Noto Serif CJK SC",\s*serif;/);
+  assert.match(css, /\.lyrics-tools-result-line small\s*\{[\s\S]*font-family:\s*"Songti SC",\s*"Noto Serif CJK SC",\s*serif;/);
+});
+
+test("Hamilton search translation previews use the same Chinese lyric font", () => {
+  const css = fs.readFileSync(require.resolve("../../Hamilton/style.css"), "utf8");
+  assert.match(css, /\.search-results h2\s*\{[\s\S]*font-family:\s*"Songti SC",\s*"Noto Serif CJK SC",\s*serif;/);
+  assert.match(css, /\.search-line-secondary\s*\{[\s\S]*font-family:\s*"Songti SC",\s*"Noto Serif CJK SC",\s*serif;/);
 });

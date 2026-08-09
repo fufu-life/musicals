@@ -9,9 +9,6 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-import pdfplumber
-
-
 ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT.parent
 SOURCE_ROOT = Path("/Users/jady/Documents/03_Areas/剧院与现场/Hamilton中英歌词")
@@ -374,6 +371,10 @@ def extract_pdf(pdf_path: Path, reader: Path) -> list[dict[str, str | int]]:
 
 
 def main() -> None:
+    raise SystemExit(
+        "LEGACY_GENERATOR_DISABLED: PDF/CSV extraction is no longer a Hamilton page-data source. "
+        "Use the authoritative normalized Markdown and build-lyrics-data-from-md.py."
+    )
     if not SOURCE_ROOT.exists():
         raise SystemExit(f"Source folder not found: {SOURCE_ROOT}")
 

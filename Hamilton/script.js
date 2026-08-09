@@ -212,6 +212,7 @@ async function loadWordDictionary() {
   await loadScript("word-data.js", "high");
   generatedWordEntries = window.hamiltonWordEntries || {};
   songs = buildSongsFromRows(getAvailableLyricsRows());
+  refreshRenderedPhonetics();
 }
 
 async function loadAnalysisData() {
@@ -424,9 +425,11 @@ function addLineWordEntries(lookup, english, lineIpa, words) {
     const generated = generatedWordEntries[key];
     const glossary = COMMON_WORD_GLOSSARY[key] || notesByTerm.get(key);
     const alignedIpa = ipaParts.length === tokens.length ? `/${ipaParts[index]}/` : "";
+    const wordIpa = glossary?.ipa || generated?.ipa || alignedIpa;
+    if (!wordIpa) return;
     lookup.set(key, {
       term: token,
-      ipa: glossary?.ipa || generated?.ipa || alignedIpa || lineIpa || "见本句音标",
+      ipa: wordIpa,
       meaning: glossary?.meaning || glossary?.zh || generated?.meaning || `歌词用词：${token}`,
       en: glossary?.en || generated?.en || "",
       note: glossary?.note || "",
@@ -1147,6 +1150,28 @@ function renderEnglishTokens(text, wordClassName = "lyric-word", options = {}) {
   });
 
   return fragment;
+}
+
+function refreshRenderedPhonetics() {
+  const song = getCurrentSong();
+  if (!song || !refs.lyrics) return;
+  const linesById = new Map(song.lines.map((line) => [line.id, line]));
+
+  refs.lyrics.querySelectorAll(".lyric-card").forEach((card) => {
+    const line = linesById.get(card.dataset.lineId);
+    if (!line) return;
+    const words = tokenizeEnglish(line.en);
+    const ipaParts = splitIpa(line.ipa);
+    const tokens = Array.from(card.querySelectorAll(".lyric-token"));
+    if (tokens.length !== words.length) return;
+
+    tokens.forEach((token, index) => {
+      const word = token.querySelector(".lyric-word")?.textContent || "";
+      const phonetic = token.querySelector(".word-phonetic");
+      if (!phonetic) return;
+      phonetic.textContent = getAlignedTokenIpa(word, index, words.length, ipaParts);
+    });
+  });
 }
 
 function getAlignedTokenIpa(token, wordIndex, wordCount, ipaParts) {

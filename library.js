@@ -12,12 +12,16 @@
     chicago: "Z", "dear-evan-hansen": "Q", "six-the-musical": "L", suffs: "N",
     "sunset-boulevard": "R", "phantom-of-the-opera": "J", "love-never-dies": "Z",
     "elisabeth-das-musical": "Y", "mozart-das-musical": "M", "rouge-et-noir": "Y",
+    "tanz-der-vampire": "X", "ludwig-ii-sehnsucht-nach-dem-paradies": "L",
+    "dracula-das-musical": "D", "rebecca-das-musical": "H", "the-greatest-showman": "M", "epic-the-musical": "E",
     starmania: "X", "les-souliers-rouges": "H", "la-legende-du-roi-arthur": "Y",
     "notre-dame-de-paris": "B", "mozart-opera-rock": "Y", "romeo-et-juliette": "L",
     "le-roi-soleil": "T", "1789-les-amants-de-la-bastille": "#", "don-juan": "T",
     "moliere-le-spectacle-musical": "M", "cyrano-de-bergerac": "D",
     "les-miserables-1980": "B", "les-miserables-cityprod-2017": "B",
     "jesus-christ-superstar-1996-london": "Y", "le-petit-prince-2cd": "X",
+    "come-from-away": "Y", rent: "J", "tick-tick-boom": "D", wicked: "M", hadestown: "M",
+    "les-dix-commandements": "S",
   };
   const pinyinCollator = new Intl.Collator("zh-Hans-CN-u-co-pinyin", { sensitivity: "base" });
 

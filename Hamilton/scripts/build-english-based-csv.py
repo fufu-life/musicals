@@ -21,6 +21,22 @@ def key(text: str) -> str:
 
 TRANSLATION_OVERRIDES = {
     "advice": "建议",
+    "fu...": "该死——",
+    "this is the difference, this kid is out": "这就是区别，这家伙出局了",
+    "you fat mother...": "你这个胖……",
+    "how 'bout when i get back we all strip down to our socks?": "等我回来，我们都脱到只剩袜子吧",
+    "hamilton: you must be outta your goddamn mind": "汉密尔顿：你一定是疯了",
+    "i'm the damn fool that shot him(shot him, shot him)": "我是射杀他的那个傻瓜",
+    "he looked at me like i was stupid, i'm not stupid": "他的眼神仿佛在说我很愚蠢，但我并不愚蠢",
+    "burr: while we're talking, let me offer you some free": "伯尔：我们说话时，我给你一个建议",
+    "mulligan/lafayette/laurens: ooh, who is this kid? what's he gonna do?": "马利根/拉法耶特/劳伦斯：噢，这个年轻人是谁？他要做什么？",
+    "watch this obnoxious, arrogant, loudmouth bother, be seated": "看这个讨厌傲慢又多嘴的家伙坐下",
+    "something you will never see again": "你以后不会再是自由人",
+    "we've had quite a run": "这一路很不容易",
+    "madison, you're mad as a hatter, son, take your medicine": "麦迪逊，你这个疯子，别忘了吃药；你们的状态比国家债务还要不堪",
+    "so we can at last unmask him": "我们终于可以揭穿他",
+    "god, you're a fox": "天啊，你真迷人",
+    "i'm not your little schoolboy friends": "我不是你那些学校朋友",
     "hamilton: ha": "汉密尔顿：哈",
     "burr: good luck with that you're takin' a stand": "伯尔：祝你好运，你终于表态了",
     "whoa, whoa, whoa hey!": "哇，哇，哇，嘿！",
@@ -178,6 +194,10 @@ def translate(row: dict[str, str]) -> str:
 
 
 def main() -> None:
+    raise SystemExit(
+        "LEGACY_GENERATOR_DISABLED: Hamilton's authoritative source is the normalized Markdown. "
+        "Use build-lyrics-data-from-md.py to check it, or add --write for an intentional rebuild."
+    )
     with INPUT_CSV.open(encoding="utf-8-sig", newline="") as file:
         rows = list(csv.DictReader(file))
 

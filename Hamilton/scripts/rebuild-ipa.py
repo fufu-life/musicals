@@ -126,6 +126,11 @@ def batch_ipa(tokens: list[str], keep_stress: bool) -> dict[str, str]:
 
 
 def main() -> None:
+    raise RuntimeError(
+        "LEGACY_GENERATOR_DISABLED: rebuild-ipa.py edits generated files directly and bypasses "
+        "the authoritative Hamilton Markdown. Update the Markdown IPA, then run "
+        "build-lyrics-data-from-md.py --write."
+    )
     rows = load_js(LYRICS_FILE, "window.hamiltonLyricsRows = ")
     entries = load_js(WORD_FILE, "window.hamiltonWordEntries = ")
     line_tokens = [token for row in rows for token in TOKEN_RE.findall(row.get("english", ""))]

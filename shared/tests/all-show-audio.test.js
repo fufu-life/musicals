@@ -68,7 +68,7 @@ function readDisplayedLyricText(show) {
 }
 
 test("all show pages load the shared audio guard and expose a playlist button", () => {
-  assert.equal(libraryShows.length, 27);
+  assert.equal(libraryShows.length, 41);
   libraryShows.forEach((show) => {
     const { index, script, style } = readShowFiles(show);
     assert.match(index, /\.\.\/shared\/audio-playback\.js/, `${show.id}: shared audio controller`);
@@ -119,7 +119,7 @@ test("all show deployment trees contain only compact MP3 audio", () => {
     files.forEach((file) => assert.equal(path.extname(file).toLowerCase(), ".mp3", `${show.id}: ${file}`));
     total += files.length;
   });
-  assert.equal(total, 68498);
+  assert.equal(total, 107342);
 });
 
 test("future audio builds write external WAV masters and deploy MP3 automatically", () => {
@@ -131,6 +131,7 @@ test("future audio builds write external WAV masters and deploy MP3 automaticall
   assert.match(builder, /vibe-coding-current/);
   assert.match(builder, /libmp3lame/);
   assert.match(builder, /\.mp3/);
+  assert.match(builder, /!isValidFile\(job\.output\)\s*\|\|\s*manifest\.jobs\[job\.manifestKey\]\s*!==\s*job\.speechVersion/s);
   assert.match(pruner, /\.mp3/);
   assert.match(validator, /\.mp3/);
 });

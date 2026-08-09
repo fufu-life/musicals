@@ -7,6 +7,14 @@ const scriptJs = fs.readFileSync("Hamilton/script.js", "utf8");
 const styleCss = fs.readFileSync("Hamilton/style.css", "utf8");
 const lyricsDataJs = fs.readFileSync("Hamilton/lyrics-data.js", "utf8");
 const lyricsSourceMd = fs.readFileSync("../lyrics/Hamilton (Original Broadway Cast Recording) (3367211).md", "utf8");
+const legacyLyricsSourceFiles = [
+  "../lyrics/Hamilton lyrics/hamilton_lyrics.csv",
+  "../lyrics/Hamilton lyrics/hamilton_lyrics_en_based.csv",
+  "../lyrics/Hamilton lyrics/27Say No to This.md",
+  "../lyrics/Hamilton lyrics/31Washington On Your Side.md",
+  "../lyrics/Hamilton lyrics/34The Adams Administration.md",
+  "../lyrics/Hamilton lyrics/39Blow Us All Away.md",
+];
 const wordDataJs = fs.existsSync("Hamilton/word-data.js") ? fs.readFileSync("Hamilton/word-data.js", "utf8") : "";
 const audioBuilderJs = fs.existsSync("Hamilton/scripts/build-audio.js")
   ? fs.readFileSync("Hamilton/scripts/build-audio.js", "utf8")
@@ -42,6 +50,18 @@ test("phonetics have a toolbar toggle matching the Chinese toggle behavior", () 
   assert.match(styleCss, /\.word-phonetic/);
 });
 
+test("cold-loaded word phonetics never use a whole sentence as one word fallback", () => {
+  assert.doesNotMatch(scriptJs, /alignedIpa\s*\|\|\s*lineIpa/);
+});
+
+test("deferred word data refreshes visible phonetics without replacing lyric cards", () => {
+  assert.match(scriptJs, /function refreshRenderedPhonetics\(\)/);
+  assert.match(
+    scriptJs,
+    /async function loadWordDictionary\(\)[\s\S]*?songs = buildSongsFromRows\(getAvailableLyricsRows\(\)\);\s*refreshRenderedPhonetics\(\);/,
+  );
+});
+
 test("page mounts the shared feedback widget with current song selection", () => {
   assert.match(indexHtml, /\.\.\/shared\/feedback-widget\.js/);
   assert.match(indexHtml, /window\.MusicalFeedback\.mount/);
@@ -62,6 +82,41 @@ test("lyrics render before noncritical analysis and word data load", () => {
   assert.match(scriptJs, /await loadScript\("songs\.js", "low"\)/);
   assert.match(scriptJs, /showLoadingPopover\(part, button\);\s*await ensureWordDictionaryReady\(\)/);
   assert.match(scriptJs, /await ensureFullLyricsReady\(\);\s*audioController\.stopAll\(\)/);
+});
+
+test("Hamilton never falls back to the retired CSV lyric pipeline", () => {
+  assert.doesNotMatch(scriptJs, /hamilton_lyrics(?:_en_based)?\.csv/);
+  assert.doesNotMatch(scriptJs, /loadSongsFromCsv|parseCsv/);
+  assert.match(scriptJs, /Hamilton initial lyric data is empty/);
+});
+
+test("Hamilton lyric sources keep translations neutral and source-faithful", () => {
+  const legacySource = legacyLyricsSourceFiles
+    .filter((file) => fs.existsSync(file))
+    .map((file) => fs.readFileSync(file, "utf8"))
+    .join("\n");
+  const combined = `${lyricsSourceMd}\n${legacySource}\n${lyricsDataJs}`;
+  [
+    "你造",
+    "老子",
+    "天了噜",
+    "说曹操",
+    "咱们",
+    "啥",
+    "没门儿",
+    "南方佬",
+    "腆着脸",
+    "脑子进水",
+    "命运之屋",
+    "决策的现场",
+    "好嘞",
+    "来嘞",
+    "那啥",
+    "秽物",
+    "归西",
+  ].forEach((marker) => {
+    assert.equal(combined.includes(marker), false, `found unapproved Hamilton translation marker: ${marker}`);
+  });
 });
 
 test("page uses the shared analytics module", () => {
@@ -340,6 +395,28 @@ test("parallel vocals never leak role abbreviations into Hamilton lyric fields",
   );
   assert.equal(pamphletRows.find((row) => row.line_index === "45").speakers[0], "ENSEMBLE MEN");
   assert.equal(pamphletRows.find((row) => row.line_index === "46").speakers[0], "FULL COMPANY");
+});
+
+test("parallel-vocal speakers keep deterministic lead-before-response order", () => {
+  const sandbox = { window: {} };
+  require("node:vm").runInNewContext(lyricsDataJs, sandbox);
+  const rows = sandbox.window.hamiltonLyricsRows;
+  const byId = new Map(rows.map((row) => [
+    `ham-${String(row.song_order).padStart(2, "0")}-${String(row.line_index).padStart(3, "0")}`,
+    row,
+  ]));
+
+  const expected = {
+    "ham-08-073": ["MULLIGAN", "COMPANY"],
+    "ham-10-093": ["ELIZA", "ALL WOMEN"],
+    "ham-14-074": ["LAURENS", "HAMILTON"],
+    "ham-28-057": ["BURR", "BURR AND COMPANY"],
+    "ham-28-060": ["BURR", "BURR AND COMPANY"],
+    "ham-46-074": ["ELIZA", "COMPANY"],
+  };
+  Object.entries(expected).forEach(([lineId, speakers]) => {
+    assert.deepEqual(Array.from(byId.get(lineId).speakers), speakers, lineId);
+  });
 });
 
 test("search history responds to browser back and forward navigation", () => {

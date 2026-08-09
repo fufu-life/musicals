@@ -120,6 +120,9 @@ function loadScript(src, fetchPriority = "auto") {
 
 async function loadFullSongs() {
   await loadScript("songs.js", "high");
+  if (window.pageConfig.fullSongsFile) {
+    await loadScript(window.pageConfig.fullSongsFile, "high");
+  }
   const fullSongs = window.songs || [];
   if (!fullSongs.length) throw new Error("Full song data is empty");
   songs.splice(0, songs.length, ...fullSongs);
@@ -341,6 +344,13 @@ function renderLine(song, line) {
   const original = document.createElement("p");
   original.className = "line-original";
   original.append(renderClickableWords(line.original, "lyric-word", { showPhonetics: true, line }));
+  if (line.repeatCount > 1) {
+    const repeat = document.createElement("sup");
+    repeat.className = "lyric-repeat";
+    repeat.textContent = `×${line.repeatCount}`;
+    repeat.setAttribute("aria-label", `重复 ${line.repeatCount} 次`);
+    original.append(repeat);
+  }
   main.append(original);
 
   const en = document.createElement("p");
@@ -446,7 +456,6 @@ function getAlignedWordIpa(token, wordIndex, wordCount, ipaParts) {
 function formatLineIpaPart(value, wordIndex, wordCount) {
   const bare = stripIpaSlashes(value);
   if (!bare || /见|标题词/u.test(bare)) return "";
-  if (config.independentWordIpa) return `/${bare}/`;
   const prefix = wordIndex === 0 ? "/" : "";
   const suffix = wordIndex === wordCount - 1 ? "/" : "";
   return `${prefix}${bare}${suffix}`;
@@ -1081,6 +1090,33 @@ function drawCursorIcon(ctx, pointer, icon, colors, time) {
     ctx.lineTo(17, 1);
     ctx.bezierCurveTo(6, 7, -2, -3, -12, 3);
     ctx.stroke();
+  } else if (icon === "plane") {
+    ctx.rotate(-0.08);
+    ctx.lineWidth = 1.5;
+    ctx.fillStyle = colors.secondary;
+    ctx.strokeStyle = colors.primary;
+    ctx.beginPath();
+    ctx.moveTo(-31, -2);
+    ctx.quadraticCurveTo(-15, -5, -1, -4);
+    ctx.lineTo(21, -14);
+    ctx.lineTo(26, -13);
+    ctx.lineTo(10, -2);
+    ctx.lineTo(33, 3);
+    ctx.lineTo(31, 8);
+    ctx.lineTo(8, 3);
+    ctx.lineTo(-2, 17);
+    ctx.lineTo(-8, 17);
+    ctx.lineTo(-3, 3);
+    ctx.lineTo(-31, 3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = colors.primary;
+    [-14, -7, 0, 7].forEach((x) => {
+      ctx.beginPath();
+      ctx.arc(x, -1, 1.15, 0, Math.PI * 2);
+      ctx.fill();
+    });
   } else if (icon === "musicNote") {
     ctx.lineWidth = 2.2;
     ctx.beginPath();
@@ -1089,6 +1125,32 @@ function drawCursorIcon(ctx, pointer, icon, colors, time) {
     ctx.lineTo(2, -20);
     ctx.bezierCurveTo(12, -16, 16, -11, 16, -3);
     ctx.stroke();
+  } else if (icon === "clock") {
+    ctx.rotate(time * 0.0012);
+    ctx.lineWidth = 1.45;
+    ctx.beginPath();
+    ctx.arc(0, 0, 14, 0, Math.PI * 2);
+    ctx.stroke();
+    for (let index = 0; index < 12; index += 1) {
+      const angle = index * Math.PI / 6;
+      const outer = 18;
+      const inner = index % 3 === 0 ? 11 : 13;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+      ctx.stroke();
+    }
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-2, -8);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(7, 4);
+    ctx.stroke();
+    ctx.fillStyle = colors.secondary;
+    ctx.beginPath();
+    ctx.arc(0, 0, 2, 0, Math.PI * 2);
+    ctx.fill();
   } else if (icon === "star") {
     drawStar(ctx, 0, 0, 7, 17, 5);
   } else if (icon === "quill") {

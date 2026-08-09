@@ -2,10 +2,13 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const vm = require("node:vm");
+const { writeFileAtomic } = require("./generator-write-guard.js");
 
 const ROOT = path.resolve(__dirname, "..");
-const CURSOR_ASSET_VERSION = "20260728-deh-1";
+let generationWritesEnabled = false;
+const CURSOR_ASSET_VERSION = "20260808-show-assets-1";
 const LYRICS_ROOT = path.resolve(ROOT, "..", "lyrics");
+const LEGACY_OUTPUT_ROOT = path.resolve(ROOT, "..", "outputs", "lyrics-web");
 const ROUGE_SCRIPT = path.join(ROOT, "rouge-et-noir", "script.js");
 const ROUGE_SONGS = path.join(ROOT, "rouge-et-noir", "songs.js");
 const FREEDICT_GLOSSARY = path.join(ROOT, "scripts", "freedict-french-glossary.json");
@@ -13,13 +16,24 @@ const GOOGLE_ENGLISH_GLOSSARY = path.join(ROOT, "scripts", "google-english-gloss
 const AUTO_WORD_GLOSSARY = path.join(ROOT, "scripts", "auto-word-glossary.json");
 const MANUAL_WORD_GLOSSARY = path.join(ROOT, "scripts", "manual-word-overrides.json");
 const WAVE2_MANUAL_WORD_GLOSSARY = path.join(ROOT, "scripts", "manual-word-overrides-wave2.json");
+const BATCH_WORD_GLOSSARY = path.join(ROOT, "scripts", "batch-word-overrides.json");
 const ELISION_WORD_GLOSSARY = path.join(ROOT, "scripts", "elision-word-overrides.json");
+const REVIEWED_LINE_OVERRIDES = path.resolve(ROOT, "..", "scripts", "reviewed_normalized_line_overrides.json");
+const REQUIRED_LINE_REVIEW_KEYS = {
+  "jesus-christ-superstar-1996-london": "jcs",
+  "le-petit-prince-2cd": "lpp",
+};
 const LINE_MERGE_OVERRIDES = JSON.parse(
   fs.readFileSync(path.join(ROOT, "scripts", "line-merge-overrides.json"), "utf8"),
+);
+const LINE_SEGMENT_OVERRIDES = JSON.parse(
+  fs.readFileSync(path.join(ROOT, "scripts", "line-segment-overrides.json"), "utf8"),
 );
 const MERGED_LINE_TEXT_OVERRIDES = JSON.parse(
   fs.readFileSync(path.join(ROOT, "scripts", "merged-line-text-overrides.json"), "utf8"),
 );
+const MAX_REVIEWED_LINE_MERGE_ROWS = 4;
+const MAX_REVIEWED_LINE_MERGE_WORDS = 18;
 const INSTRUMENTAL_MARKERS = new Set([
   "instrumental",
   "instrumental music",
@@ -248,6 +262,38 @@ const SHOWS = [
     },
   },
   {
+    slug: "the-greatest-showman",
+    source: "The Greatest Showman (Original Motion Picture Soundtrack) (36674183)/The Greatest Showman (Original Motion Picture Soundtrack) (36674183).md",
+    sourceFormat: "english-chinese-single",
+    title: "The Greatest Showman",
+    titleZh: "马戏之王",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-logo.png",
+    showEnglishToggle: false,
+    effect: { icon: "stage", trail: "goldSparkleRosePetal", click: "marqueeBurst", primary: "#d59b3a", secondary: "#e75b3c" },
+    theme: {
+      bg: "#0c0807",
+      panel: "#24130f",
+      accent: "#d59b3a",
+      highlight: "#f2d18a",
+      ink: "#fff5df",
+      muted: "rgba(244, 222, 187, 0.74)",
+      line: "rgba(242, 209, 138, 0.3)",
+      shadow: "rgba(0, 0, 0, 0.58)",
+      bodyFont: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+      displayFont: 'Didot, "Bodoni 72", Georgia, serif',
+      lyricFont: 'Baskerville, "Iowan Old Style", Georgia, "Songti SC", serif',
+      radius: "5px",
+      titleTracking: "0.02em",
+      bodyPattern: "radial-gradient(ellipse at 50% 0%, rgba(213, 155, 58, 0.25), transparent 34rem), repeating-linear-gradient(90deg, transparent 0 64px, rgba(242, 209, 138, 0.03) 65px 66px)",
+      heroPattern: "linear-gradient(124deg, rgba(213, 155, 58, 0.2), transparent 48%), radial-gradient(circle at 84% 18%, rgba(231, 91, 60, 0.15), transparent 16rem)",
+      visualPattern: "conic-gradient(from 180deg at 50% 20%, rgba(213, 155, 58, 0.2), rgba(231, 91, 60, 0.14), rgba(213, 155, 58, 0.2))",
+      visualFilter: "drop-shadow(0 18px 24px rgba(0, 0, 0, 0.58)) saturate(1.08)",
+    },
+  },
+  {
     slug: "chicago",
     source: "Chicago The Musical (New Broadway Cast Recording (1997)) (72099621)/Chicago The Musical (New Broadway Cast Recording (1997)) (72099621).md",
     sourceFormat: "paired-english",
@@ -438,6 +484,136 @@ const SHOWS = [
     },
   },
   {
+    slug: "tanz-der-vampire",
+    source: "../outputs/german_musicals/Tanz der Vampire/lyrics/Tanz der Vampire 全曲目歌词.md",
+    sourceFormat: "german-triple",
+    legacyOutputSlug: "tanz-der-vampire",
+    title: "Tanz der Vampire",
+    titleZh: "吸血鬼之舞",
+    language: "de",
+    voice: "de",
+    audioVoice: "Anna",
+    logo: "assets/show-logo.png",
+    fullSongsFile: "songs-full.js",
+    effect: { icon: "moon", trail: "silverDust", click: "crownGlow", primary: "#a32643", secondary: "#d8b56d" },
+    theme: {
+      bg: "#08050c",
+      panel: "#1b101b",
+      accent: "#a32643",
+      highlight: "#d8b56d",
+      ink: "#f8eff1",
+      muted: "rgba(232, 213, 220, 0.72)",
+      line: "rgba(216, 181, 109, 0.28)",
+      shadow: "rgba(0, 0, 0, 0.62)",
+      bodyFont: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+      displayFont: 'Didot, "Bodoni 72", Georgia, serif',
+      lyricFont: 'Baskerville, "Iowan Old Style", Georgia, "Songti SC", serif',
+      radius: "5px",
+      titleTracking: "0.018em",
+      bodyPattern: "radial-gradient(ellipse at 78% 0%, rgba(163, 38, 67, 0.24), transparent 34rem), repeating-linear-gradient(90deg, transparent 0 64px, rgba(216, 181, 109, 0.025) 65px 66px)",
+      heroPattern: "linear-gradient(124deg, rgba(163, 38, 67, 0.2), transparent 50%), radial-gradient(circle at 84% 18%, rgba(216, 181, 109, 0.13), transparent 15rem)",
+      visualPattern: "radial-gradient(circle at 50% 22%, rgba(163, 38, 67, 0.24), transparent 64%), linear-gradient(160deg, rgba(216, 181, 109, 0.08), transparent 58%)",
+      visualFilter: "drop-shadow(0 18px 24px rgba(0, 0, 0, 0.62)) saturate(1.08)",
+    },
+  },
+  {
+    slug: "ludwig-ii-sehnsucht-nach-dem-paradies",
+    source: "../outputs/german_musicals/Ludwig II - Sehnsucht nach dem Paradies/lyrics/Ludwig II - Sehnsucht nach dem Paradies 全曲目歌词.md",
+    sourceFormat: "german-triple",
+    legacyOutputSlug: "ludwig-ii-sehnsucht-nach-dem-paradies",
+    title: "Ludwig II - Sehnsucht nach dem Paradies",
+    titleZh: "路德维希二世：向往天堂",
+    language: "de",
+    voice: "de",
+    audioVoice: "Anna",
+    logo: "assets/show-logo.jpg",
+    effect: { icon: "crown", trail: "diamondDust", click: "softDiamondGlow", primary: "#8aa4c8", secondary: "#e6d6a0" },
+    theme: {
+      bg: "#07101b",
+      panel: "#102034",
+      accent: "#6f90b8",
+      highlight: "#e6d6a0",
+      ink: "#f2f5fb",
+      muted: "rgba(211, 224, 239, 0.72)",
+      line: "rgba(230, 214, 160, 0.28)",
+      shadow: "rgba(0, 4, 12, 0.58)",
+      bodyFont: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+      displayFont: '"Snell Roundhand", "Apple Chancery", cursive',
+      lyricFont: 'Baskerville, "Iowan Old Style", Georgia, "Songti SC", serif',
+      radius: "4px",
+      titleTracking: "0.01em",
+      bodyPattern: "radial-gradient(ellipse at 14% 0%, rgba(111, 144, 184, 0.24), transparent 33rem), repeating-linear-gradient(105deg, transparent 0 46px, rgba(230, 214, 160, 0.025) 47px 48px)",
+      heroPattern: "linear-gradient(118deg, rgba(111, 144, 184, 0.2), transparent 48%), radial-gradient(circle at 82% 16%, rgba(230, 214, 160, 0.14), transparent 15rem)",
+      visualPattern: "radial-gradient(ellipse at 50% 20%, rgba(111, 144, 184, 0.24), transparent 62%), linear-gradient(160deg, rgba(230, 214, 160, 0.08), transparent 58%)",
+      visualFilter: "drop-shadow(0 18px 24px rgba(0, 0, 0, 0.6)) contrast(1.04)",
+    },
+  },
+  {
+    slug: "dracula-das-musical",
+    source: "../outputs/german_musicals/Dracula/lyrics/Dracula 全曲目歌词.md",
+    sourceFormat: "german-triple",
+    legacyOutputSlug: "dracula",
+    title: "Dracula - Das Musical",
+    titleZh: "德古拉",
+    language: "de",
+    voice: "de",
+    audioVoice: "Anna",
+    logo: "assets/show-logo.jpg",
+    effect: { icon: "chandelier", trail: "crystalGlint", click: "pressGlow", primary: "#8f1d2c", secondary: "#d7b36a" },
+    theme: {
+      bg: "#080609",
+      panel: "#1b1118",
+      accent: "#8f1d2c",
+      highlight: "#d7b36a",
+      ink: "#f8f0e8",
+      muted: "rgba(225, 207, 195, 0.72)",
+      line: "rgba(215, 179, 106, 0.28)",
+      shadow: "rgba(0, 0, 0, 0.68)",
+      bodyFont: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+      displayFont: 'Didot, "Bodoni 72", Georgia, serif',
+      lyricFont: 'Baskerville, "Iowan Old Style", Georgia, "Songti SC", serif',
+      radius: "3px",
+      titleTracking: "0.022em",
+      bodyPattern: "radial-gradient(ellipse at 84% 0%, rgba(143, 29, 44, 0.26), transparent 34rem), repeating-linear-gradient(90deg, transparent 0 70px, rgba(215, 179, 106, 0.024) 71px 72px)",
+      heroPattern: "linear-gradient(126deg, rgba(143, 29, 44, 0.22), transparent 50%), radial-gradient(circle at 82% 18%, rgba(215, 179, 106, 0.12), transparent 16rem)",
+      visualPattern: "radial-gradient(ellipse at 50% 16%, rgba(143, 29, 44, 0.28), transparent 60%), linear-gradient(180deg, rgba(215, 179, 106, 0.08), transparent 58%)",
+      visualFilter: "drop-shadow(0 18px 24px rgba(0, 0, 0, 0.72)) sepia(0.08)",
+    },
+  },
+  {
+    slug: "rebecca-das-musical",
+    source: "../outputs/german_musicals/Rebecca/lyrics/Rebecca 全曲目歌词.md",
+    sourceFormat: "german-triple",
+    legacyOutputSlug: "rebecca",
+    title: "Rebecca",
+    titleZh: "蝴蝶梦",
+    language: "de",
+    voice: "de",
+    audioVoice: "Anna",
+    logo: "assets/show-logo.png",
+    fullSongsFile: "songs-full.js",
+    effect: { icon: "rebeccaR", trail: "neonSpark", click: "subtleRipple", primary: "#426a91", secondary: "#c9a75a" },
+    theme: {
+      bg: "#071019",
+      panel: "#10202d",
+      accent: "#426a91",
+      highlight: "#c9a75a",
+      ink: "#eff5f7",
+      muted: "rgba(207, 224, 231, 0.72)",
+      line: "rgba(201, 167, 90, 0.27)",
+      shadow: "rgba(0, 5, 12, 0.62)",
+      bodyFont: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+      displayFont: 'Didot, "Bodoni 72", Georgia, serif',
+      lyricFont: 'Baskerville, "Iowan Old Style", Georgia, "Songti SC", serif',
+      radius: "4px",
+      titleTracking: "0.018em",
+      bodyPattern: "radial-gradient(ellipse at 18% 0%, rgba(66, 106, 145, 0.25), transparent 34rem), repeating-linear-gradient(90deg, transparent 0 58px, rgba(201, 167, 90, 0.025) 59px 60px)",
+      heroPattern: "linear-gradient(122deg, rgba(66, 106, 145, 0.22), transparent 48%), radial-gradient(circle at 84% 16%, rgba(201, 167, 90, 0.13), transparent 15rem)",
+      visualPattern: "linear-gradient(138deg, rgba(66, 106, 145, 0.22), transparent 52%), radial-gradient(circle at 50% 18%, rgba(201, 167, 90, 0.14), transparent 62%)",
+      visualFilter: "drop-shadow(0 18px 24px rgba(0, 0, 0, 0.62)) contrast(1.05)",
+    },
+  },
+  {
     slug: "starmania",
     source: "Starmania (Live Intégral 1979) (179767).md",
     title: "Starmania",
@@ -472,6 +648,43 @@ const SHOWS = [
       visualPadding: "0px",
       visualFrameRadius: "1px",
       visualFilter: "saturate(0.9) contrast(1.08)",
+    },
+  },
+  {
+    slug: "epic-the-musical",
+    source: "../outputs/musicals/Epic- The Musical/lyrics/Epic- The Musical 全曲目歌词.md",
+    sourceFormat: "english-chinese-columns",
+    title: "EPIC",
+    titleZh: "EPIC",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-logo.png",
+    showEnglishToggle: false,
+    effect: { icon: "musicNote", trail: "seaStarlight", click: "oceanWave", primary: "#2d9fb6", secondary: "#f0d58b" },
+    theme: {
+      bg: "#06131c",
+      panel: "#0d2630",
+      accent: "#2d9fb6",
+      highlight: "#f0d58b",
+      ink: "#f5f4ea",
+      muted: "rgba(214, 235, 232, 0.74)",
+      line: "rgba(151, 213, 214, 0.28)",
+      shadow: "rgba(0, 8, 18, 0.64)",
+      bodyFont: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+      displayFont: 'Cinzel, "Times New Roman", "Songti SC", serif',
+      lyricFont: 'Baskerville, "Iowan Old Style", Georgia, "Songti SC", serif',
+      radius: "6px",
+      titleTracking: "0.06em",
+      bodyPattern: "radial-gradient(ellipse at 50% 0%, rgba(45, 159, 182, 0.22), transparent 34rem), repeating-linear-gradient(0deg, transparent 0 31px, rgba(151, 213, 214, 0.035) 32px 33px)",
+      heroPattern: "linear-gradient(135deg, rgba(45, 159, 182, 0.22), transparent 48%), radial-gradient(circle at 85% 10%, rgba(240, 213, 139, 0.16), transparent 18rem)",
+      visualPattern: "radial-gradient(circle at 50% 50%, rgba(45, 159, 182, 0.18), transparent 64%), linear-gradient(155deg, rgba(240, 213, 139, 0.1), transparent 48%)",
+      visualFit: "contain",
+      visualPosition: "50% 50%",
+      visualWidth: "min(250px, 100%)",
+      visualHeight: "210px",
+      visualPadding: "0px",
+      visualFilter: "drop-shadow(0 16px 22px rgba(0, 0, 0, 0.52)) saturate(1.05)",
     },
   },
   {
@@ -671,10 +884,189 @@ const SHOWS = [
     effect: { icon: "flag", trail: "letters", click: "dawnRays", primary: "#9d2733", secondary: "#ead9aa" },
     theme: { bg: "#0c1420", panel: "#172335", accent: "#b33a35", highlight: "#ead9aa", ink: "#f6f2e8", muted: "rgba(246, 242, 232, 0.7)", serif: 'Garamond, "Times New Roman", "Songti SC", serif' },
   },
+  {
+    slug: "jesus-christ-superstar-1996-london",
+    source: "Jesus Christ Superstar (1996 London Cast) 网页数据源.md",
+    title: "Jesus Christ Superstar",
+    titleZh: "耶稣基督万世巨星（1996伦敦卡司录音）",
+    language: "en",
+    voice: "en-gb",
+    audioVoice: "Daniel",
+    logo: "assets/show-logo.png",
+    showEnglishToggle: false,
+    effect: { icon: "star", trail: "goldDust", click: "dawnRays", primary: "#d5a23c", secondary: "#efe1b1" },
+    theme: {
+      bg: "#110c08",
+      panel: "#24160f",
+      accent: "#a63c2d",
+      highlight: "#d9ad53",
+      ink: "#f7edda",
+      muted: "rgba(247, 237, 218, 0.68)",
+      serif: 'Baskerville, "Times New Roman", "Songti SC", serif',
+    },
+  },
+  {
+    slug: "le-petit-prince-2cd",
+    source: "Le Petit Prince (2CD访华首演纪念盘) 网页数据源.md",
+    title: "Le Petit Prince",
+    titleZh: "小王子（2CD访华首演纪念盘）",
+    language: "fr",
+    voice: "fr-fr",
+    audioVoice: "Audrey",
+    logo: "assets/show-logo.png",
+    effect: { icon: "star", trail: "goldDust", click: "sunHalo", primary: "#e3bd58", secondary: "#9ecbe8" },
+    theme: {
+      bg: "#071326",
+      panel: "#10233d",
+      accent: "#d59b3a",
+      highlight: "#f0d783",
+      ink: "#f6f1df",
+      muted: "rgba(225, 234, 239, 0.72)",
+      serif: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+    },
+  },
+  {
+    slug: "come-from-away",
+    source: "Come From Away (Original Broadway Cast Recording) 网页数据源.md",
+    legacyOutputSlug: "come-from-away",
+    title: "Come From Away",
+    titleZh: "来自远方",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-logo.jpg",
+    showEnglishToggle: false,
+    effect: { icon: "plane", trail: "airRoute", click: "flightPath", primary: "#2d9fb6", secondary: "#e3bd58" },
+    theme: {
+      bg: "#07171c",
+      panel: "#102b32",
+      accent: "#2d9fb6",
+      highlight: "#e3bd58",
+      ink: "#effafa",
+      muted: "rgba(216, 239, 240, 0.72)",
+      serif: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+    },
+  },
+  {
+    slug: "rent",
+    source: "Rent (Original Broadway Cast) 网页数据源.md",
+    legacyOutputSlug: "rent",
+    title: "Rent",
+    titleZh: "吉屋出租",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-logo.jpg",
+    showEnglishToggle: false,
+    effect: { icon: "musicNote", trail: "neonSpark", click: "subtleRipple", primary: "#c51d49", secondary: "#f0d65d" },
+    theme: {
+      bg: "#10070f",
+      panel: "#26101f",
+      accent: "#c51d49",
+      highlight: "#f0d65d",
+      ink: "#fff4ef",
+      muted: "rgba(246, 220, 222, 0.72)",
+      serif: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+    },
+  },
+  {
+    slug: "tick-tick-boom",
+    source: "tick, tick...BOOM! (Original Off-Broadway Cast Recording) 网页数据源.md",
+    legacyOutputSlug: "tick-tick-boom",
+    title: "tick, tick...BOOM!",
+    titleZh: "倒数时刻",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-logo.jpg",
+    showEnglishToggle: false,
+    effect: { icon: "clock", trail: "clockTicks", click: "clockShockwave", primary: "#f3b33d", secondary: "#f5e4a8" },
+    theme: {
+      bg: "#12100a",
+      panel: "#282113",
+      accent: "#e3ba25",
+      highlight: "#af86c8",
+      ink: "#fff9df",
+      muted: "rgba(229, 218, 177, 0.74)",
+      serif: 'Rockwell, "Courier New", serif',
+    },
+  },
+  {
+    slug: "wicked",
+    source: "Wicked (Original Broadway Cast Recording 2003) 网页数据源.md",
+    legacyOutputSlug: "wicked",
+    title: "Wicked",
+    titleZh: "魔法坏女巫",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-logo.jpg",
+    showEnglishToggle: false,
+    effect: { icon: "mask", trail: "magicDust", click: "crispShockwave", primary: "#8dc63f", secondary: "#f4f0df" },
+    theme: {
+      bg: "#090f08",
+      panel: "#162211",
+      accent: "#8dc63f",
+      highlight: "#f4f0df",
+      ink: "#f8f6e9",
+      muted: "rgba(218, 231, 190, 0.72)",
+      serif: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+    },
+  },
+  {
+    slug: "hadestown",
+    source: "Hadestown (Original Broadway Cast Recording) 网页数据源.md",
+    legacyOutputSlug: "hadestown",
+    title: "Hadestown",
+    titleZh: "冥城",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-logo.jpg",
+    showEnglishToggle: false,
+    effect: { icon: "rose", trail: "thornEmbers", click: "crispShockwave", primary: "#b33a2c", secondary: "#e9d3a0" },
+    theme: {
+      bg: "#110b08",
+      panel: "#21140e",
+      accent: "#b33a2c",
+      highlight: "#e9d3a0",
+      ink: "#f7eee0",
+      muted: "rgba(229, 202, 171, 0.72)",
+      serif: 'Baskerville, "Times New Roman", "Songti SC", serif',
+    },
+  },
+  {
+    slug: "les-dix-commandements",
+    source: "Les Dix Commandements (2000 French Cast) 网页数据源.md",
+    legacyOutputSlug: "les-dix-commandements-com-die-musicale",
+    title: "Les Dix Commandements",
+    titleZh: "十诫",
+    language: "fr",
+    voice: "fr-fr",
+    audioVoice: "Audrey",
+    logo: "assets/show-logo.jpg",
+    showEnglishToggle: false,
+    effect: { icon: "sun", trail: "goldDust", click: "sunHalo", primary: "#1d8aa6", secondary: "#f0e6c5" },
+    theme: {
+      bg: "#08131c",
+      panel: "#102737",
+      accent: "#1d8aa6",
+      highlight: "#f0e6c5",
+      ink: "#f5f7ef",
+      muted: "rgba(199, 225, 232, 0.72)",
+      serif: '"Times New Roman", "Songti SC", serif',
+    },
+  },
 ];
 const WAVE2_SHOW_SLUGS = new Set([
   "moulin-rouge",
   "elisabeth-das-musical",
+  "tanz-der-vampire",
+  "ludwig-ii-sehnsucht-nach-dem-paradies",
+  "dracula-das-musical",
+  "rebecca-das-musical",
+  "the-greatest-showman",
+  "epic-the-musical",
   "starmania",
   "mozart-das-musical",
   "phantom-of-the-opera",
@@ -688,9 +1080,252 @@ const WAVE2_SHOW_SLUGS = new Set([
   "sunset-boulevard",
   "les-miserables-1980",
   "les-miserables-cityprod-2017",
+  "jesus-christ-superstar-1996-london",
+  "le-petit-prince-2cd",
+  "come-from-away",
+  "rent",
+  "tick-tick-boom",
+  "wicked",
+  "hadestown",
+  "les-dix-commandements",
 ]);
 
 const SONG_TITLE_TRANSLATIONS = {
+  "the-greatest-showman": {
+    "The Greatest Show": "最伟大的表演",
+    "A Million Dreams": "一百万个梦想",
+    "A Million Dreams (Reprise)": "一百万个梦想（重唱）",
+    "Come Alive": "焕发生命",
+    "The Other Side": "另一面",
+    "Never Enough": "永远不够",
+    "This Is Me": "这就是我",
+    "Rewrite The Stars": "改写星辰",
+    Tightrope: "钢索",
+    "Never Enough (Reprise)": "永远不够（重唱）",
+    "From Now On": "从今以后",
+  },
+  "epic-the-musical": {
+    "The Horse and the Infant": "木马与婴儿",
+    "Just A Man": "不过是个凡人",
+    "Full Speed Ahead": "全速前进",
+    "Open Arms": "张开双臂",
+    "Warrior of the Mind": "心智战士",
+    Polyphemus: "波吕斐摩斯",
+    Survive: "求生",
+    "Remember Them": "铭记他们",
+    "My Goodbye": "我的告别",
+    Storm: "风暴",
+    "Luck Runs Out": "好运耗尽",
+    "Keep Your Friends Close": "亲近你的朋友",
+    Ruthlessness: "冷酷无情",
+    Puppeteer: "提线木偶师",
+    "Wouldn't You Like": "你难道不想吗",
+    "Done For": "你完了",
+    "There Are Other Ways": "还有别的办法",
+    "The Underworld": "冥界",
+    "No Longer You": "你已不再是你",
+    Monster: "怪物",
+    Suffering: "苦难",
+    "Different Beast": "另一头野兽",
+    Scylla: "斯库拉",
+    Mutiny: "哗变",
+    "Thunder Bringer": "雷霆之神",
+    Legendary: "传奇",
+    "Little Wolf": "小狼",
+    "We'd Be Fine": "我们会没事的",
+    "Love in Paradise": "天堂之爱",
+    "God Games": "众神游戏",
+    "Not Sorry For Loving You": "不为爱你道歉",
+    Dangerous: "危险",
+    Charybdis: "卡律布狄斯",
+    "Get in the Water": "下水来",
+    "600 Strike": "六百击",
+    "The Challenge": "挑战",
+    "Hold Them Down": "将他们压制",
+    Odysseus: "奥德修斯",
+    "I Can't Help But Wonder": "我禁不住猜想",
+    "Would You Fall In Love With Me Again": "你还会再次爱上我吗",
+  },
+  "jesus-christ-superstar-1996-london": {
+    "Heaven on their minds": "他们心中的天堂",
+    "What's the buzz-Strange thing Mystifying": "怎么回事／奇怪又费解",
+    "Everything's alright": "一切安好",
+    "This Jesus must die": "耶稣必须死",
+    Hosanna: "和散那",
+    "Simon Zeolotes": "奋锐党人西门",
+    "Pilate's dream": "彼拉多的梦",
+    "The temple": "圣殿",
+    "Everything's alright (Reprise)": "一切安好（重唱）",
+    "I don't know how to love him": "我不知该如何爱他",
+    "Damned for all time-Blood money": "永世受诅／血钱",
+    "The last supper": "最后的晚餐",
+    Gethsemane: "客西马尼",
+    "The arrest": "逮捕",
+    "Peter's denial": "彼得不认主",
+    "Pilate and Christ": "彼拉多与基督",
+    "King Herod's song": "希律王之歌",
+    "Judas' death": "犹大之死",
+    "Trial before Pilate (Including the 39 lashes)": "彼拉多审判（含三十九鞭）",
+    Superstar: "超级巨星",
+    Crucifixion: "受难",
+  },
+  "le-petit-prince-2cd": {
+    "Avion Dans La Nuit / Lever De Soleil / Dessine-Moi Un Mouton / Coucher De Soleil": "夜航／日出／给我画只绵羊／日落",
+    "L'allumeur De RÉVerbÈRes": "点灯人",
+    "Lever De Soleil / Retour Dans Le DÉSert : 8È Jour Coucher De Soleil": "日出／重返沙漠：第八天／日落",
+    "Le DÉPart": "离别",
+  },
+  "come-from-away": {
+    "Welcome To the Rock": "欢迎来到岩石",
+    "38 Planes": "38架飞机",
+    "Blankets and Bedding": "毯子和床上用品",
+    "28 Hours / Wherever We Are": "28小时／无论我们身在何处",
+    "Darkness and Trees": "黑暗与树木",
+    "On the Bus": "在巴士上",
+    "Darkness and Trees (Reprise)": "黑暗与树木（重唱）",
+    "Lead Us Out of the Night": "带领我们走出黑夜",
+    "Phoning Home": "打电话回家",
+    "Costume Party": "化装舞会",
+    "I Am Here": "我在这里",
+    Prayer: "祈祷",
+    "On the Edge": "在边缘",
+    "Screech In": "尖叫入会",
+    "Me and the Sky": "我和天空",
+    "The Dover Fault": "多佛断层",
+    "Stop the World": "让世界停止",
+    "38 Planes (Reprise) / Somewhere In the Middle of Nowhere": "38架飞机（重唱）／荒无人烟之地",
+    "Something's Missing": "少了些什么",
+    "10 Years Later": "十年之后",
+    Finale: "终曲",
+    "Screech Out": "尖叫出场",
+  },
+  rent: {
+    "Tune Up #1": "调音#1",
+    "Voice Mail #1": "语音留言#1",
+    "Tune Up #2": "调音#2",
+    Rent: "吉屋出租",
+    "You Okay Honey?": "你还好吗，亲爱的？",
+    "Tune Up #3": "调音#3",
+    "One Song Glory": "一曲荣耀",
+    "Light My Candle": "点燃我的蜡烛",
+    "Voice Mail #2": "语音留言#2",
+    "Today 4 U": "今天为你",
+    "You'll See": "你会看到",
+    "Tango: Maureen": "探戈：莫琳",
+    "Life Support": "生命支持",
+    "Out Tonight": "今晚出门",
+    "Another Day": "另一天",
+    "Will I?": "会是我吗？",
+    "On The Street": "街头",
+    "Santa Fe": "圣菲",
+    "I'll Cover You": "我会照顾你",
+    "We're Okay": "我们没事",
+    "Christmas Bells": "圣诞钟声",
+    "Over The Moon": "欣喜若狂",
+    "La Vie Boheme": "波希米亚生活",
+    "I Should Tell You": "我应该告诉你",
+    "La Vie Boheme B": "波希米亚生活B",
+    "Seasons Of Love": "爱的四季",
+    "Happy New Year": "新年快乐",
+    "Voice Mail #3": "语音留言#3",
+    "Happy New Year B": "新年快乐B",
+    "Take Me Or Leave Me": "要么接受我，要么离开我",
+    "Seasons Of Love B": "爱的四季B",
+    "Without You": "没有你",
+    "Voice Mail #4": "语音留言#4",
+    Contact: "接触",
+    "I'll Cover You (Reprise)": "我会照顾你（重唱）",
+    Halloween: "万圣节",
+    "Goodbye Love": "告别，爱",
+    "What You Own": "你拥有的东西",
+    "Voice Mail #5": "语音留言#5",
+    Finale: "终曲",
+    "Your Eyes": "你的眼睛",
+    "Finale B": "终曲B",
+  },
+  "tick-tick-boom": {
+    "30/90": "30/90",
+    "Green Green Dress": "绿色连衣裙",
+    Sugar: "糖",
+    "See Her Smile": "看见她的笑容",
+    "Come to Your Senses": "唤醒你的感官",
+    Why: "为什么",
+    "Louder Than Words": "言语之外",
+  },
+  wicked: {
+    "Dear Old Shiz": "古老的希兹",
+    "The Wizard And I": "巫师与我",
+    "What Is This Feeling?": "这是什么感觉？",
+    "Something Bad": "坏事",
+    "Dancing Through Life": "载歌载舞的人生",
+    Popular: "受欢迎",
+    "I'm Not That Girl": "我不是那种女孩",
+    "One Short Day": "短暂的一天",
+    "A Sentimental Man": "多愁善感的人",
+    "Defying Gravity": "挑战重力",
+    "Thank Goodness": "谢天谢地",
+    "I'm Not That Girl (Reprise)": "我不是那种女孩（重唱）",
+    "As Long As You're Mine": "只要你属于我",
+    "No Good Deed": "没有善举",
+    "March Of The Witch Hunters": "女巫猎人进行曲",
+    "For Good": "永远改变",
+    Finale: "终曲",
+  },
+  hadestown: {
+    "Road to Hell": "通往地狱之路",
+    "Any Way the Wind Blows": "风往哪边吹",
+    "Come Home with Me": "和我回家",
+    "Wedding Song": "婚礼之歌",
+    "Epic I": "史诗I",
+    "Livin' it Up on Top": "在顶端欢庆",
+    "All I've Ever Known (Intro)": "我所知道的一切（序）",
+    "All I've Ever Known": "我所知道的一切",
+    "Way Down Hadestown": "深入冥城",
+    "A Gathering Storm": "风暴将至",
+    "Epic II": "史诗II",
+    Chant: "圣歌",
+    "Hey, Little Songbird": "嘿，小鸣鸟",
+    "When the Chips are Down (Intro)": "当筹码落定（序）",
+    "When the Chips are Down": "当筹码落定",
+    "Gone, I'm Gone": "离开，我要离开",
+    "Wait for Me (Intro)": "等我（序）",
+    "Wait for Me": "等我",
+    "Why We Build the Wall": "我们为何筑墙",
+    "Why We Build the Wall (Outro)": "我们为何筑墙（尾声）",
+    "Our Lady of the Underground": "地下女王",
+    "Way Down Hadestown (Reprise)": "深入冥城（重唱）",
+    Flowers: "鲜花",
+    "Come Home with Me (Reprise)": "和我回家（重唱）",
+    "Papers (Intro)": "文件（序）",
+    "Nothing Changes": "什么都不会改变",
+    "If it's True": "如果这是真的",
+    "How Long?": "还有多久？",
+    "Chant (Reprise)": "圣歌（重唱）",
+    "Promises": "承诺",
+    "Word to the Wise": "智者之言",
+    "His Kiss, the Riot": "他的吻，暴乱",
+    "Wait for Me (Reprise) (Intro)": "等我（重唱序）",
+    "Wait for Me (Reprise)": "等我（重唱）",
+    "Doubt Comes In": "怀疑来袭",
+    "Road to Hell (Reprise)": "通往地狱之路（重唱）",
+    "We Raise our Cups": "我们举杯",
+  },
+  "les-dix-commandements": {
+    "Je laisse à l'abandon": "我把你遗弃",
+    "Il s'appellera Moïse": "他将被命名为摩西",
+    "Le dilemme": "两难",
+    "À chacun son rêve": "各自的梦想",
+    "La peine maximum": "最高刑罚",
+    "Oh Moïse": "噢，摩西",
+    "Il est celui que je voulais": "他就是我想要的人",
+    "Mais tu t'en vas": "但你要离开",
+    "Laisse mon peuple s'en aller": "让我的人民离去",
+    "L-I-B-R-E": "自由",
+    "Devant la mer": "面对大海",
+    "Mon frère": "我的兄弟",
+    "Les dix commandements": "十诫",
+    "L'envie d'aimer": "爱的渴望",
+  },
   "moulin-rouge": {
     "Welcome To The Moulin Rouge!": "欢迎来到红磨坊！",
     "The Sparkling Diamond": "璀璨钻石",
@@ -725,7 +1360,11 @@ const SONG_TITLE_TRANSLATIONS = {
     "Elisabeth, mach auf": "伊丽莎白，开门",
     "Uns're Kaiserin soll sich wiegen": "让我们的皇后称一称体重",
     "Ich gehör nur mir (Reprise)": "我只属于我自己（重唱）",
-    Kitsch: "媚俗",
+    Kitsch: "便宜货",
+    "Der letzte Tanz": "最后一舞",
+    "Nichts ist schwer": "世上无难事",
+    "Ich gehör nur mir": "我只属于我自己",
+    "Die Schatten werden länger": "阴霾渐袭",
     Éljen: "万岁",
     Nervenklinik: "精神病院",
     "Salon in der Hofburg": "霍夫堡宫的沙龙",
@@ -734,7 +1373,7 @@ const SONG_TITLE_TRANSLATIONS = {
     "Die Maladie": "疾病",
     "Die letzte Chance": "最后的机会",
     "Ist das nun dein Lohn (Bellaria)": "这就是你的报偿吗（贝拉里亚）",
-    "Die Schatten werden länger (Reprise)": "阴影渐长（重唱）",
+    "Die Schatten werden länger (Reprise)": "阴霾渐袭（重唱）",
     "Rudolf, ich bin ausser mir": "鲁道夫，我失去理智了",
     Hass: "仇恨",
     "Wie du (Reprise)": "像你一样（重唱）",
@@ -793,6 +1432,16 @@ const SONG_TITLE_TRANSLATIONS = {
     "Le rêve de Stella Spotlight": "斯黛拉·聚光灯的梦",
     Final: "终曲",
   },
+  "rebecca-das-musical": {
+    "Zeit in einer Flasche": "序曲/瓶中时光",
+    "Zeit in einer Flasche (Live)": "序曲/瓶中时光",
+    "Gott, warum?": "上天，为什么",
+    "Gott, warum? (Live)": "上天，为什么",
+    "Hilf mir durch die Nacht": "助我度过沉沉黑夜",
+    "I’m an American Woman": "我是一个美国女人",
+    "I'm An American Woman": "我是一个美国女人",
+    Rebecca: "瑞贝卡",
+  },
   "mozart-das-musical": {
     "Entr'acte": "幕间曲",
     Prolog: "序幕",
@@ -819,22 +1468,28 @@ const SONG_TITLE_TRANSLATIONS = {
     "Dich Kennen Heisst Dich Lieben (Reprise)": "认识你就是爱上你（重唱）",
     "Wer Ist Wer?": "谁是谁？",
     "Der Prinz Ist Fort": "王子走了",
-    "Irgendwo Wird Immer Getanzt": "总有某处在起舞",
+    "Overture / Irgendwo wird immer getanzt": "序曲/ 总有一处可尽情起舞",
+    "Irgendwo Wird Immer Getanzt": "序曲/ 总有一处可尽情起舞",
     "Mozart-Zitat (Ouvertüre \"Titus\")": "莫扎特引曲（《狄托的仁慈》序曲）",
-    "Wie Kann Es Möglich Sein?": "这怎么可能？",
+    "Wie kann es möglich sein?": "怎会如此？",
+    "Wie Kann Es Möglich Sein?": "怎会如此？",
     "Warum Kannst Du Mich Nicht Lieben?": "你为什么不能爱我？",
     "Mozarts Verwirrung": "莫扎特的迷惘",
     "Gold Von Den Sternen (Reprise)": "来自群星的黄金（重唱）",
     Bettelbriefe: "乞求信",
     "Papa Ist Tot": "爸爸死了",
-    "Schliess Dein Herz In Eisen Ein (Reprise)": "把你的心锁进铁中（重唱）",
+    "Schliess dein Herz in Eisen ein": "紧锁心扉，坚如磐石",
+    "Schliess Dein Herz In Eisen Ein (Reprise)": "紧锁心扉，坚如磐石（重唱）",
     "Irgendwo Wird Immer Getanzt (Reprise)": "总有某处在起舞（重唱）",
     "Der Einfache Weg": "简单的道路",
     "Mozart, Mozart!": "莫扎特，莫扎特！",
     "Mozarts Tod": "莫扎特之死",
-    "Wie Wird Man Seinen Schatten Los? (Finale)": "如何摆脱自己的影子？（终曲）",
+    "Wie wird man seinen Schatten los?": "如何逃离自己的阴影？",
+    "Wie Wird Man Seinen Schatten Los? (Finale)": "如何逃离自己的阴影？（终曲）",
   },
   "phantom-of-the-opera": {
+    "All I Ask Of You": "我对你唯一的请求",
+    "All I Ask Of You (Reprise)": "我对你唯一的请求（重唱）",
     "Prologue (Live)": "序幕（现场）",
     "Overture (Live)": "序曲（现场）",
     "Think Of Me (Live)": "想念我（现场）",
@@ -1022,6 +1677,14 @@ const SONG_TITLE_OVERRIDES = {
   },
 };
 
+// Keep published audio paths stable when a source heading is corrected.
+const SONG_ID_OVERRIDES = {
+  "phantom-of-the-opera": {
+    12: "12-all-i-ask-of-you-live",
+    13: "13-all-i-ask-of-you-live",
+  },
+};
+
 const LINE_TEXT_OVERRIDES = {
   "la-legende-du-roi-arthur-01-001": { zh: "我曾看见邪恶的仙女" },
   "la-legende-du-roi-arthur-01-002": { zh: "挡住我的去路" },
@@ -1077,6 +1740,12 @@ const LINE_TEXT_OVERRIDES = {
   "starmania-02-034": { zh: "在垄断城" },
   "starmania-02-035": { zh: "当太阳落下" },
   "starmania-02-036": { zh: "整个西方都在恐惧" },
+};
+
+const MISSING_SOURCE_TRANSLATIONS = {
+  "the-greatest-showman": {
+    Woah: "呜哦",
+  },
 };
 
 const SHOW_WORD_OVERRIDES = {
@@ -1147,10 +1816,20 @@ const SHOW_WORD_OVERRIDES = {
 };
 
 const SHOW_LYRIC_CORRECTIONS = {
+  "the-greatest-showman": [
+    [/^CThink of that your only option$/gu, "Think of that your only option"],
+    [/\bI gonna send a flood\b/gu, "I'm gonna send a flood"],
+    [/\bnightsky\b/gu, "night sky"],
+    [/\ball that you now\b/gu, "all that you know"],
+    [/\bWhats waited\b/gu, "What's waited"],
+  ],
   "moulin-rouge": [
     [/Dancing and the way we go to/gu, "Dancing, and away we go..."],
     [/The most less lascivious racketeer around/gu, "The most lascivious racketeer around"],
     [/\bchocalata\b/giu, "chocolata"],
+  ],
+  "wicked": [
+    [/^What is it\?\s*:\s*what's wrong\?$/gu, "What is it? What's wrong?"],
   ],
   "elisabeth-das-musical": [
     [/^_Die$/gu, ""],
@@ -2029,13 +2708,14 @@ const COMMON_ENGLISH = {
 };
 
 function main() {
-  const rougeGlossary = loadRougeGlossary();
-  const freedictGlossary = loadFreedictGlossary();
-  const englishGlossary = loadEnglishGlossary();
   const summary = [];
 
   const requestedSlug = process.argv.find((arg) => arg.startsWith("--show="))?.slice("--show=".length);
   const dryRun = process.argv.includes("--dry-run");
+  const writeRequested = process.argv.includes("--write");
+  const preflightOnly = process.argv.includes("--preflight");
+  const allowContentChanges = process.argv.includes("--allow-content-changes");
+  const allRequested = process.argv.includes("--all");
   const textOnly = process.argv.includes("--text-only");
   const stylesOnly = process.argv.includes("--styles-only");
   const cursorsOnly = process.argv.includes("--cursors-only");
@@ -2043,6 +2723,19 @@ function main() {
   const indexOnly = process.argv.includes("--index-only");
   const scriptsOnly = process.argv.includes("--scripts-only");
   const initialDataOnly = process.argv.includes("--initial-data-only");
+  if ((dryRun && writeRequested) || (preflightOnly && (dryRun || writeRequested))) {
+    throw new Error("Use exactly one of --dry-run, --preflight, or --write");
+  }
+  if (!dryRun && !preflightOnly && !writeRequested) {
+    throw new Error(
+      "Generation is read-only by default. Run --dry-run or --preflight first, then rerun with --write "
+      + "and a narrow --show=<slug> or explicit output mode.",
+    );
+  }
+  if (writeRequested && !requestedSlug && !allRequested) {
+    throw new Error("Bulk generation requires explicit --all; otherwise use --show=<slug>");
+  }
+  generationWritesEnabled = writeRequested;
   const selectedShows = requestedSlug ? SHOWS.filter((show) => show.slug === requestedSlug) : SHOWS;
   if (requestedSlug && selectedShows.length === 0) throw new Error(`Unknown show slug: ${requestedSlug}`);
 
@@ -2091,7 +2784,7 @@ function main() {
     }
     const sourcePath = path.join(LYRICS_ROOT, show.source);
     const songs = parseMarkdown(sourcePath, show);
-    assertLyricsReadyForGeneration(songs, show);
+    assertLyricsReadyForGeneration(songs, show, { requireComplete: !dryRun });
     if (dryRun) {
       const lines = songs.flatMap((song) => song.lines);
       const missingTitles = songs.filter((song) => !song.titleZh).map((song) => song.title);
@@ -2110,8 +2803,11 @@ function main() {
       });
       return;
     }
-    if (textOnly) {
-      const outDir = path.join(ROOT, show.slug);
+    if (writeRequested) assertNoUnreviewedContentChanges(songs, show, { allowContentChanges });
+    assertReviewedSourceLines(songs, show);
+    const outDir = path.join(ROOT, show.slug);
+    if (textOnly && writeRequested) {
+      assertSourceWordCardsReady(songs, show, loadExistingWordEntries(outDir));
       fs.mkdirSync(outDir, { recursive: true });
       writeFile(outDir, "songs.js", `window.songs=${JSON.stringify(songs)};\n`);
       writeFile(outDir, "songs-initial.js", `window.songsInitial=${JSON.stringify(buildInitialSongs(songs))};\n`);
@@ -2124,14 +2820,26 @@ function main() {
       return;
     }
     const glossaryShow = show.contentSlug ? { ...show, slug: show.contentSlug } : show;
-    const outDir = path.join(ROOT, show.slug);
-    let previousWordEntries = {};
-    try {
-      previousWordEntries = loadWindowObject(path.join(outDir, "word-data.js"), "wordEntries");
-    } catch {
-      // A new show has no prior generated dictionary to reuse.
-    }
+    const rougeGlossary = loadRougeGlossary();
+    const freedictGlossary = loadFreedictGlossary();
+    const englishGlossary = loadEnglishGlossary();
+    const previousWordEntries = {
+      ...loadLegacyEnglishWordEntries(show),
+      ...loadLegacyWordEntries(show),
+      ...loadExistingWordEntries(outDir),
+    };
     const wordEntries = buildWordEntries(glossaryShow, songs, rougeGlossary, freedictGlossary, englishGlossary, previousWordEntries);
+    assertSourceWordCardsReady(songs, show, wordEntries);
+    if (preflightOnly) {
+      summary.push({
+        slug: show.slug,
+        songs: songs.length,
+        lines: songs.reduce((total, song) => total + song.lines.length, 0),
+        words: Object.keys(wordEntries).length,
+        preflight: "passed",
+      });
+      return;
+    }
 
     fs.mkdirSync(path.join(outDir, "scripts"), { recursive: true });
     fs.mkdirSync(path.join(outDir, "tests"), { recursive: true });
@@ -2142,7 +2850,13 @@ function main() {
     writeFile(outDir, "index.html", renderIndex(show));
     writeFile(outDir, "style.css", renderStyle(show));
     writeFile(outDir, "script.js", renderScript(show));
-    writeFile(outDir, "songs.js", `window.songs=${JSON.stringify(songs)};\n`);
+    const runtimeSongs = show.fullSongsFile ? buildInitialSongs(songs) : songs;
+    let songsRuntimeSource = "window.songs=" + JSON.stringify(runtimeSongs) + ";\n";
+    if (show.fullSongsFile) {
+      songsRuntimeSource += "window.fullSongsFile=" + JSON.stringify(show.fullSongsFile) + ";\n";
+      writeFile(outDir, show.fullSongsFile, "window.songs=" + JSON.stringify(songs) + ";\n");
+    }
+    writeFile(outDir, "songs.js", songsRuntimeSource);
     writeFile(outDir, "songs-initial.js", `window.songsInitial=${JSON.stringify(buildInitialSongs(songs))};\n`);
     writeFile(outDir, "word-data.js", `window.wordEntries=${JSON.stringify(wordEntries)};\n`);
     writeFile(path.join(outDir, "scripts"), "build-audio.js", renderAudioBuilder(show));
@@ -2190,17 +2904,173 @@ function findStructuralLyricCandidates(songs) {
   return candidates;
 }
 
-function assertLyricsReadyForGeneration(songs, show) {
+function assertLyricsReadyForGeneration(songs, show, { requireComplete = false } = {}) {
   const candidates = findStructuralLyricCandidates(songs);
-  if (!candidates.length) return;
-  const details = candidates
-    .slice(0, 20)
-    .map((item) => `${item.line} [${item.reasons.join(", ")}] ${item.text}`)
-    .join("\n");
-  throw new Error(
-    `${show.slug} has ${candidates.length} unresolved structural lyric candidates. `
-    + `Review parallel voices and line segmentation before page or audio generation:\n${details}`,
-  );
+  if (candidates.length) {
+    const details = candidates
+      .slice(0, 20)
+      .map((item) => `${item.line} [${item.reasons.join(", ")}] ${item.text}`)
+      .join("\n");
+    throw new Error(
+      `${show.slug} has ${candidates.length} unresolved structural lyric candidates. `
+      + `Review parallel voices and line segmentation before page or audio generation:\n${details}`,
+    );
+  }
+
+  if (!requireComplete || !show.language) return;
+  const missing = [];
+  songs.forEach((song) => {
+    (song.lines || []).forEach((line) => {
+      if (!line.original) missing.push(`${line.id}:original`);
+      if (!line.ipa) missing.push(`${line.id}:ipa`);
+      if (!line.zh && !(show.allowedMissingZhIds || []).includes(line.id)) {
+        missing.push(`${line.id}:zh`);
+      }
+      if (show.language !== "en" && show.showEnglishToggle !== false && !line.en) {
+        missing.push(`${line.id}:en`);
+      }
+    });
+  });
+  if (missing.length) {
+    throw new Error(
+      `${show.slug} has ${missing.length} missing required lyric fields; refusing to overwrite generated data:\n`
+      + missing.slice(0, 30).join("\n"),
+    );
+  }
+}
+
+function assertNoUnreviewedContentChanges(songs, show, { allowContentChanges = false } = {}) {
+  if (allowContentChanges) return;
+  const existingFile = path.join(ROOT, show.slug, "songs.js");
+  if (!fs.existsSync(existingFile)) return;
+  const existingSongs = loadWindowArray(existingFile, "songs");
+  const fields = ["speaker", "original", "ipa", "zh", "en", "note"];
+  const existingLines = new Map(existingSongs.flatMap((song) => song.lines || []).map((line) => [line.id, line]));
+  const generatedLines = new Map(songs.flatMap((song) => song.lines || []).map((line) => [line.id, line]));
+  const changes = [];
+  for (const id of new Set([...existingLines.keys(), ...generatedLines.keys()])) {
+    const before = existingLines.get(id);
+    const after = generatedLines.get(id);
+    if (!before) {
+      changes.push(`${id}:added`);
+      continue;
+    }
+    if (!after) {
+      changes.push(`${id}:removed`);
+      continue;
+    }
+    const changedFields = fields.filter((field) => String(before[field] || "") !== String(after[field] || ""));
+    if (changedFields.length) changes.push(`${id}:${changedFields.join(",")}`);
+  }
+  if (changes.length) {
+    throw new Error(
+      `${show.slug} would change ${changes.length} existing lyric rows; refusing an implicit content overwrite:\n`
+      + `${changes.slice(0, 30).join("\n")}\n`
+      + "Review the diff, then rerun with --allow-content-changes only when the content change is intentional.",
+    );
+  }
+}
+
+function reviewedLineKey(song, line) {
+  return `${song.sourceOrder}:${line.sourceLineIndex ?? line.lineIndex}`;
+}
+
+function assertReviewedSourceLines(songs, show) {
+  const reviewKey = REQUIRED_LINE_REVIEW_KEYS[show.slug];
+  if (!reviewKey) return;
+  const ledger = JSON.parse(fs.readFileSync(REVIEWED_LINE_OVERRIDES, "utf8"));
+  const reviewed = new Set(Object.keys(ledger[reviewKey] || {}));
+  const unreviewed = songs.flatMap((song) => (song.lines || [])
+    .filter((line) => !reviewed.has(reviewedLineKey(song, line)))
+    .map((line) => `${line.id} (${reviewedLineKey(song, line)})`));
+  if (unreviewed.length) {
+    throw new Error(
+      `${show.slug} source review gate blocked page generation: ${unreviewed.length} lyric lines remain unreviewed.\n`
+      + `${unreviewed.slice(0, 30).join("\n")}\n`
+      + "Finish the authoritative-source review before generating or overwriting this page.",
+    );
+  }
+}
+
+function loadExistingWordEntries(outDir) {
+  try {
+    return loadWindowObject(path.join(outDir, "word-data.js"), "wordEntries");
+  } catch {
+    return {};
+  }
+}
+
+function loadLegacyWordEntries(show) {
+  if (!show.legacyOutputSlug) return {};
+  try {
+    return loadWindowObject(
+      path.join(LEGACY_OUTPUT_ROOT, show.legacyOutputSlug, "word-data.js"),
+      "wordEntries",
+    );
+  } catch {
+    return {};
+  }
+}
+
+function loadLegacyEnglishWordEntries(show) {
+  if (show.language !== "en") return {};
+  const entries = {};
+  SHOWS
+    .filter((candidate) => candidate.language === "en" && candidate.slug !== show.slug)
+    .forEach((candidate) => {
+      try {
+        Object.assign(
+          entries,
+          loadWindowObject(path.join(ROOT, candidate.slug, "word-data.js"), "wordEntries"),
+        );
+      } catch {
+        // A missing legacy page dictionary is not a reason to block another page.
+      }
+    });
+  if (fs.existsSync(LEGACY_OUTPUT_ROOT)) {
+    fs.readdirSync(LEGACY_OUTPUT_ROOT, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .forEach((entry) => {
+        try {
+          const legacyEntries = loadWindowObject(
+            path.join(LEGACY_OUTPUT_ROOT, entry.name, "word-data.js"),
+            "wordEntries",
+          );
+          Object.entries(legacyEntries).forEach(([key, wordEntry]) => {
+            if (!entries[key]) entries[key] = wordEntry;
+          });
+        } catch {
+          // A legacy output without a dictionary is not a blocking input.
+        }
+      });
+  }
+  return entries;
+}
+
+function requiredWordKeys(songs) {
+  return new Set(songs.flatMap((song) => [song.title, ...(song.lines || []).map((line) => line.original)])
+    .flatMap((text) => collectTokens(text))
+    .map((token) => normalizeKey(token))
+    .filter(Boolean));
+}
+
+function isReviewedWordCard(entry) {
+  if (!entry || entry.needsReview) return false;
+  const fields = [entry.ipa, entry.meaning, entry.en, entry.speak];
+  if (fields.some((value) => !String(value || "").trim())) return false;
+  return !/(?:词义：|暂未|待补|proper noun)/iu.test(`${entry.meaning}\n${entry.en}`);
+}
+
+function assertSourceWordCardsReady(songs, show, wordEntries) {
+  const unresolved = [...requiredWordKeys(songs)]
+    .filter((key) => !isReviewedWordCard(wordEntries[key]));
+  if (unresolved.length) {
+    throw new Error(
+      `${show.slug} word-card gate blocked page generation: ${unresolved.length} clickable tokens lack reviewed cards.\n`
+      + `${unresolved.slice(0, 30).join(", ")}\n`
+      + "Resolve each card in the canonical glossary, then rerun --preflight before --write.",
+    );
+  }
 }
 
 function loadWindowArray(file, key) {
@@ -2235,7 +3105,7 @@ function existingLineIpa(show, lineId, original) {
     const cache = new Map();
     try {
       loadWindowArray(file, "songs").forEach((song) => song.lines.forEach((line) => {
-        cache.set(line.id, { original: line.original, ipa: line.ipa });
+        cache.set(line.id, { original: line.original, ipaKey: ipaCacheKey(line.original), ipa: line.ipa });
       }));
     } catch {
       // A first generation has no prior page data to reuse.
@@ -2243,7 +3113,16 @@ function existingLineIpa(show, lineId, original) {
     existingLineIpaCache.set(show.slug, cache);
   }
   const previous = existingLineIpaCache.get(show.slug).get(lineId);
-  return previous?.original === original && previous.ipa ? previous.ipa : "";
+  return previous?.ipaKey === ipaCacheKey(original) && previous.ipa ? previous.ipa : "";
+}
+
+function ipaCacheKey(text) {
+  return String(text || "")
+    .normalize("NFC")
+    .toLocaleLowerCase("fr-FR")
+    .replace(/[.,!?;:…'"“”‘’()[\]{}—–-]/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
 }
 
 function loadRougeGlossary() {
@@ -2366,6 +3245,15 @@ function parseMarkdown(file, show) {
   if (show.sourceFormat === "paired-english") {
     return parsePairedEnglishMarkdown(file, show);
   }
+  if (show.sourceFormat === "german-triple") {
+    return parseGermanTripleMarkdown(file, show);
+  }
+  if (show.sourceFormat === "english-chinese-single") {
+    return parseEnglishChineseSingleColumnMarkdown(file, show);
+  }
+  if (show.sourceFormat === "english-chinese-columns") {
+    return parseEnglishChineseColumnsMarkdown(file, show);
+  }
   const contentShow = show.contentSlug ? { ...show, slug: show.contentSlug } : show;
   const text = fs.readFileSync(file, "utf8");
   const lines = text.split(/\r?\n/);
@@ -2379,9 +3267,10 @@ function parseMarkdown(file, show) {
     const heading = raw.match(/^##\s+(\d+)\.\s+(.+?)\s*$/);
     if (heading) {
       const sourceTitle = normalizeGeneratedLineText(contentShow, heading[2].trim(), "original");
+      const order = Number(heading[1]);
       current = {
-        order: Number(heading[1]),
-        id: slugify(`${heading[1]}-${sourceTitle}`),
+        order,
+        id: SONG_ID_OVERRIDES[show.slug]?.[order] || slugify(`${heading[1]}-${sourceTitle}`),
         sourceTitle,
         title: stripSongTitleVersionSuffix(sourceTitle),
         titleZh: "",
@@ -2428,6 +3317,10 @@ function parseMarkdown(file, show) {
       return;
     }
     if (/^--.*--$/u.test(original.trim())) return;
+    if (!/^\s*(?:\[|【)/u.test(original) && isKnownSourceRole(original) && !/[:：]\s*\S/u.test(cleanCell(original))) {
+      pendingSpeaker = cleanCell(original).replace(/[:：]\s*$/u, "") || pendingSpeaker;
+      return;
+    }
     const bracketedLyric = original.trim().match(/^\s*(?:\[([^\]]{1,500})\]|【([^】]{1,500})】)\s*$/u);
     const hasAlignedText = Boolean(
       cleanCell(row["法语音标（IPA）"] || row["德语音标（IPA）"] || row["英文音标（IPA）"] || "")
@@ -2479,6 +3372,301 @@ function parseMarkdown(file, show) {
   });
 
   return finalizeParsedSongs(contentShow, show, songs);
+}
+
+function parseGermanTripleMarkdown(file, show) {
+  const contentShow = show.contentSlug ? { ...show, slug: show.contentSlug } : show;
+  const text = fs.readFileSync(file, "utf8");
+  const lines = text.split(/\r?\n/);
+  const songs = [];
+  let current = null;
+  let currentLineNumber = 0;
+  let header = null;
+
+  lines.forEach((raw) => {
+    const heading = raw.match(/^#\s+(\d+)\.?\s+(.+?)\s*$/u);
+    if (heading) {
+      const sourceTitle = normalizeGeneratedLineText(contentShow, heading[2].trim(), "original");
+      const order = Number(heading[1]);
+      current = {
+        order,
+        id: slugify(`${heading[1]}-${sourceTitle}`),
+        sourceTitle,
+        title: stripSongTitleVersionSuffix(sourceTitle),
+        titleZh: "",
+        lines: [],
+      };
+      songs.push(current);
+      currentLineNumber = 0;
+      header = null;
+      return;
+    }
+
+    if (!current) return;
+
+    const sourceTitle = raw.match(/^-\s*原歌名：(.+?)\s*$/u);
+    if (sourceTitle) {
+      current.sourceTitle = cleanCell(sourceTitle[1]);
+      current.title = stripSongTitleVersionSuffix(current.sourceTitle);
+      return;
+    }
+    const zhTitle = raw.match(/^-?\s*中文歌名：(.+?)\s*$/u);
+    if (zhTitle) {
+      const value = cleanCell(zhTitle[1]);
+      current.titleZh = value === "未提供" ? "" : stripSongTitleVersionSuffix(value);
+      return;
+    }
+    const pageInclusion = raw.match(/^-\s*网页收录：(.+?)\s*$/u);
+    if (pageInclusion) {
+      current.excludeFromPage = /^(?:否|不|no|false)/iu.test(pageInclusion[1].trim());
+      return;
+    }
+
+    if (!raw.startsWith("|")) return;
+    const cells = splitMarkdownRow(raw);
+    if (!cells.length || cells.some((cell) => /^---/u.test(cell))) return;
+    if (cells.includes("德语") && cells.includes("英文") && cells.includes("中文")) {
+      header = cells;
+      return;
+    }
+    if (!header) return;
+
+    const row = rowByHeader(header, cells);
+    const originalCell = row["德语"] || "";
+    const speakerCell = extractGermanTripleSpeaker(originalCell);
+    currentLineNumber += 1;
+    if (!speakerCell.text.trim()) return;
+    if (/^(?:\.\.\.|…|—+)$/u.test(speakerCell.text.trim())) return;
+    if (/^--.*--$/u.test(speakerCell.text.trim())) return;
+
+    const lineId = `${contentShow.slug}-${String(current.order).padStart(2, "0")}-${String(currentLineNumber).padStart(3, "0")}`;
+    const textOverride = LINE_TEXT_OVERRIDES[lineId] || {};
+    const original = cleanLineCell(contentShow, speakerCell.text, "original");
+    if (!original) return;
+    current.lines.push({
+      id: lineId,
+      lineIndex: currentLineNumber,
+      speaker: speakerCell.speaker,
+      original,
+      ipa: existingLineIpa(contentShow, lineId, original) || ipaFor(original, contentShow.voice),
+      en: normalizeGeneratedLineText(contentShow, textOverride.en ?? cleanLineCell(contentShow, stripGermanTripleTranslationSpeaker(row["英文"] || "", speakerCell.speaker, "en"), "en"), "en"),
+      zh: normalizeGeneratedLineText(contentShow, textOverride.zh ?? cleanLineCell(contentShow, stripGermanTripleTranslationSpeaker(row["中文"] || "", speakerCell.speaker, "zh"), "zh"), "zh"),
+      note: "",
+    });
+  });
+
+  return finalizeParsedSongs(contentShow, show, songs);
+}
+
+function parseEnglishChineseColumnsMarkdown(file, show) {
+  const contentShow = show.contentSlug ? { ...show, slug: show.contentSlug } : show;
+  const rows = fs.readFileSync(file, "utf8").split(/\r?\n/);
+  const songs = [];
+  let current = null;
+  let inLyricTable = false;
+  let pendingSpeaker = "";
+
+  const flushSong = () => {
+    if (!current) return;
+    current.sourceTitle = cleanConfiguredSongTitle(show, current.sourceTitle || current.title);
+    current.title = current.sourceTitle;
+    delete current.dataRowSeen;
+  };
+
+  rows.forEach((raw) => {
+    const heading = raw.match(/^##\s+(\d+)\.?\s+(.+?)\s*$/u);
+    if (heading) {
+      flushSong();
+      const headingTitle = normalizeGeneratedLineText(contentShow, cleanCell(heading[2]), "original");
+      current = {
+        order: Number(heading[1]),
+        id: slugify(`${heading[1]}-${headingTitle}`),
+        sourceTitle: headingTitle,
+        title: headingTitle,
+        titleZh: "",
+        lines: [],
+        dataRowSeen: false,
+      };
+      songs.push(current);
+      inLyricTable = false;
+      pendingSpeaker = "";
+      return;
+    }
+
+    if (!current) return;
+
+    const sourceTitle = raw.match(/^-\s*原歌名：(.+?)\s*$/u);
+    if (sourceTitle) {
+      current.sourceTitle = cleanCell(sourceTitle[1]);
+      current.title = stripSongTitleVersionSuffix(current.sourceTitle);
+      return;
+    }
+    const translatedTitle = raw.match(/^-?\s*中文歌名：(.+?)\s*$/u);
+    if (translatedTitle) {
+      const value = cleanCell(translatedTitle[1]);
+      current.titleZh = value === "未提供" ? "" : stripSongTitleVersionSuffix(value);
+      return;
+    }
+    const pageInclusion = raw.match(/^-\s*网页收录：(.+?)\s*$/u);
+    if (pageInclusion) {
+      current.excludeFromPage = /^(?:否|不|no|false)/iu.test(pageInclusion[1].trim());
+      return;
+    }
+
+    if (!raw.startsWith("|")) return;
+    const cells = splitMarkdownRow(raw);
+    if (cells.length < 2 || cells.some((cell) => /^---/u.test(cell))) return;
+    if (cells[0] === "英文" && cells[1] === "中文") {
+      inLyricTable = true;
+      return;
+    }
+    if (!inLyricTable) return;
+
+    const originalRaw = cleanCell(cells[0]);
+    const zhRaw = cleanCell(cells[1]);
+    if (!originalRaw || !zhRaw) return;
+    if (!current.dataRowSeen) {
+      current.dataRowSeen = true;
+      if (originalRaw === current.sourceTitle) return;
+    }
+    if (isEnglishSourceStageDirection(originalRaw)) return;
+
+    const speakerCell = extractSpeaker(originalRaw);
+    if (!speakerCell.text) {
+      pendingSpeaker = speakerCell.speaker || pendingSpeaker;
+      return;
+    }
+    const speaker = speakerCell.speaker || pendingSpeaker;
+    const original = cleanLineCell(contentShow, speakerCell.text, "original");
+    const zh = cleanLineCell(contentShow, stripTranslationSpeaker(zhRaw, speaker), "zh");
+    if (!original || !zh) return;
+
+    const lineIndex = current.lines.length + 1;
+    const lineId = `${contentShow.slug}-${String(current.order).padStart(2, "0")}-${String(lineIndex).padStart(3, "0")}`;
+    const textOverride = LINE_TEXT_OVERRIDES[lineId] || {};
+    current.lines.push({
+      id: lineId,
+      lineIndex,
+      speaker,
+      original,
+      ipa: existingLineIpa(contentShow, lineId, original) || ipaFor(original, contentShow.voice),
+      zh: normalizeGeneratedLineText(contentShow, textOverride.zh ?? zh, "zh"),
+      en: "",
+      note: "",
+    });
+    pendingSpeaker = "";
+  });
+  flushSong();
+
+  return finalizeParsedSongs(contentShow, show, songs);
+}
+
+function isEnglishSourceStageDirection(value) {
+  const clean = cleanCell(value);
+  if (/^\[\s*instrumental(?:\s+(?:interlude|break))?\s*\]$/iu.test(clean)) return true;
+  if (/^\[[^\]]+\]\s*\([^)]*\)$/u.test(clean)) {
+    return /\b(?:open|opens|opening|pick(?:s)?\s+up|drop(?:s|ped)?|raise(?:s|d)?|walk(?:s|ed)?|enter(?:s|ed)?|exit(?:s|ed)?)\b/iu.test(clean);
+  }
+  return /^\[[^\]]*\b(?:open|opens|opening|pick(?:s)?\s+up|drop(?:s|ped)?|raise(?:s|d)?|walk(?:s|ed)?|enter(?:s|ed)?|exit(?:s|ed)?)\b[^\]]*\]$/iu.test(clean);
+}
+
+function parseEnglishChineseSingleColumnMarkdown(file, show) {
+  const contentShow = show.contentSlug ? { ...show, slug: show.contentSlug } : show;
+  const rows = fs.readFileSync(file, "utf8").split(/\r?\n/);
+  const songs = [];
+  let current = null;
+  let inLyricTable = false;
+
+  const flushSong = () => {
+    if (!current) return;
+    let lineIndex = 0;
+    for (let index = 0; index < current.rawRows.length; index += 1) {
+      const originalRaw = cleanCell(current.rawRows[index]);
+      if (!originalRaw || /\p{Script=Han}/u.test(originalRaw)) continue;
+      const nextRaw = cleanCell(current.rawRows[index + 1] || "");
+      const hasAlignedChinese = /\p{Script=Han}/u.test(nextRaw);
+      const zhSource = hasAlignedChinese
+        ? nextRaw
+        : MISSING_SOURCE_TRANSLATIONS[contentShow.slug]?.[originalRaw] || "";
+      if (hasAlignedChinese) index += 1;
+      if (!zhSource) {
+        throw new Error(`${show.slug} track ${current.order} has no Chinese translation for: ${originalRaw}`);
+      }
+      lineIndex += 1;
+      const lineId = `${contentShow.slug}-${String(current.order).padStart(2, "0")}-${String(lineIndex).padStart(3, "0")}`;
+      const textOverride = LINE_TEXT_OVERRIDES[lineId] || {};
+      const original = cleanLineCell(contentShow, originalRaw, "original");
+      if (!original) continue;
+      current.lines.push({
+        id: lineId,
+        lineIndex,
+        speaker: "",
+        original,
+        ipa: existingLineIpa(contentShow, lineId, original) || ipaFor(original, contentShow.voice),
+        zh: normalizeGeneratedLineText(contentShow, textOverride.zh ?? cleanLineCell(contentShow, zhSource, "zh"), "zh"),
+        en: "",
+        note: "",
+      });
+    }
+    current.title = cleanConfiguredSongTitle(show, current.sourceTitle || current.title);
+    delete current.rawRows;
+  };
+
+  rows.forEach((raw) => {
+    const heading = raw.match(/^##\s+(\d+)\.\s+(.+?)\s*$/u);
+    if (heading) {
+      flushSong();
+      const headingTitle = cleanCell(heading[2]);
+      current = {
+        order: Number(heading[1]),
+        id: slugify(`${heading[1]}-${headingTitle}`),
+        sourceTitle: headingTitle,
+        title: headingTitle,
+        titleZh: "",
+        lines: [],
+        rawRows: [],
+      };
+      songs.push(current);
+      inLyricTable = false;
+      return;
+    }
+    if (!current) return;
+    const sourceTitle = raw.match(/^-\s*原歌名：(.+?)\s*$/u);
+    if (sourceTitle) {
+      current.sourceTitle = cleanCell(sourceTitle[1]);
+      return;
+    }
+    const translatedTitle = raw.match(/^-\s*中文歌名：(.+?)\s*$/u);
+    if (translatedTitle) {
+      const value = cleanCell(translatedTitle[1]);
+      current.titleZh = value === "未提供" ? "" : value;
+      return;
+    }
+    if (/^\|\s*歌词\s*\|$/u.test(raw)) {
+      inLyricTable = true;
+      return;
+    }
+    if (!inLyricTable || /^\|\s*---\s*\|$/u.test(raw)) return;
+    const lyricCell = raw.match(/^\|\s?(.*?)\s?\|$/u);
+    if (lyricCell) current.rawRows.push(lyricCell[1].replace(/\\\|/g, "|").trim());
+  });
+  flushSong();
+
+  return finalizeParsedSongs(contentShow, show, songs);
+}
+
+function stripGermanTripleTranslationSpeaker(value, sourceSpeaker, field) {
+  const clean = cleanCell(value);
+  if (!sourceSpeaker) return clean;
+  const bracketed = clean.match(/^\s*(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)\s*[:：]\s*(.+)$/u);
+  if (bracketed) return bracketed[3].trim();
+  const labelled = clean.match(/^([^:：]{1,24})[:：]\s*(.+)$/u);
+  if (!labelled) return clean;
+  const label = labelled[1].trim();
+  const parsed = extractTranslationSpeaker(clean);
+  const chineseRole = /(?:先生|女士|小姐|夫人|伯爵|公爵|男爵|王子|公主|国王|女王|妈妈|爸爸|合唱|众)$/u.test(label);
+  if (parsed.speaker || (field === "zh" && chineseRole)) return labelled[2].trim();
+  return clean;
 }
 
 function parsePairedEnglishMarkdown(file, show) {
@@ -2594,17 +3782,39 @@ function cleanConfiguredSongTitle(show, value) {
 }
 
 function finalizeParsedSongs(contentShow, show, songs) {
-  const renderedSongs = songs
+  const classifiedSongs = songs
     .map((song) => ({
       ...song,
       lines: song.lines.filter((line) => !isInstrumentalPlaceholderLine(line)),
-    }))
+      explicitlyInstrumental: song.lines.some((line) => isInstrumentalPlaceholderLine(line))
+        || /(?:\binstrumental\b|纯音乐|纯器乐|器乐曲)/iu.test(`${song.sourceTitle || ""} ${song.title || ""} ${song.titleZh || ""}`),
+    }));
+
+  const emptyUnclassifiedSongs = classifiedSongs.filter((song) => {
+    const inConfiguredRange = (show.sourceOrderMin === undefined || song.order >= show.sourceOrderMin)
+      && (show.sourceOrderMax === undefined || song.order <= show.sourceOrderMax);
+    return inConfiguredRange
+      && !song.excludeFromPage
+      && !song.explicitlyInstrumental
+      && song.lines.length === 0;
+  });
+  if (emptyUnclassifiedSongs.length) {
+    const details = emptyUnclassifiedSongs
+      .map((song) => `${String(song.order).padStart(2, "0")} "${song.sourceTitle || song.title}"`)
+      .join(", ");
+    throw new Error(
+      `${show.slug} track ${details} has no lyric rows and is not explicitly instrumental or excluded. `
+      + "Restore it from the authoritative or reviewed local source; if no local source exists, research and record an online source before generation.",
+    );
+  }
+
+  const renderedSongs = classifiedSongs
     .filter((song) => !song.excludeFromPage)
     .filter((song) => song.lines.length > 0)
     .filter((song) => show.sourceOrderMin === undefined || song.order >= show.sourceOrderMin)
     .filter((song) => show.sourceOrderMax === undefined || song.order <= show.sourceOrderMax)
     .map((song, index) => {
-      const { sourceTitle, excludeFromPage, ...displaySong } = song;
+      const { sourceTitle, excludeFromPage, explicitlyInstrumental, ...displaySong } = song;
       const translatedTitle = SONG_TITLE_OVERRIDES[contentShow.slug]?.[sourceTitle]
         || song.titleZh
         || SONG_TITLE_TRANSLATIONS[show.slug]?.[sourceTitle]
@@ -2680,6 +3890,11 @@ function mergeReviewedLineWraps(lines, show) {
     if (actualIds.join("\n") !== ids.join("\n")) {
       throw new Error(`Line merge mismatch for ${show.slug}: expected ${ids.join(", ")}; got ${actualIds.join(", ")}`);
     }
+    if (!isSafeReviewedLineMerge(members)) {
+      merged.push(line);
+      index += 1;
+      continue;
+    }
     const textOverride = MERGED_LINE_TEXT_OVERRIDES[line.id] || {};
     const joinedOriginal = members.map((member) => member.original).join(" ")
       .replace(/\s+([,.;!?…])/gu, "$1")
@@ -2696,10 +3911,25 @@ function mergeReviewedLineWraps(lines, show) {
       en: textOverride.en ?? joinedEnglish,
       zh: textOverride.zh ?? joinedChinese,
       note: members.map((member) => member.note).filter(Boolean).join("；"),
+      ...(textOverride.repeatCount ? { repeatCount: textOverride.repeatCount } : {}),
     });
     index += ids.length;
   }
   return merged.map((line, index) => ({ ...line, lineIndex: index + 1 }));
+}
+
+function isSafeReviewedLineMerge(members) {
+  if (!Array.isArray(members) || members.length < 2) {
+    return false;
+  }
+  const original = members.map((member) => String(member.original || "").trim()).filter(Boolean).join(" ");
+  const vocalizationOnly = members.every((member) => /^(?:[a-z]+\W*)+$/iu.test(String(member.original || "").trim())
+    && !/[\p{L}]{3,}/u.test(String(member.original || "").trim().replace(/^(?:woah|oh|ah|ha|la|na)\b/iu, "")));
+  if (vocalizationOnly) return true;
+  if (members.length > MAX_REVIEWED_LINE_MERGE_ROWS) return false;
+  const wordCount = original.match(/[\p{L}\p{N}]+(?:[’'’-][\p{L}\p{N}]+)*/gu)?.length || 0;
+  if (!wordCount || wordCount > MAX_REVIEWED_LINE_MERGE_WORDS) return false;
+  return !/[.!?…]+[”’'"』」）)\]]*\s+[“‘'"（(【\[]*[\p{Lu}]/u.test(original);
 }
 
 function merge1789OpeningLines(lines, show) {
@@ -2738,34 +3968,69 @@ function merge1789OpeningLines(lines, show) {
   return merged.map((line, index) => ({ ...line, lineIndex: index + 1 }));
 }
 
-function normalizeGeneratedSongLines(show, lines) {
+function normalizeGeneratedSongLines(show, lines, allowLongLineSplit = true) {
   const splitOrdinaryComma = new Set([
     "1789-les-amants-de-la-bastille",
     "moliere-le-spectacle-musical",
   ]).has(show.slug);
 
   const expanded = lines.flatMap((line) => {
-    let originals = [line.original];
+    const sourceLineIndex = line.sourceLineIndex ?? line.lineIndex;
+    const explicitSegments = allowLongLineSplit ? LINE_SEGMENT_OVERRIDES[line.id] : null;
+    if (Array.isArray(explicitSegments) && explicitSegments.length > 1) {
+      return explicitSegments.flatMap((segment, index) => normalizeGeneratedSongLines(show, [{
+        ...line,
+        ...segment,
+        en: segment.en ?? line.en,
+        id: `${line.id}-${String.fromCharCode(97 + index)}`,
+        sourceLineIndex,
+      }], false));
+    }
+    const longSegments = allowLongLineSplit ? splitAlignedLongLine(line) : null;
+    if (longSegments) {
+      return longSegments.flatMap((segment, index) => normalizeGeneratedSongLines(show, [{
+        ...line,
+        ...segment,
+        id: `${line.id}-${String.fromCharCode(97 + index)}`,
+        sourceLineIndex,
+      }], false));
+    }
+    let originals = splitAlignedSentenceSegments(line);
+    if (originals.length === 1) originals = [line.original];
+    let sentenceAligned = originals.length > 1;
     if (line.original.includes("，")) {
       originals = line.original.split(/\s*，\s*/u).filter(Boolean);
+      sentenceAligned = false;
     } else if (splitOrdinaryComma || (show.slug === "mozart-opera-rock" && line.original === "On se reverra, On se reverra")) {
       const candidates = line.original.split(/\s*,\s*(?=[A-ZÀÂÄÇÉÈÊËÎÏÔÙÛÜŸŒÆ])/u).filter(Boolean);
       if (candidates.length > 1 && new Set(candidates.map((part) => part.toLocaleLowerCase("fr-FR"))).size > 1) {
         originals = candidates;
+        sentenceAligned = false;
       }
     }
 
     const count = originals.length;
-    const english = alignParallelSegments(String(line.en).split(/\s*[,，]\s*(?=[A-Z])/u).filter(Boolean), count, ", ");
-    const chinese = alignParallelSegments(String(line.zh).split(/\s*，\s*/u).filter(Boolean), count, "，");
+    const english = sentenceAligned
+      ? splitSentenceSegments(line.en, false)
+      : count > 1
+        ? String(line.en).split(/\s*[,，]\s*(?=[A-Z])/u).filter(Boolean)
+        : [line.en];
+    const chinese = sentenceAligned
+      ? splitSentenceSegments(line.zh, true)
+      : count > 1
+        ? String(line.zh).split(/\s*，\s*/u).filter(Boolean)
+        : [line.zh];
 
     return originals.map((original, index) => {
       const normalizedOriginal = normalizeGeneratedLineText(show, original, "original");
       return {
         ...line,
+        sourceLineIndex,
         id: count === 1 ? line.id : `${line.id}-${String.fromCharCode(97 + index)}`,
         original: normalizedOriginal,
-        ipa: count === 1 && normalizedOriginal === line.original && line.ipa ? line.ipa : ipaFor(normalizedOriginal, show.voice),
+        ipa: count === 1
+          ? existingLineIpa(show, line.id, normalizedOriginal) || line.ipa || ipaFor(normalizedOriginal, show.voice)
+          : ipaFor(normalizedOriginal, show.voice),
         en: normalizeGeneratedLineText(show, english[index] || line.en, "en"),
         zh: normalizeGeneratedLineText(show, chinese[index] || line.zh, "zh"),
         note: index === 0 ? line.note : "",
@@ -2774,6 +4039,196 @@ function normalizeGeneratedSongLines(show, lines) {
   });
 
   return expanded.map((line, index) => ({ ...line, lineIndex: index + 1 }));
+}
+
+function splitSentenceSegments(value, chinese) {
+  const text = String(value || "").trim();
+  if (!text) return [];
+  const endings = chinese ? new Set(["。", "！", "？", "…"]) : new Set([".", "!", "?", "…"]);
+  const closers = new Set(["”", "’", "'", '"', "』", "」", "）", ")", "】", "]"]);
+  const segments = [];
+  let start = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    if (!endings.has(text[index])) continue;
+    let end = index + 1;
+    while (endings.has(text[end])) end += 1;
+    while (closers.has(text[end])) end += 1;
+    let next = end;
+    while (/\s/u.test(text[next] || "")) next += 1;
+    if (next >= text.length) continue;
+    segments.push(text.slice(start, end).trim());
+    start = next;
+    index = next - 1;
+  }
+  segments.push(text.slice(start).trim());
+  return segments.filter(Boolean);
+}
+
+function splitClauseSegments(value, chinese) {
+  const text = String(value || "").trim();
+  if (!text) return [];
+  const endings = chinese
+    ? new Set(["，", "；", "：", "。", "！", "？", "…"])
+    : new Set([",", ";", ":", ".", "!", "?", "…"]);
+  const closers = new Set(["”", "’", "'", '"', "』", "」", "）", ")", "】", "]"]);
+  const segments = [];
+  let start = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    if (!endings.has(text[index])) continue;
+    let end = index + 1;
+    while (endings.has(text[end])) end += 1;
+    while (closers.has(text[end])) end += 1;
+    let next = end;
+    while (/\s/u.test(text[next] || "")) next += 1;
+    segments.push(text.slice(start, end).trim());
+    start = next;
+    index = next - 1;
+  }
+  if (start < text.length) segments.push(text.slice(start).trim());
+  return segments.filter(Boolean);
+}
+
+function splitAlignedLongLine(line) {
+  const original = String(line.original || "").trim();
+  const originalWordCount = countLyricWords(original);
+  if (originalWordCount <= MAX_REVIEWED_LINE_MERGE_WORDS) return null;
+  const hasEnglishTranslation = Boolean(String(line.en || "").trim());
+  const sourceVariants = [
+    { kind: "sentence", parts: splitSentenceSegments(original, false), priority: 0 },
+    { kind: "clause", parts: splitClauseSegments(original, false), priority: 2 },
+  ];
+  const chineseVariants = [
+    { kind: "sentence", parts: splitSentenceSegments(line.zh, true), priority: 0 },
+    { kind: "clause", parts: splitClauseSegments(line.zh, true), priority: 2 },
+  ];
+  const englishVariants = hasEnglishTranslation
+    ? [
+      { kind: "sentence", parts: splitSentenceSegments(line.en, false), priority: 0 },
+      { kind: "clause", parts: splitClauseSegments(line.en, false), priority: 2 },
+    ]
+    : [];
+  const candidates = [];
+
+  for (const sourceVariant of sourceVariants) {
+    for (const chineseVariant of chineseVariants) {
+      const aligned = alignLongLineVariants(sourceVariant.parts, chineseVariant.parts, "");
+      if (!aligned) continue;
+      const [sourceParts, chineseParts] = aligned;
+      if (hasEnglishTranslation) {
+        for (const englishVariant of englishVariants) {
+          if (englishVariant.parts.length !== sourceParts.length) continue;
+          candidates.push({
+            sourceParts,
+            chineseParts,
+            englishParts: englishVariant.parts,
+            priority: sourceVariant.priority + chineseVariant.priority + englishVariant.priority,
+          });
+        }
+      } else {
+        candidates.push({
+          sourceParts,
+          chineseParts,
+          englishParts: [],
+          priority: sourceVariant.priority + chineseVariant.priority,
+        });
+      }
+    }
+  }
+
+  const usable = candidates.filter((candidate) => {
+    const count = candidate.sourceParts.length;
+    if (count < 2 || count > 4) return false;
+    if (candidate.sourceParts.some((part) => countLyricWords(part) < 3)) return false;
+    if (candidate.sourceParts.some((part) => !hasBalancedParentheses(part))) return false;
+    const maxWords = Math.max(...candidate.sourceParts.map(countLyricWords));
+    return maxWords <= MAX_REVIEWED_LINE_MERGE_WORDS + 4 && maxWords < originalWordCount;
+  });
+  if (!usable.length) return null;
+  usable.sort((left, right) => {
+    const leftMax = Math.max(...left.sourceParts.map(countLyricWords));
+    const rightMax = Math.max(...right.sourceParts.map(countLyricWords));
+    return leftMax - rightMax || left.priority - right.priority || left.sourceParts.length - right.sourceParts.length;
+  });
+  const best = usable[0];
+  return best.sourceParts.map((part, index) => ({
+    original: part,
+    en: best.englishParts[index] || "",
+    zh: best.chineseParts[index] || "",
+  }));
+}
+
+function alignLongLineVariants(sourceParts, chineseParts, joiner) {
+  if (sourceParts.length < 2 || chineseParts.length < 2) return null;
+  if (sourceParts.length === chineseParts.length) return [sourceParts, chineseParts];
+  if (sourceParts.length > chineseParts.length) {
+    const groupedSource = groupSegmentsToCount(sourceParts, chineseParts.length, " ", sourceParts, chineseParts);
+    return groupedSource ? [groupedSource, chineseParts] : null;
+  }
+  const groupedChinese = groupSegmentsToCount(chineseParts, sourceParts.length, joiner, chineseParts, sourceParts);
+  return groupedChinese ? [sourceParts, groupedChinese] : null;
+}
+
+function groupSegmentsToCount(parts, count, joiner, longParts, referenceParts) {
+  if (parts.length < count || count < 1) return null;
+  if (parts.length === count) return parts;
+  const weights = (value, chinese) => chinese
+    ? Math.max(Array.from(String(value || "")).length, 1)
+    : Math.max(countLyricWords(value), 1);
+  const isChinese = joiner === "";
+  const total = parts.reduce((sum, part) => sum + weights(part, isChinese), 0);
+  const referenceTotal = referenceParts.reduce((sum, part) => sum + weights(part, !isChinese), 0);
+  const prefix = [0];
+  parts.forEach((part) => prefix.push(prefix[prefix.length - 1] + weights(part, isChinese)));
+  const referencePrefix = [0];
+  referenceParts.forEach((part) => referencePrefix.push(referencePrefix[referencePrefix.length - 1] + weights(part, !isChinese)));
+  const groups = [];
+  let start = 0;
+  for (let group = 1; group <= count; group += 1) {
+    const remainingGroups = count - group;
+    if (group === count) {
+      groups.push(parts.slice(start).join(joiner).trim());
+      break;
+    }
+    const desired = total * (referencePrefix[group] / referenceTotal);
+    let bestEnd = start + 1;
+    let bestDistance = Infinity;
+    const maxEnd = parts.length - remainingGroups;
+    for (let end = start + 1; end <= maxEnd; end += 1) {
+      const distance = Math.abs(prefix[end] - desired);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestEnd = end;
+      }
+    }
+    groups.push(parts.slice(start, bestEnd).join(joiner).trim());
+    start = bestEnd;
+  }
+  return groups.every(Boolean) ? groups : null;
+}
+
+function countLyricWords(value) {
+  return String(value || "").match(/[\p{L}\p{N}]+(?:[’'’-][\p{L}\p{N}]+)*/gu)?.length || 0;
+}
+
+function splitAlignedSentenceSegments(line) {
+  const original = splitSentenceSegments(line.original, false);
+  if (original.length < 2 || countLyricWords(line.original) < 18) return [line.original];
+  if (original.some((segment) => !hasBalancedParentheses(segment))) return [line.original];
+  const chinese = splitSentenceSegments(line.zh, true);
+  const english = splitSentenceSegments(line.en, false);
+  if (chinese.length !== original.length) return [line.original];
+  if (String(line.en || "").trim() && english.length !== original.length) return [line.original];
+  return original;
+}
+
+function hasBalancedParentheses(value) {
+  let depth = 0;
+  for (const char of String(value || "")) {
+    if ("([{（【".includes(char)) depth += 1;
+    if (")] }】）".replace(/\s/gu, "").includes(char)) depth -= 1;
+    if (depth < 0) return false;
+  }
+  return depth === 0;
 }
 
 function alignParallelSegments(parts, count, joiner) {
@@ -2797,13 +4252,14 @@ function normalizeGeneratedLineText(show, value, field) {
     .replace(/_{2,}/gu, "…")
     .replace(/\\+\s*$/gu, "")
     .replace(/,\s*(?=\S)/gu, ", ")
+    .replace(/([!?])\s*,/gu, "$1")
     .replace(/([!?])(?=\p{L})/gu, "$1 ")
     .replace(/([:;])(?=\p{L})/gu, "$1 ")
     .replace(/\s*，\s*/gu, ", ")
     .replace(/\s*：\s*/gu, ": ")
     .replace(/\s*；\s*/gu, "; ")
     .replace(/,\s*,+/gu, ", ")
-    .replace(/\s+([,.;!?])/gu, "$1")
+    .replace(/\s+([,.;:!?])/gu, "$1")
     .replace(/,+\s*$/gu, "")
     .trim();
   if (field === "original") {
@@ -2901,6 +4357,22 @@ function stripSongTitleVersionSuffix(value) {
 }
 
 const SPEAKER_HINT = /(?:judge|lucheni|toten|sophie|ludovika|max|\bfj\b|rudolf|\btod\b|chor|sisi|herzog|verwandt|ehepaar|schwager|helene|gouvernante|erzherzog|graf|kardinal|franz|mutter|fürst|fürsten|hochzeit|gräfin|hofdame|zofe|friseuse|männer|frauen|menge|aristokrat|professor|journalist|student|bohemien|poet|cafégast|arzt|baron|rauscher|richter|elisabeth|eisabeth|gäste|leopold|zinzendorf|salieri|waldstätten|nannerl|mesmer|wolfgang|mozart|chamberlain|arco|ensemble|anna|händlerin|gemüsefrau|gewürzhändlerin|obstfrau|passanten|schikaneder|colloredo|constanze|constance|cecilia|aloysia|josephine|raoul|andre|confidante|fop|firmin|countess|attilio|carlotta|phantom|meg|christine|chief|firemen|marksman|voice|don juan|passarino|aminta|giry|stagehand|sadia|johnny|marie-jeanne|roger|gourou|stella|zéro|clapman|cristal|speakerine|clients|both|\ball\b|chorus|\bp\b|\br\b|\bmj\b|\bgel\b|ge-l)/iu;
+const KNOWN_CHINESE_TRANSLATION_ROLES = new Set([
+  "众", "合唱", "爸爸", "妈妈", "姐姐", "弟弟", "发辫", "沙粒", "亚瑟", "莫扎特",
+  "康斯坦斯", "沃尔夫冈", "凯瑞", "爱丽丝", "萝丝", "多丽丝", "乔", "诺玛", "麦克斯", "贝蒂", "埃文",
+  "小王子", "飞行员", "大人们", "玫瑰花们", "狐狸", "蛇", "仙人掌们", "合", "回声",
+  "地理学家", "国王", "酒鬼", "玫瑰", "商人", "扳道工", "卖药丸的商人", "药丸商人",
+]);
+const KNOWN_SOURCE_ROLE_LABELS = new Set([
+  "chor (wolfgang)",
+  "chœur",
+  "der tod & rudolf",
+  "don carlos",
+  "wolfgang (chor)",
+]);
+const KNOWN_LYRIC_COLON_LABELS = new Set([
+  "die große redoute",
+]);
 
 const SPEAKER_IPA_PREFIXES = {
   "notre-dame-de-paris": {
@@ -2915,11 +4387,25 @@ const SPEAKER_IPA_PREFIXES = {
 
 function isStandaloneBracketedSpeakerRow(original, row) {
   const label = cleanCell(original).match(/^\s*(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)\s*$/u)?.slice(1).find(Boolean)?.trim() || "";
-  if (!label || /[()!?！？]/u.test(label) || !SPEAKER_HINT.test(label)) return false;
+  if (!label || /[!?！？]/u.test(label) || (!SPEAKER_HINT.test(label) && !isKnownSourceRole(label))) return false;
+  if (isKnownSourceRole(label)) return true;
   const parallelTranslations = [row["中文翻译（校订）"], row["English Translation"]]
     .filter((value) => cleanCell(value));
   return parallelTranslations.length > 0
     && parallelTranslations.every((value) => /^\s*(?:\[[^\]]{1,500}\]|【[^】]{1,500}】)\s*$/u.test(cleanCell(value)));
+}
+
+function normalizeSourceRoleLabel(value) {
+  return cleanCell(value)
+    .replace(/^\s*(?:\[|【)/u, "")
+    .replace(/(?:\]|】)\s*$/u, "")
+    .replace(/[:：]\s*$/u, "")
+    .trim()
+    .toLocaleLowerCase();
+}
+
+function isKnownSourceRole(value) {
+  return KNOWN_SOURCE_ROLE_LABELS.has(normalizeSourceRoleLabel(value));
 }
 
 function extractSpeaker(value) {
@@ -2936,21 +4422,62 @@ function extractSpeaker(value) {
   }
   const bracketed = clean.match(/^\s*(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)\s*[:：]?\s*(.*)$/u);
   if (bracketed) {
-    return { speaker: (bracketed[1] || bracketed[2] || "").trim(), text: (bracketed[3] || "").trim() };
+    return {
+      speaker: (bracketed[1] || bracketed[2] || "").replace(/[:：]\s*$/u, "").trim(),
+      text: (bracketed[3] || "").trim(),
+    };
   }
 
   const labelled = clean.match(/^([^:：]{1,48})[:：]\s*(.*)$/u);
   if (!labelled) return { speaker: "", text: clean };
   const label = labelled[1].trim();
+  if (KNOWN_LYRIC_COLON_LABELS.has(normalizeSourceRoleLabel(label))) {
+    return { speaker: "", text: clean };
+  }
   // Some English sources annotate a role in the label (for example
   // "NORMA, on the phone:"). Keep the role, not the staging direction, out
   // of the lyric line.
   const stagedRole = label.match(/^([A-Z][A-Z .'-]*(?:\s+and\s+[A-Z][A-Z .'-]*)?)\s*,\s*(?:spoken|on the phone|off stage)\b/iu);
   if (stagedRole) return { speaker: stagedRole[1].trim(), text: labelled[2].trim() };
-  if (/[()!?]/u.test(label)) return { speaker: "", text: clean };
+  if (/[!?]/u.test(label) || (/[()]/u.test(label) && !isKnownSourceRole(label))) {
+    return { speaker: "", text: clean };
+  }
   const upper = label === label.toLocaleUpperCase() && /[A-Z]/u.test(label);
   const titleCase = label.split(/\s+/u).every((word) => /^[A-Z][\p{L}'’.-]*$/u.test(word));
-  if (!upper && !titleCase && !SPEAKER_HINT.test(label)) return { speaker: "", text: clean };
+  const slashSeparatedTitleCase = label.split("/").length > 1
+    && label.split("/").every((role) => role.trim().split(/\s+/u).every((word) => /^[A-Z][\p{L}'’.-]*$/u.test(word)));
+  if (!upper && !titleCase && !slashSeparatedTitleCase && !SPEAKER_HINT.test(label) && !isKnownSourceRole(label)) {
+    return { speaker: "", text: clean };
+  }
+  return { speaker: label, text: labelled[2].trim() };
+}
+
+function extractGermanTripleSpeaker(value) {
+  const clean = cleanCell(value);
+  const bracketed = clean.match(/^\s*(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)\s*[:：]\s*(.+)$/u);
+  if (bracketed) {
+    return {
+      speaker: (bracketed[1] || bracketed[2] || "").trim(),
+      text: bracketed[3].trim(),
+    };
+  }
+
+  const labelled = clean.match(/^([^:：]{1,48})[:：]\s*(.*)$/u);
+  if (!labelled || !labelled[2].trim()) return { speaker: "", text: clean };
+  const label = labelled[1].trim();
+  if (/[!?！？,，;]/u.test(label)) return { speaker: "", text: clean };
+
+  const words = label.split(/\s+/u);
+  const upper = label === label.toLocaleUpperCase() && /[A-ZÄÖÜẞ]/u.test(label);
+  const titleCase = words.length <= 4 && words.every((word) => /^(?:[A-ZÄÖÜẞ][\p{L}'’.-]*|der|die|das|de|del|den|des|von|van|und)$/u.test(word));
+  const slashSeparated = label.split("/").length > 1
+    && label.split("/").every((role) => {
+      const roleWords = role.trim().split(/\s+/u);
+      return roleWords.length <= 3 && roleWords.every((word) => /^(?:[A-ZÄÖÜẞ][\p{L}'’.-]*|der|die|das|de|del|den|des|von|van|und)$/u.test(word));
+    });
+  if (!upper && !titleCase && !slashSeparated && !SPEAKER_HINT.test(label)) {
+    return { speaker: "", text: clean };
+  }
   return { speaker: label, text: labelled[2].trim() };
 }
 
@@ -2969,8 +4496,9 @@ function extractTranslationSpeaker(value) {
   const clean = cleanCell(value);
   const match = clean.match(/^([^:：]{1,24})[:：]\s*(.*)$/u);
   if (!match) return { speaker: "", text: clean };
+  if (!match[2].trim()) return { speaker: "", text: clean };
   const speaker = match[1].trim();
-  const knownChineseRole = /^(?:众|合唱|爸爸|妈妈|姐姐|弟弟|发辫|沙粒|亚瑟|莫扎特|康斯坦斯|沃尔夫冈|凯瑞|爱丽丝|萝丝|多丽丝|乔|诺玛|麦克斯|贝蒂)$/u.test(speaker);
+  const knownChineseRole = KNOWN_CHINESE_TRANSLATION_ROLES.has(speaker);
   const upper = speaker === speaker.toLocaleUpperCase() && /[A-Z]/u.test(speaker);
   const titleCase = speaker.split(/\s+/u).every((word) => /^[A-Z][\p{L}'’.-]*$/u.test(word));
   if (!knownChineseRole && !upper && !titleCase && !SPEAKER_HINT.test(speaker)) {
@@ -2988,9 +4516,19 @@ function stripTranslationSpeaker(value, sourceSpeaker) {
       .replace(/\s+/gu, " ")
       .trim();
   }
-  const withoutBracketedSpeaker = clean.replace(/^\s*(?:\[[^\]]{1,48}\]|【[^】]{1,48}】)\s*/u, "");
-  if (withoutBracketedSpeaker !== clean) return withoutBracketedSpeaker.trim();
-  return clean.replace(/^\s*[^:：]{1,48}[:：]\s*/u, "").trim();
+  const bracketed = clean.match(/^\s*(?:\[([^\]]{1,500})\]|【([^】]{1,500})】)\s*$/u);
+  if (bracketed) {
+    const text = (bracketed[1] || bracketed[2] || "").trim();
+    const parsed = extractTranslationSpeaker(text);
+    // An aligned bracketed translation can contain the whole lyric, not only a
+    // role label. Preserve that text unless the source speaker confirms a
+    // leading translation label to remove.
+    if (parsed.speaker) return parsed.text;
+    const labelled = text.match(/^[^:：]{1,24}[:：]\s*(.+)$/u);
+    return labelled ? labelled[1].trim() : text;
+  }
+  const parsed = extractTranslationSpeaker(clean);
+  return parsed.speaker ? parsed.text : clean;
 }
 
 function stripSpeakerIpaPrefix(show, value, sourceSpeaker) {
@@ -3126,8 +4664,18 @@ function addEntry(entries, token, show, common, rougeGlossary, freedictGlossary,
     return;
   }
 
-  if (priorEntry && !priorEntry.needsReview && priorEntry.ipa && priorEntry.meaning && priorEntry.en && priorEntry.speak) {
-    entries[key] = { ...priorEntry };
+  if (
+    priorEntry
+    && !priorEntry.needsReview
+    && priorEntry.meaning
+    && priorEntry.speak
+    && !/(?:词义：|暂未|待补|proper noun)/iu.test(`${priorEntry.meaning} ${priorEntry.en || ""}`)
+  ) {
+    entries[key] = {
+      ...priorEntry,
+      ipa: priorEntry.ipa || ipaFor(priorEntry.speak || speak, show.voice),
+      en: priorEntry.en || priorEntry.speak || speak,
+    };
     return;
   }
 
@@ -3161,11 +4709,11 @@ function addEntry(entries, token, show, common, rougeGlossary, freedictGlossary,
     return;
   }
 
-  if (englishEntry && englishEntry.meaning) {
+  if (englishEntry && (englishEntry.meaning || englishEntry.zh)) {
     entries[key] = {
       ipa: ipaFor(speak, show.voice),
-      meaning: englishEntry.meaning,
-      en: englishEntry.en || key,
+      meaning: englishEntry.meaning || englishEntry.zh,
+      en: englishEntry.en || englishEntry.speak || key,
       speak,
     };
     return;
@@ -3183,12 +4731,19 @@ function loadManualWordGlossary(show, key) {
       const reviewedElisions = JSON.parse(fs.readFileSync(ELISION_WORD_GLOSSARY, "utf8"));
       const manual = JSON.parse(fs.readFileSync(MANUAL_WORD_GLOSSARY, "utf8"));
       const wave2Manual = JSON.parse(fs.readFileSync(WAVE2_MANUAL_WORD_GLOSSARY, "utf8"));
+      const batch = JSON.parse(fs.readFileSync(BATCH_WORD_GLOSSARY, "utf8"));
       manualWordGlossaryCache = {};
-      for (const showName of new Set([...Object.keys(reviewedElisions), ...Object.keys(manual), ...Object.keys(wave2Manual)])) {
+      for (const showName of new Set([
+        ...Object.keys(reviewedElisions),
+        ...Object.keys(manual),
+        ...Object.keys(wave2Manual),
+        ...Object.keys(batch),
+      ])) {
         manualWordGlossaryCache[showName] = {
           ...(reviewedElisions[showName] || {}),
           ...(manual[showName] || {}),
           ...(wave2Manual[showName] || {}),
+          ...(batch[showName] || {}),
         };
       }
     } catch {
@@ -3445,9 +5000,9 @@ function ipaFor(text, voice) {
     .replace(/[\u200b-\u200f\u2060\ufeff]/gu, "")
     .replace(/\s+/g, " ")
     .trim();
+  ipa = ipa.replace(/\((?:en|fr|de)\)/giu, "");
   if (String(voice).startsWith("fr")) {
     ipa = ipa
-      .replace(/\((?:en|fr|de)\)/giu, "")
       .replace(/[ˈˌ-]/gu, "")
       .replace(/\s+/g, " ")
       .trim();
@@ -3461,7 +5016,10 @@ function shorten(value, max) {
 }
 
 function writeFile(dir, name, content) {
-  fs.writeFileSync(path.join(dir, name), content, "utf8");
+  if (!generationWritesEnabled) {
+    throw new Error(`Refusing to write ${name} without --write`);
+  }
+  writeFileAtomic(path.join(dir, name), content, `musical page generator: ${name}`);
 }
 
 function renderLoadRecovery() {
@@ -3602,7 +5160,7 @@ function renderIndex(show) {
             <div class="toolbar" role="group" aria-label="显示设置">
               <button class="toggle-btn is-active" type="button" data-toggle="showZh" aria-pressed="true">中文</button>
               <button class="toggle-btn is-active" type="button" data-toggle="showIpa" aria-pressed="true">音标</button>
-              ${show.showEnglishToggle === false ? "" : '<button class="toggle-btn is-active" type="button" data-toggle="showEn" aria-pressed="true">英文</button>'}
+${show.showEnglishToggle === false ? "" : '              <button class="toggle-btn is-active" type="button" data-toggle="showEn" aria-pressed="true">英文</button>\n'}
               <button class="toggle-btn feedback-btn" id="feedbackButton" type="button">反馈</button>
               <div class="toolbar-playback-tools" aria-label="本曲播放控制">
                 <button class="song-play-button" id="songPlayButton" type="button" aria-label="连续播放本曲" aria-pressed="false" title="连续播放本曲">
@@ -3638,6 +5196,7 @@ function renderIndex(show) {
         language: show.language,
         showEnglishToggle: show.showEnglishToggle !== false,
         independentWordIpa: show.independentWordIpa === true,
+        ...(show.fullSongsFile ? { fullSongsFile: show.fullSongsFile } : {}),
         effect: show.effect,
       }, null, 8)};
     </script>
@@ -4320,6 +5879,18 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.lyric-repeat {
+  display: inline-block;
+  margin-left: 0.22em;
+  color: color-mix(in srgb, var(--highlight), white 22%);
+  font-family: var(--ui-font);
+  font-size: 0.54em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  vertical-align: super;
+}
+
 .line-speaker {
   margin: 0 0 2px;
   color: var(--highlight);
@@ -4759,6 +6330,9 @@ function loadScript(src, fetchPriority = "auto") {
 
 async function loadFullSongs() {
   await loadScript("songs.js", "high");
+  if (window.pageConfig.fullSongsFile) {
+    await loadScript(window.pageConfig.fullSongsFile, "high");
+  }
   const fullSongs = window.songs || [];
   if (!fullSongs.length) throw new Error("Full song data is empty");
   songs.splice(0, songs.length, ...fullSongs);
@@ -4980,6 +6554,13 @@ function renderLine(song, line) {
   const original = document.createElement("p");
   original.className = "line-original";
   original.append(renderClickableWords(line.original, "lyric-word", { showPhonetics: true, line }));
+  if (line.repeatCount > 1) {
+    const repeat = document.createElement("sup");
+    repeat.className = "lyric-repeat";
+    repeat.textContent = \`×\${line.repeatCount}\`;
+    repeat.setAttribute("aria-label", \`重复 \${line.repeatCount} 次\`);
+    original.append(repeat);
+  }
   main.append(original);
 
   const en = document.createElement("p");
@@ -5299,7 +6880,7 @@ function playSpeech(text, waitForEnd, { rateControlled = false, analyticsSession
   }
   stopCurrentPlayback();
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = config.language === "en" ? "en-US" : config.language === "de" ? "de-DE" : "fr-FR";
+  utterance.lang = window.MusicalAudio.getSpeechLanguage(config.language);
   utterance.rate = rateControlled ? pageTools.getRate() : 1;
   utterance.onstart = () => {
     if (analyticsSession) analytics.audioStart(analyticsSession);
@@ -5719,6 +7300,33 @@ function drawCursorIcon(ctx, pointer, icon, colors, time) {
     ctx.lineTo(17, 1);
     ctx.bezierCurveTo(6, 7, -2, -3, -12, 3);
     ctx.stroke();
+  } else if (icon === "plane") {
+    ctx.rotate(-0.08);
+    ctx.lineWidth = 1.5;
+    ctx.fillStyle = colors.secondary;
+    ctx.strokeStyle = colors.primary;
+    ctx.beginPath();
+    ctx.moveTo(-31, -2);
+    ctx.quadraticCurveTo(-15, -5, -1, -4);
+    ctx.lineTo(21, -14);
+    ctx.lineTo(26, -13);
+    ctx.lineTo(10, -2);
+    ctx.lineTo(33, 3);
+    ctx.lineTo(31, 8);
+    ctx.lineTo(8, 3);
+    ctx.lineTo(-2, 17);
+    ctx.lineTo(-8, 17);
+    ctx.lineTo(-3, 3);
+    ctx.lineTo(-31, 3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = colors.primary;
+    [-14, -7, 0, 7].forEach((x) => {
+      ctx.beginPath();
+      ctx.arc(x, -1, 1.15, 0, Math.PI * 2);
+      ctx.fill();
+    });
   } else if (icon === "musicNote") {
     ctx.lineWidth = 2.2;
     ctx.beginPath();
@@ -5727,6 +7335,32 @@ function drawCursorIcon(ctx, pointer, icon, colors, time) {
     ctx.lineTo(2, -20);
     ctx.bezierCurveTo(12, -16, 16, -11, 16, -3);
     ctx.stroke();
+  } else if (icon === "clock") {
+    ctx.rotate(time * 0.0012);
+    ctx.lineWidth = 1.45;
+    ctx.beginPath();
+    ctx.arc(0, 0, 14, 0, Math.PI * 2);
+    ctx.stroke();
+    for (let index = 0; index < 12; index += 1) {
+      const angle = index * Math.PI / 6;
+      const outer = 18;
+      const inner = index % 3 === 0 ? 11 : 13;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+      ctx.stroke();
+    }
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-2, -8);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(7, 4);
+    ctx.stroke();
+    ctx.fillStyle = colors.secondary;
+    ctx.beginPath();
+    ctx.arc(0, 0, 2, 0, Math.PI * 2);
+    ctx.fill();
   } else if (icon === "star") {
     drawStar(ctx, 0, 0, 7, 17, 5);
   } else if (icon === "quill") {
@@ -5864,6 +7498,12 @@ function getCursorMarker(slug) {
     "moliere-le-spectacle-musical": "preRenderPureQuill",
     "moulin-rouge": "preRenderMoulinWindmill",
     "elisabeth-das-musical": "preRenderClassicTiara",
+    "tanz-der-vampire": "preRenderVampireFangs",
+    "ludwig-ii-sehnsucht-nach-dem-paradies": "preRenderLudwigCastle",
+    "dracula-das-musical": "preRenderDraculaBat",
+    "rebecca-das-musical": "preRenderRebeccaLogoR",
+  "the-greatest-showman": "preRenderMarqueeHat",
+    "epic-the-musical": "preRenderOdysseyTrident",
     "starmania": "preRenderBlackStar",
     "mozart-das-musical": "preRenderInspirationPoint",
     "phantom-of-the-opera": "preRenderGrandChandelier",
@@ -5875,6 +7515,12 @@ function getCursorMarker(slug) {
     "six-the-musical": "preRenderNeonCrown",
     suffs: "preRenderVoteButton",
     "sunset-boulevard": "preRenderFilmReel",
+    "come-from-away": "preRenderComeFromAwayPlane",
+    rent: "preRenderRentGraffiti",
+    "tick-tick-boom": "preRenderTickClock",
+    wicked: "preRenderWickedHat",
+    hadestown: "preRenderHadestownFlower",
+    "les-dix-commandements": "preRenderStoneTablets",
   }[slug];
 }
 
@@ -5904,6 +7550,84 @@ function getReferenceCursorConfig(show) {
       emitDistance: 25,
       clickOn: "up",
       burstParticles: 3,
+      hotspot: [0.5, 0.5],
+    },
+    "tanz-der-vampire": {
+      motif: "vampireFangs",
+      trail: "bloodMist",
+      burst: "vampireBite",
+      motion: "still",
+      accent: "#b51e3d",
+      size: 58,
+      follow: 0.48,
+      emitDistance: 16,
+      clickOn: "down",
+      burstParticles: 5,
+      hotspot: [0.5, 0.5],
+    },
+    "ludwig-ii-sehnsucht-nach-dem-paradies": {
+      motif: "ludwigCastle",
+      trail: "ludwigStarlight",
+      burst: "castleGlow",
+      motion: "still",
+      accent: "#8aa4c8",
+      size: 60,
+      follow: 0.45,
+      emitDistance: 22,
+      clickOn: "up",
+      burstParticles: 5,
+      hotspot: [0.5, 0.5],
+    },
+    "dracula-das-musical": {
+      motif: "draculaBat",
+      trail: "batEmbers",
+      burst: "batFlare",
+      motion: "still",
+      accent: "#a82135",
+      size: 58,
+      follow: 0.42,
+      emitDistance: 15,
+      clickOn: "down",
+      burstParticles: 6,
+      hotspot: [0.5, 0.5],
+    },
+    "rebecca-das-musical": {
+      motif: "rebeccaLogoR",
+      trail: "manderleySmoke",
+      burst: "manderleyBurn",
+      motion: "still",
+      accent: "#426a91",
+      size: 58,
+      follow: 0.52,
+      emitInterval: 32,
+      clickOn: "down",
+      burstParticles: 4,
+      hotspot: [0.5, 0.5],
+    },
+  "the-greatest-showman": {
+      motif: "marqueeHat",
+      trail: "marqueeGold",
+      burst: "curtainCall",
+      motion: "still",
+      accent: "#d59b3a",
+      size: 60,
+      follow: 0.46,
+      emitDistance: 22,
+      clickOn: "up",
+      burstParticles: 7,
+      hotspot: [0.5, 0.5],
+    },
+    "epic-the-musical": {
+      motif: "odysseyTrident",
+      trail: "seaStarlight",
+      burst: "oceanWave",
+      motion: "still",
+      accent: "#2d9fb6",
+      size: 62,
+      follow: 0.46,
+      emitDistance: 18,
+      clickOn: "down",
+      burstParticles: 5,
       hotspot: [0.5, 0.5],
     },
     starmania: {
@@ -6062,7 +7786,7 @@ function getReferenceCursorConfig(show) {
       emitDistance: 16,
       clickOn: "down",
       burstParticles: 4,
-      hotspot: [0.24, 0.78],
+      hotspot: [0.24, 0.54],
     },
     "les-miserables-cityprod-2017": {
       motif: "concertFlag",
@@ -6075,7 +7799,111 @@ function getReferenceCursorConfig(show) {
       emitDistance: 18,
       clickOn: "down",
       burstParticles: 3,
-      hotspot: [0.25, 0.76],
+      hotspot: [0.25, 0.56],
+    },
+    "jesus-christ-superstar-1996-london": {
+      motif: "passionCrossHalo",
+      trail: "thornEmbers",
+      burst: "cruciformHalo",
+      motion: "still",
+      accent: "#d6b46a",
+      size: 56,
+      follow: 0.5,
+      emitDistance: 18,
+      clickOn: "down",
+      burstParticles: 4,
+      hotspot: [0.5, 0.5],
+    },
+    "le-petit-prince-2cd": {
+      motif: "littlePrinceScarf",
+      trail: "b612Stars",
+      burst: "planetOrbit",
+      motion: "still",
+      accent: "#e3bd58",
+      size: 54,
+      follow: 0.48,
+      emitDistance: 18,
+      clickOn: "down",
+      burstParticles: 3,
+      hotspot: [0.5, 0.5],
+    },
+    "come-from-away": {
+      motif: "comeFromAwayPlane",
+      trail: "airRoute",
+      burst: "flightPath",
+      motion: "still",
+      accent: "#2d9fb6",
+      size: 62,
+      follow: 0.46,
+      emitDistance: 18,
+      clickOn: "down",
+      burstParticles: 5,
+      hotspot: [0.5, 0.5],
+    },
+    rent: {
+      motif: "rentGraffiti",
+      trail: "neonSpark",
+      burst: "subtleRipple",
+      motion: "still",
+      accent: "#c51d49",
+      size: 58,
+      follow: 0.55,
+      emitInterval: 35,
+      clickOn: "down",
+      burstParticles: 2,
+      hotspot: [0.1875, 0.1875],
+    },
+    "tick-tick-boom": {
+      motif: "tickClock",
+      trail: "clockTicks",
+      burst: "clockShockwave",
+      motion: "turn",
+      accent: "#f3b33d",
+      size: 54,
+      follow: 0.6,
+      emitDistance: 8,
+      clickOn: "down",
+      burstParticles: 0,
+      hotspot: [0.5, 0.5],
+    },
+    wicked: {
+      motif: "wickedHat",
+      trail: "magicDust",
+      burst: "crispShockwave",
+      motion: "still",
+      accent: "#8dc63f",
+      size: 58,
+      follow: 0.45,
+      emitDistance: 18,
+      clickOn: "up",
+      burstParticles: 4,
+      hotspot: [0.5, 0.5],
+    },
+    hadestown: {
+      motif: "hadestownFlower",
+      trail: "thornEmbers",
+      burst: "crispShockwave",
+      motion: "still",
+      accent: "#b33a2c",
+      size: 62,
+      follow: 0.46,
+      emitDistance: 18,
+      clickOn: "down",
+      burstParticles: 5,
+      hotspot: [0.5, 0.5],
+    },
+    "les-dix-commandements": {
+      motif: "stoneTablets",
+      trail: "goldDust",
+      burst: "sunHalo",
+      motion: "still",
+      accent: "#c89b45",
+      size: 56,
+      follow: 0.5,
+      emitDistance: 18,
+      clickOn: "down",
+      burstParticles: 4,
+      hotspot: [0.5, 0.5],
     },
   };
   return {
@@ -6144,7 +7972,288 @@ function renderReferenceCursor(show) {
     cacheCtx.lineJoin = "round";
     cacheCtx.lineWidth = 2.2;
 
-    if (config.motif === "windmill") {
+    if (config.motif === "comeFromAwayPlane") {
+      cacheCtx.save();
+      cacheCtx.rotate(-0.06);
+      cacheCtx.fillStyle = "#fff4d6";
+      cacheCtx.strokeStyle = "#2d9fb6";
+      cacheCtx.lineWidth = 1.8;
+      cacheCtx.shadowColor = "rgba(45,159,182,0.75)";
+      cacheCtx.shadowBlur = 6;
+      // A compact, recognizable aircraft: nose, swept wings, tail plane,
+      // engines and cabin windows keep the silhouette crisp at pointer size.
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-34, -2);
+      cacheCtx.quadraticCurveTo(-18, -5, -2, -4);
+      cacheCtx.lineTo(22, -14);
+      cacheCtx.lineTo(27, -13);
+      cacheCtx.lineTo(11, -2);
+      cacheCtx.lineTo(35, 3);
+      cacheCtx.lineTo(33, 8);
+      cacheCtx.lineTo(8, 3);
+      cacheCtx.lineTo(-2, 18);
+      cacheCtx.lineTo(-8, 18);
+      cacheCtx.lineTo(-3, 3);
+      cacheCtx.lineTo(-34, 3);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.strokeStyle = "#e3bd58";
+      cacheCtx.lineWidth = 1.25;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-27, -1);
+      cacheCtx.lineTo(8, -1);
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#2d9fb6";
+      [-15, -8, -1, 6].forEach((x) => {
+        cacheCtx.beginPath();
+        cacheCtx.arc(x, -1.2, 1.25, 0, Math.PI * 2);
+        cacheCtx.fill();
+      });
+      cacheCtx.fillStyle = "#e3bd58";
+      cacheCtx.beginPath();
+      cacheCtx.arc(17, 3.8, 2.3, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.strokeStyle = "#e3bd58";
+      cacheCtx.lineWidth = 1.1;
+      cacheCtx.beginPath();
+      cacheCtx.arc(20, 23, 9, 0, Math.PI * 2);
+      cacheCtx.moveTo(11, 23);
+      cacheCtx.lineTo(29, 23);
+      cacheCtx.moveTo(20, 14);
+      cacheCtx.bezierCurveTo(16, 18, 16, 28, 20, 32);
+      cacheCtx.moveTo(20, 14);
+      cacheCtx.bezierCurveTo(24, 18, 24, 28, 20, 32);
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#e3bd58";
+      [[8, 37], [31, 13], [34, 31]].forEach(([x, y]) => {
+        cacheCtx.beginPath();
+        cacheCtx.arc(x, y, 1.15, 0, Math.PI * 2);
+        cacheCtx.fill();
+      });
+      cacheCtx.restore();
+    } else if (config.motif === "rentGraffiti") {
+      cacheCtx.save();
+      cacheCtx.rotate(-0.04);
+      cacheCtx.fillStyle = "#171016";
+      cacheCtx.strokeStyle = "#c51d49";
+      cacheCtx.lineWidth = 2.3;
+      cacheCtx.shadowColor = "rgba(197,29,73,0.75)";
+      cacheCtx.shadowBlur = 6;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-31, -19);
+      cacheCtx.lineTo(27, -22);
+      cacheCtx.lineTo(33, 17);
+      cacheCtx.lineTo(-28, 21);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.fillStyle = "#f0d65d";
+      cacheCtx.font = "900 24px Arial Black, Arial, sans-serif";
+      cacheCtx.textAlign = "center";
+      cacheCtx.textBaseline = "middle";
+      cacheCtx.fillText("RENT", 0, 1);
+      cacheCtx.strokeStyle = "rgba(255,244,239,0.6)";
+      cacheCtx.lineWidth = 1;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-27, -12);
+      cacheCtx.lineTo(-20, -16);
+      cacheCtx.moveTo(20, 13);
+      cacheCtx.lineTo(27, 9);
+      cacheCtx.stroke();
+      cacheCtx.strokeStyle = "rgba(240,214,93,0.72)";
+      cacheCtx.lineWidth = 0.8;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-24, 13);
+      cacheCtx.lineTo(22, 10);
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#c51d49";
+      [[-27, -18], [28, -18], [-25, 18], [28, 16]].forEach(([x, y]) => {
+        cacheCtx.beginPath();
+        cacheCtx.arc(x, y, 1.6, 0, Math.PI * 2);
+        cacheCtx.fill();
+      });
+      cacheCtx.restore();
+    } else if (config.motif === "tickClock") {
+      cacheCtx.save();
+      cacheCtx.fillStyle = "#f3e500";
+      cacheCtx.strokeStyle = "#17130a";
+      cacheCtx.lineWidth = 2.6;
+      cacheCtx.shadowColor = "rgba(243,229,0,0.75)";
+      cacheCtx.shadowBlur = 7;
+      cacheCtx.fillStyle = "#f5df42";
+      cacheCtx.beginPath();
+      cacheCtx.roundRect(-5, -32, 10, 8, 3);
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 0, 24, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.lineWidth = 1.3;
+      for (let index = 0; index < 12; index += 1) {
+        const angle = index * Math.PI / 6;
+        const outer = 21;
+        const inner = index % 3 === 0 ? 16 : 18;
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+        cacheCtx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+        cacheCtx.stroke();
+      }
+      cacheCtx.lineWidth = 2.6;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, 0);
+      cacheCtx.lineTo(-3, -13);
+      cacheCtx.moveTo(0, 0);
+      cacheCtx.lineTo(11, 6);
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#17130a";
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 0, 2.5, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.strokeStyle = "#af86c8";
+      cacheCtx.lineWidth = 1.2;
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 0, 28, Math.PI * 1.1, Math.PI * 1.85);
+      cacheCtx.stroke();
+      cacheCtx.restore();
+    } else if (config.motif === "wickedHat") {
+      cacheCtx.save();
+      cacheCtx.fillStyle = "#8dc63f";
+      cacheCtx.shadowColor = "rgba(141,198,63,0.72)";
+      cacheCtx.shadowBlur = 8;
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 17, 12, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.fillStyle = "#080b08";
+      cacheCtx.strokeStyle = "#f4f0df";
+      cacheCtx.lineWidth = 1.2;
+      cacheCtx.shadowColor = "rgba(0,0,0,0.85)";
+      cacheCtx.shadowBlur = 4;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-21, 7);
+      cacheCtx.quadraticCurveTo(-3, 1, 21, 7);
+      cacheCtx.lineTo(16, 12);
+      cacheCtx.quadraticCurveTo(0, 8, -16, 12);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-12, 7);
+      cacheCtx.lineTo(3, -32);
+      cacheCtx.lineTo(13, 7);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.strokeStyle = "#8dc63f";
+      cacheCtx.lineWidth = 2.2;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-8, 3);
+      cacheCtx.quadraticCurveTo(1, 0, 10, 3);
+      cacheCtx.stroke();
+      cacheCtx.strokeStyle = "#e3c65c";
+      cacheCtx.lineWidth = 1.3;
+      cacheCtx.strokeRect(-7, 3, 14, 4);
+      cacheCtx.fillStyle = "#d4af37";
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 5, 1.3, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.strokeStyle = "rgba(141,198,63,0.85)";
+      cacheCtx.lineWidth = 1.1;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(17, -7);
+      cacheCtx.lineTo(22, -12);
+      cacheCtx.moveTo(20, -9);
+      cacheCtx.lineTo(25, -9);
+      cacheCtx.stroke();
+      cacheCtx.restore();
+    } else if (config.motif === "hadestownFlower") {
+      cacheCtx.save();
+      cacheCtx.strokeStyle = "#e9d3a0";
+      cacheCtx.lineWidth = 2.1;
+      cacheCtx.shadowColor = "rgba(233,211,160,0.48)";
+      cacheCtx.shadowBlur = 4;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, 28);
+      cacheCtx.bezierCurveTo(-2, 14, 2, 4, 0, -7);
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#8f241f";
+      cacheCtx.strokeStyle = "#e9d3a0";
+      cacheCtx.lineWidth = 0.9;
+      for (let index = 0; index < 8; index += 1) {
+        cacheCtx.save();
+        cacheCtx.rotate(index * Math.PI / 4);
+        cacheCtx.beginPath();
+        cacheCtx.ellipse(0, -16, index % 2 ? 6 : 7.5, index % 2 ? 10 : 12, 0, 0, Math.PI * 2);
+        cacheCtx.fill();
+        cacheCtx.stroke();
+        cacheCtx.restore();
+      }
+      cacheCtx.fillStyle = "#b33a2c";
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, -16, 6, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.fillStyle = "#e9d3a0";
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, -16, 2.8, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.strokeStyle = "#6c3327";
+      cacheCtx.lineWidth = 1.15;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, 28);
+      cacheCtx.quadraticCurveTo(-13, 18, -16, 11);
+      cacheCtx.moveTo(-2, 20);
+      cacheCtx.lineTo(-10, 16);
+      cacheCtx.moveTo(1, 13);
+      cacheCtx.lineTo(10, 9);
+      cacheCtx.stroke();
+      cacheCtx.restore();
+    } else if (config.motif === "stoneTablets") {
+      cacheCtx.save();
+      const tabletFill = cacheCtx.createLinearGradient(0, -29, 0, 26);
+      tabletFill.addColorStop(0, "#d8cba5");
+      tabletFill.addColorStop(0.5, "#b7a887");
+      tabletFill.addColorStop(1, "#82765e");
+      cacheCtx.fillStyle = tabletFill;
+      cacheCtx.strokeStyle = "#f0e6c5";
+      cacheCtx.lineWidth = 1.4;
+      cacheCtx.shadowColor = "rgba(29,138,166,0.65)";
+      cacheCtx.shadowBlur = 5;
+      const drawTablet = (x, rotation) => {
+        cacheCtx.save();
+        cacheCtx.translate(x, 2);
+        cacheCtx.rotate(rotation);
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(-13, -22);
+        cacheCtx.quadraticCurveTo(0, -29, 13, -22);
+        cacheCtx.lineTo(14, 23);
+        cacheCtx.lineTo(-14, 23);
+        cacheCtx.closePath();
+        cacheCtx.fill();
+        cacheCtx.stroke();
+        cacheCtx.strokeStyle = "rgba(43,54,55,0.75)";
+        cacheCtx.lineWidth = 1.1;
+        [-13, -6, 1, 8, 15].forEach((y, index) => {
+          cacheCtx.beginPath();
+          cacheCtx.moveTo(-8 + (index % 2), y);
+          cacheCtx.lineTo(8 - (index % 3), y);
+          cacheCtx.stroke();
+        });
+        cacheCtx.strokeStyle = "rgba(240,230,197,0.4)";
+        cacheCtx.lineWidth = 0.7;
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(-10, -20);
+        cacheCtx.lineTo(10, -20);
+        cacheCtx.stroke();
+        cacheCtx.restore();
+      };
+      drawTablet(-10, -0.12);
+      drawTablet(10, 0.12);
+      cacheCtx.restore();
+    } else if (config.motif === "windmill") {
       const millBody = cacheCtx.createLinearGradient(0, 2, 0, 36);
       millBody.addColorStop(0, "#ef2835");
       millBody.addColorStop(0.52, "#b80f20");
@@ -6185,6 +8294,230 @@ function renderReferenceCursor(show) {
       cacheCtx.beginPath();
       cacheCtx.arc(0, 0, 4.2, 0, Math.PI * 2);
       cacheCtx.fillStyle = "#e6b85e";
+      cacheCtx.fill();
+    } else if (config.motif === "vampireFangs") {
+      cacheCtx.translate(0, 1);
+      cacheCtx.shadowColor = "rgba(181,30,61,0.72)";
+      cacheCtx.shadowBlur = 6;
+      cacheCtx.fillStyle = "#210810";
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-27, -8);
+      cacheCtx.quadraticCurveTo(-12, -19, 0, -8);
+      cacheCtx.quadraticCurveTo(12, -19, 27, -8);
+      cacheCtx.quadraticCurveTo(10, -1, 0, -7);
+      cacheCtx.quadraticCurveTo(-10, -1, -27, -8);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.shadowBlur = 2;
+      cacheCtx.fillStyle = "#fff5dc";
+      cacheCtx.strokeStyle = "#d9c49e";
+      cacheCtx.lineWidth = 0.9;
+      [[-13, -7, -3, 23], [13, -7, 3, 23]].forEach((fang) => {
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(fang[0] - 5, fang[1]);
+        cacheCtx.quadraticCurveTo(fang[0], fang[1] + 3, fang[0] + 5, fang[1]);
+        cacheCtx.lineTo(fang[2], fang[3]);
+        cacheCtx.closePath();
+        cacheCtx.fill();
+        cacheCtx.stroke();
+      });
+      cacheCtx.shadowColor = "#b51e3d";
+      cacheCtx.shadowBlur = 5;
+      cacheCtx.fillStyle = "#b51e3d";
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, 17);
+      cacheCtx.bezierCurveTo(-2, 21, -3, 24, 0, 28);
+      cacheCtx.bezierCurveTo(3, 24, 2, 21, 0, 17);
+      cacheCtx.fill();
+    } else if (config.motif === "ludwigCastle") {
+      cacheCtx.translate(0, 2);
+      cacheCtx.shadowColor = "rgba(138,164,200,0.65)";
+      cacheCtx.shadowBlur = 5;
+      cacheCtx.fillStyle = "rgba(216,232,247,0.94)";
+      cacheCtx.beginPath();
+      cacheCtx.arc(20, -24, 9, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.fillStyle = "rgba(7,16,27,0.9)";
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-35, 28);
+      cacheCtx.lineTo(-20, 15);
+      cacheCtx.lineTo(-10, 22);
+      cacheCtx.lineTo(4, 10);
+      cacheCtx.lineTo(17, 21);
+      cacheCtx.lineTo(31, 14);
+      cacheCtx.lineTo(38, 28);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.fillStyle = "#b9c9d6";
+      cacheCtx.strokeStyle = "#e6d6a0";
+      cacheCtx.lineWidth = 1;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-27, 26);
+      cacheCtx.lineTo(-25, 1);
+      cacheCtx.lineTo(-19, -7);
+      cacheCtx.lineTo(-13, 1);
+      cacheCtx.lineTo(-13, 26);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#d4e2ed";
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-9, 26);
+      cacheCtx.lineTo(-7, -15);
+      cacheCtx.lineTo(0, -24);
+      cacheCtx.lineTo(7, -15);
+      cacheCtx.lineTo(9, 26);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#aebfcc";
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(13, 26);
+      cacheCtx.lineTo(14, 4);
+      cacheCtx.lineTo(20, -4);
+      cacheCtx.lineTo(26, 4);
+      cacheCtx.lineTo(27, 26);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#e6d6a0";
+      [-21, -3, 20].forEach((x) => {
+        cacheCtx.fillRect(x, 10, 2.3, 5);
+        cacheCtx.fillRect(x, 19, 2.3, 5);
+      });
+      cacheCtx.shadowBlur = 0;
+      [[-32,-22,1.2],[-3,-31,1.1],[10,-18,1.3],[34,-25,1]].forEach((star) => {
+        cacheCtx.beginPath();
+        cacheCtx.arc(star[0], star[1], star[2], 0, Math.PI * 2);
+        cacheCtx.fill();
+      });
+    } else if (config.motif === "draculaBat") {
+      cacheCtx.translate(0, 2);
+      cacheCtx.shadowColor = "rgba(168,33,53,0.72)";
+      cacheCtx.shadowBlur = 6;
+      cacheCtx.fillStyle = "#10070e";
+      cacheCtx.strokeStyle = "#a82135";
+      cacheCtx.lineWidth = 1.1;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-4, -2);
+      cacheCtx.bezierCurveTo(-15, -13, -25, -19, -38, -13);
+      cacheCtx.lineTo(-30, -4);
+      cacheCtx.lineTo(-39, -1);
+      cacheCtx.lineTo(-25, 8);
+      cacheCtx.lineTo(-16, 5);
+      cacheCtx.lineTo(-8, 12);
+      cacheCtx.lineTo(0, 5);
+      cacheCtx.lineTo(8, 12);
+      cacheCtx.lineTo(16, 5);
+      cacheCtx.lineTo(25, 8);
+      cacheCtx.lineTo(39, -1);
+      cacheCtx.lineTo(30, -4);
+      cacheCtx.lineTo(38, -13);
+      cacheCtx.bezierCurveTo(25, -19, 15, -13, 4, -2);
+      cacheCtx.quadraticCurveTo(0, -10, -4, -2);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#a82135";
+      cacheCtx.beginPath();
+      cacheCtx.ellipse(0, 3, 5, 12, 0, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.fillStyle = "#f5c7a1";
+      cacheCtx.beginPath();
+      cacheCtx.arc(-2, -1, 1.2, 0, Math.PI * 2);
+      cacheCtx.arc(2, -1, 1.2, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.strokeStyle = "#b51e3d";
+      cacheCtx.lineWidth = 1.7;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, 13);
+      cacheCtx.lineTo(0, 29);
+      cacheCtx.stroke();
+    } else if (config.motif === "rebeccaLogoR") {
+      cacheCtx.translate(-1, -1);
+      const logoMetal = cacheCtx.createLinearGradient(-24, -34, 24, 32);
+      logoMetal.addColorStop(0, "#f8d879");
+      logoMetal.addColorStop(0.28, "#b75b2f");
+      logoMetal.addColorStop(0.58, "#4a1a1c");
+      logoMetal.addColorStop(0.82, "#efb43f");
+      logoMetal.addColorStop(1, "#8b3327");
+      cacheCtx.font = 'bold 69px Georgia, "Times New Roman", serif';
+      cacheCtx.textAlign = "center";
+      cacheCtx.textBaseline = "middle";
+      cacheCtx.lineWidth = 1.2;
+      cacheCtx.strokeStyle = "rgba(12,18,28,0.96)";
+      cacheCtx.shadowColor = "rgba(17,8,8,0.86)";
+      cacheCtx.shadowBlur = 7;
+      cacheCtx.strokeText("R", 0, -4);
+      cacheCtx.fillStyle = logoMetal;
+      cacheCtx.fillText("R", 0, -4);
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.strokeStyle = "#f2c65b";
+      cacheCtx.lineWidth = 2.1;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-28, 22);
+      cacheCtx.bezierCurveTo(-16, 29, 2, 31, 18, 25);
+      cacheCtx.bezierCurveTo(31, 20, 36, 28, 26, 34);
+      cacheCtx.bezierCurveTo(20, 38, 16, 34, 22, 30);
+      cacheCtx.stroke();
+      cacheCtx.strokeStyle = "rgba(66,106,145,0.78)";
+      cacheCtx.lineWidth = 0.9;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-27, 24);
+      cacheCtx.bezierCurveTo(-12, 31, 5, 32, 20, 26);
+      cacheCtx.stroke();
+    } else if (config.motif === "marqueeHat") {
+      cacheCtx.translate(0, 3);
+      cacheCtx.shadowColor = "rgba(213,155,58,0.7)";
+      cacheCtx.shadowBlur = 6;
+      cacheCtx.fillStyle = "#17100d";
+      cacheCtx.strokeStyle = "#d59b3a";
+      cacheCtx.lineWidth = 1.3;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-13, -24);
+      cacheCtx.quadraticCurveTo(0, -30, 13, -24);
+      cacheCtx.lineTo(11, 7);
+      cacheCtx.lineTo(-11, 7);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#a82135";
+      cacheCtx.fillRect(-12, -3, 24, 7);
+      cacheCtx.strokeStyle = "#f2d18a";
+      cacheCtx.lineWidth = 1;
+      cacheCtx.strokeRect(-12, -3, 24, 7);
+      cacheCtx.fillStyle = "#17100d";
+      cacheCtx.beginPath();
+      cacheCtx.ellipse(0, 9, 25, 6, 0, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#fff5c4";
+      [-19, -10, 0, 10, 19].forEach((x) => {
+        cacheCtx.beginPath();
+        cacheCtx.arc(x, 9 + Math.abs(x) * 0.045, 1.8, 0, Math.PI * 2);
+        cacheCtx.fill();
+      });
+      cacheCtx.strokeStyle = "#e75b3c";
+      cacheCtx.lineWidth = 1.4;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-21, -26);
+      cacheCtx.lineTo(-30, -35);
+      cacheCtx.moveTo(21, -26);
+      cacheCtx.lineTo(30, -35);
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#f2d18a";
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, -43);
+      cacheCtx.lineTo(3, -36);
+      cacheCtx.lineTo(10, -36);
+      cacheCtx.lineTo(5, -31);
+      cacheCtx.lineTo(7, -24);
+      cacheCtx.lineTo(0, -28);
+      cacheCtx.lineTo(-7, -24);
+      cacheCtx.lineTo(-5, -31);
+      cacheCtx.lineTo(-10, -36);
+      cacheCtx.lineTo(-3, -36);
+      cacheCtx.closePath();
       cacheCtx.fill();
     } else if (config.motif === "classicTiara") {
       cacheCtx.translate(0, -3);
@@ -6487,6 +8820,158 @@ function renderReferenceCursor(show) {
       cacheCtx.beginPath();
       cacheCtx.arc(0, 0, 1.8, 0, Math.PI * 2);
       cacheCtx.fill();
+    } else if (config.motif === "passionCrossHalo") {
+      cacheCtx.translate(0, 1);
+      const bronze = cacheCtx.createLinearGradient(-24, -28, 24, 28);
+      bronze.addColorStop(0, "#fff1a8");
+      bronze.addColorStop(0.42, "#d8a33d");
+      bronze.addColorStop(0.72, "#8b351f");
+      bronze.addColorStop(1, "#f1ce72");
+      cacheCtx.strokeStyle = bronze;
+      cacheCtx.lineWidth = 3;
+      cacheCtx.shadowColor = "rgba(218,168,72,0.65)";
+      cacheCtx.shadowBlur = 6;
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 3, 24, -Math.PI * 0.84, Math.PI * 0.06);
+      cacheCtx.arc(0, 3, 24, Math.PI * 0.16, Math.PI * 1.06);
+      cacheCtx.stroke();
+      cacheCtx.lineWidth = 4.2;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, -31);
+      cacheCtx.lineTo(0, 31);
+      cacheCtx.moveTo(-14, -13);
+      cacheCtx.lineTo(14, -13);
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.strokeStyle = "#fff0aa";
+      cacheCtx.lineWidth = 0.9;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-1, -29);
+      cacheCtx.lineTo(-1, 28);
+      cacheCtx.moveTo(-12, -14);
+      cacheCtx.lineTo(12, -14);
+      cacheCtx.stroke();
+    } else if (config.motif === "littlePrinceScarf") {
+      cacheCtx.translate(0, 3);
+      cacheCtx.strokeStyle = "#f4d976";
+      cacheCtx.fillStyle = "#f4d976";
+      cacheCtx.shadowColor = "rgba(240,215,131,0.55)";
+      cacheCtx.shadowBlur = 5;
+      cacheCtx.beginPath();
+      cacheCtx.arc(-5, -22, 6, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-10, -15);
+      cacheCtx.quadraticCurveTo(-16, 2, -12, 22);
+      cacheCtx.lineTo(4, 22);
+      cacheCtx.quadraticCurveTo(8, 2, 0, -15);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.fillStyle = "#df6b3f";
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-8, -13);
+      cacheCtx.bezierCurveTo(5, -10, 18, -7, 30, -14);
+      cacheCtx.bezierCurveTo(19, -1, 8, 1, -7, -7);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.strokeStyle = "#f6e49c";
+      cacheCtx.lineWidth = 2.1;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-10, 22);
+      cacheCtx.lineTo(-18, 33);
+      cacheCtx.moveTo(3, 22);
+      cacheCtx.lineTo(9, 34);
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#9ecbe8";
+      [[23,-28,2.2],[-25,-17,1.6],[24,19,1.4]].forEach((star) => {
+        cacheCtx.beginPath();
+        cacheCtx.arc(star[0], star[1], star[2], 0, Math.PI * 2);
+        cacheCtx.fill();
+      });
+    } else if (config.motif === "odysseyTrident") {
+      const seaGlow = cacheCtx.createRadialGradient(0, 5, 3, 0, 5, 34);
+      seaGlow.addColorStop(0, "rgba(240,213,139,0.28)");
+      seaGlow.addColorStop(0.45, "rgba(45,159,182,0.22)");
+      seaGlow.addColorStop(1, "rgba(45,159,182,0)");
+      cacheCtx.fillStyle = seaGlow;
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 5, 34, 0, Math.PI * 2);
+      cacheCtx.fill();
+
+      const bronze = cacheCtx.createLinearGradient(-18, -30, 18, 30);
+      bronze.addColorStop(0, "#fff1a8");
+      bronze.addColorStop(0.35, "#f0d58b");
+      bronze.addColorStop(0.68, "#7e9f9d");
+      bronze.addColorStop(1, "#2d9fb6");
+      cacheCtx.strokeStyle = bronze;
+      cacheCtx.shadowColor = "rgba(45,159,182,0.8)";
+      cacheCtx.shadowBlur = 6;
+      cacheCtx.lineWidth = 3;
+      cacheCtx.lineCap = "round";
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, -28);
+      cacheCtx.lineTo(0, 30);
+      cacheCtx.moveTo(-14, -28);
+      cacheCtx.quadraticCurveTo(-9, -14, 0, -6);
+      cacheCtx.quadraticCurveTo(9, -14, 14, -28);
+      cacheCtx.moveTo(-14, -28);
+      cacheCtx.lineTo(-14, -19);
+      cacheCtx.moveTo(14, -28);
+      cacheCtx.lineTo(14, -19);
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.strokeStyle = "rgba(255,247,205,0.84)";
+      cacheCtx.lineWidth = 0.85;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-1, -26);
+      cacheCtx.lineTo(-1, 28);
+      cacheCtx.stroke();
+      cacheCtx.strokeStyle = "#2d9fb6";
+      cacheCtx.lineWidth = 2;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-30, 24);
+      cacheCtx.bezierCurveTo(-17, 14, -7, 34, 6, 24);
+      cacheCtx.bezierCurveTo(16, 16, 22, 28, 31, 20);
+      cacheCtx.stroke();
+    } else if (config.motif === "greatestShow") {
+      const glow = cacheCtx.createRadialGradient(0, 0, 4, 0, 0, 33);
+      glow.addColorStop(0, "rgba(255,245,207,0.9)");
+      glow.addColorStop(0.35, "rgba(213,155,58,0.28)");
+      glow.addColorStop(1, "rgba(213,155,58,0)");
+      cacheCtx.fillStyle = glow;
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 0, 33, 0, Math.PI * 2);
+      cacheCtx.fill();
+
+      cacheCtx.strokeStyle = "#f2d18a";
+      cacheCtx.fillStyle = "#d59b3a";
+      cacheCtx.lineWidth = 1.35;
+      cacheCtx.beginPath();
+      for (let point = 0; point < 10; point += 1) {
+        const angle = -Math.PI / 2 + point * Math.PI / 5;
+        const radius = point % 2 === 0 ? 20 : 8;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        if (point === 0) cacheCtx.moveTo(x, y);
+        else cacheCtx.lineTo(x, y);
+      }
+      cacheCtx.closePath();
+      cacheCtx.shadowColor = "rgba(231,91,60,0.7)";
+      cacheCtx.shadowBlur = 5;
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+
+      for (let bulb = 0; bulb < 12; bulb += 1) {
+        const angle = bulb * Math.PI * 2 / 12;
+        cacheCtx.beginPath();
+        cacheCtx.arc(Math.cos(angle) * 28, Math.sin(angle) * 28, 1.7, 0, Math.PI * 2);
+        cacheCtx.fillStyle = bulb % 3 === 0 ? "#fff5c4" : "#e75b3c";
+        cacheCtx.shadowColor = cacheCtx.fillStyle;
+        cacheCtx.shadowBlur = 3;
+        cacheCtx.fill();
+      }
+      cacheCtx.shadowBlur = 0;
     } else if (config.motif === "posterMoon") {
       const halo = cacheCtx.createRadialGradient(0, 0, 12, 0, 0, 29);
       halo.addColorStop(0, "rgba(239,236,255,0.16)");
@@ -6822,6 +9307,7 @@ function renderReferenceCursor(show) {
       this.alpha = 0.92;
       this.spin = (Math.random() - 0.5) * 0.18;
       this.angle = movementAngle + (Math.random() - 0.5) * 0.55;
+      this.fade = null;
       this.color = index % 3 === 0 ? config.accent : index % 2 ? config.primary : config.secondary;
       this.variant = index % 2;
       if (config.trail === "goldSparkleRosePetal") {
@@ -6840,10 +9326,16 @@ function renderReferenceCursor(show) {
         this.color = index % 2 ? "#e2b15d" : "#9b78d0";
       }
       if (config.trail === "crystalGlint") {
-        this.vx *= burst ? 0.62 : 0.32;
-        this.vy = burst ? this.vy * 0.62 : 0.03 + Math.random() * 0.16;
-        this.radius = burst ? 1.15 + Math.random() * 1.25 : 0.85 + Math.random() * 1.05;
-        this.alpha = burst ? 0.9 : 0.76;
+        this.vx = this.vx * (burst ? 0.62 : 0.42) + (Math.random() - 0.5) * (burst ? 0.22 : 0.42);
+        this.vy = this.vy * (burst ? 0.62 : 0.42) + (Math.random() - 0.5) * (burst ? 0.18 : 0.3);
+        this.radius = burst ? 1.1 + Math.random() * 1.4 : 0.65 + Math.random() * 1.45;
+        this.alpha = burst ? 0.9 : 0.52 + Math.random() * 0.3;
+        this.fade = burst ? 0.019 + Math.random() * 0.009 : 0.012 + Math.random() * 0.009;
+        this.phase = Math.random() * Math.PI * 2;
+        this.wobble = 0.08 + Math.random() * 0.18;
+        this.twinkle = 0.04 + Math.random() * 0.08;
+        this.spin = (Math.random() - 0.5) * 0.3;
+        this.variant = Math.random() > 0.42;
         this.color = index % 3 === 0 ? "#ffffff" : index % 2 ? "#bfe8f5" : "#efdca4";
       }
       if (config.trail === "moonMist") {
@@ -6858,14 +9350,98 @@ function renderReferenceCursor(show) {
         this.vy = burst ? this.vy * 1.7 : 0.4 + Math.random() * 0.75;
         this.color = index % 3 ? "#d4af37" : "#ffffff";
       }
+      if (config.trail === "thornEmbers") {
+        this.vx *= burst ? 1.15 : 0.5;
+        this.vy = burst ? this.vy * 1.15 : -0.18 - Math.random() * 0.28;
+        this.radius = 0.75 + Math.random() * 1.15;
+        this.color = index % 3 === 0 ? "#8b351f" : index % 2 ? "#d8a33d" : "#fff0aa";
+      }
+      if (config.trail === "b612Stars") {
+        this.vx *= burst ? 0.9 : 0.35;
+        this.vy *= burst ? 0.9 : 0.35;
+        this.radius = 0.7 + Math.random() * 1.05;
+        this.color = index % 3 === 0 ? "#9ecbe8" : index % 2 ? "#f4d976" : "#ffffff";
+      }
+      if (config.trail === "bloodMist") {
+        this.vx *= burst ? 0.85 : 0.24;
+        this.vy = burst ? this.vy * 0.85 + 0.25 : 0.12 + Math.random() * 0.32;
+        this.radius = 0.85 + Math.random() * 1.35;
+        this.alpha = burst ? 0.88 : 0.52 + Math.random() * 0.22;
+        this.fade = burst ? 0.027 : 0.018 + Math.random() * 0.008;
+        this.color = index % 3 === 0 ? "#fff0d3" : index % 2 ? "#b51e3d" : "#7c122b";
+      }
+      if (config.trail === "ludwigStarlight") {
+        this.vx *= burst ? 0.9 : 0.3;
+        this.vy *= burst ? 0.9 : 0.3;
+        this.radius = 0.7 + Math.random() * 1.2;
+        this.alpha = burst ? 0.9 : 0.46 + Math.random() * 0.32;
+        this.fade = burst ? 0.024 : 0.015 + Math.random() * 0.008;
+        this.phase = Math.random() * Math.PI * 2;
+        this.color = index % 3 === 0 ? "#ffffff" : index % 2 ? "#e6d6a0" : "#8aa4c8";
+      }
+      if (config.trail === "batEmbers") {
+        this.vx *= burst ? 1.05 : 0.42;
+        this.vy = burst ? this.vy * 1.05 : -0.1 - Math.random() * 0.35;
+        this.radius = 0.7 + Math.random() * 1.15;
+        this.fade = burst ? 0.029 : 0.021 + Math.random() * 0.008;
+        this.color = index % 3 === 0 ? "#f4c47c" : index % 2 ? "#b51e3d" : "#731225";
+      }
+      if (config.trail === "manderleySmoke") {
+        this.vx *= burst ? 0.8 : 0.2;
+        this.vy = burst ? this.vy * 0.8 - 0.1 : -0.12 - Math.random() * 0.2;
+        this.radius = 1.2 + Math.random() * 1.6;
+        this.alpha = burst ? 0.72 : 0.25 + Math.random() * 0.18;
+        this.fade = burst ? 0.022 : 0.012 + Math.random() * 0.007;
+        this.phase = Math.random() * Math.PI * 2;
+        this.color = index % 3 === 0 ? "#c9a75a" : index % 2 ? "#426a91" : "#9fb8c7";
+      }
+      if (config.trail === "marqueeGold") {
+        this.vx *= burst ? 1.1 : 0.45;
+        this.vy = burst ? this.vy * 1.1 - 0.2 : -0.18 - Math.random() * 0.35;
+        this.radius = 0.8 + Math.random() * 1.2;
+        this.fade = burst ? 0.026 : 0.018 + Math.random() * 0.008;
+        this.color = index % 3 === 0 ? "#fff5c4" : index % 2 ? "#d59b3a" : "#e75b3c";
+      }
+      if (config.trail === "seaStarlight") {
+        this.vx *= burst ? 0.9 : 0.32;
+        this.vy *= burst ? 0.9 : 0.32;
+        this.radius = 0.7 + Math.random() * 1.25;
+        this.alpha = burst ? 0.9 : 0.5 + Math.random() * 0.28;
+        this.fade = burst ? 0.024 : 0.015 + Math.random() * 0.008;
+        this.phase = Math.random() * Math.PI * 2;
+        this.color = index % 3 === 0 ? "#fff7d0" : index % 2 ? "#2d9fb6" : "#97d7dc";
+      }
+      if (config.trail === "airRoute") {
+        const routeSpeed = burst ? 1.25 + Math.random() * 0.85 : 0.18 + Math.random() * 0.26;
+        this.vx = Math.cos(movementAngle) * routeSpeed + (Math.random() - 0.5) * 0.22;
+        this.vy = Math.sin(movementAngle) * routeSpeed + (Math.random() - 0.5) * 0.22;
+        this.radius = burst ? 1.1 + Math.random() * 1.2 : 0.65 + Math.random() * 0.7;
+        this.alpha = burst ? 0.9 : 0.46 + Math.random() * 0.28;
+        this.fade = burst ? 0.028 : 0.018 + Math.random() * 0.008;
+        this.color = index % 3 === 0 ? "#fff7d0" : index % 2 ? "#2d9fb6" : "#97d7dc";
+      }
+      if (config.trail === "clockTicks") {
+        this.vx *= burst ? 1.05 : 0.28;
+        this.vy *= burst ? 1.05 : 0.28;
+        this.radius = burst ? 1.1 + Math.random() * 1.1 : 0.75 + Math.random() * 0.75;
+        this.alpha = burst ? 0.92 : 0.54 + Math.random() * 0.24;
+        this.fade = burst ? 0.032 : 0.022 + Math.random() * 0.008;
+        this.color = index % 3 === 0 ? "#fff2ad" : index % 2 ? "#f3b33d" : "#af86c8";
+        this.variant = index % 3 === 0;
+      }
     }
     update() {
       this.x += this.vx;
       this.y += this.vy;
       this.vx *= config.trail === "magicDust" ? 0.97 : 0.93;
       this.vy *= config.trail === "magicDust" ? 0.97 : 0.93;
+      if (config.trail === "crystalGlint") {
+        this.phase += this.wobble;
+        this.x += Math.sin(this.phase) * 0.12;
+        this.y += Math.cos(this.phase * 0.83) * 0.08;
+      }
       this.angle += this.spin;
-      this.alpha -= config.trail === "glitchPixel" ? 0.055 : config.trail === "magicDust" ? 0.018 : config.trail === "moonMist" ? 0.016 : config.trail === "crystalGlint" ? 0.024 : 0.03;
+      this.alpha -= this.fade ?? (config.trail === "glitchPixel" ? 0.055 : config.trail === "magicDust" ? 0.018 : config.trail === "moonMist" ? 0.016 : config.trail === "crystalGlint" ? 0.024 : config.trail === "b612Stars" ? 0.022 : 0.03);
     }
     draw() {
       ctx.save();
@@ -6897,23 +9473,161 @@ function renderReferenceCursor(show) {
         ctx.arc(this.x, this.y, this.radius * (config.trail === "magicDust" ? 0.85 : 0.7), 0, Math.PI * 2);
         ctx.fill();
       } else if (config.trail === "crystalGlint") {
-        ctx.shadowBlur = 4;
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
-        drawDiamond(ctx, 0, 0, this.radius * 1.8);
-        ctx.fill();
-        ctx.globalAlpha *= 0.72;
-        ctx.lineWidth = 0.75;
+        const twinkle = 0.72 + Math.sin(this.phase) * 0.28;
+        const glowRadius = this.radius * (3.8 + twinkle * 2.2);
+        ctx.globalCompositeOperation = "screen";
+        const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, glowRadius);
+        glow.addColorStop(0, this.color);
+        glow.addColorStop(0.3, this.color);
+        glow.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.globalAlpha *= 0.2 + twinkle * 0.12;
+        ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.moveTo(-this.radius * 3.3, 0);
-        ctx.lineTo(this.radius * 3.3, 0);
-        ctx.moveTo(0, -this.radius * 2.7);
-        ctx.lineTo(0, this.radius * 2.7);
+        ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha *= 0.9 + twinkle * 0.2;
+        ctx.shadowBlur = 5 + twinkle * 4;
+        drawDiamond(ctx, 0, 0, this.radius * (1.45 + twinkle * 0.42));
+        ctx.fill();
+        if (this.variant) {
+          ctx.globalAlpha *= 0.38 + twinkle * 0.2;
+          ctx.lineWidth = 0.55 + twinkle * 0.35;
+          const ray = this.radius * (2.2 + twinkle * 1.6);
+          ctx.beginPath();
+          ctx.moveTo(-ray, 0);
+          ctx.lineTo(ray, 0);
+          ctx.moveTo(0, -ray * 0.82);
+          ctx.lineTo(0, ray * 0.82);
+          ctx.stroke();
+        }
+      } else if (config.trail === "bloodMist") {
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.beginPath();
+        ctx.ellipse(0, -this.radius * 0.55, this.radius * 0.75, this.radius * 1.15, 0, 0, Math.PI * 2);
+        ctx.moveTo(0, this.radius * 1.7);
+        ctx.lineTo(-this.radius * 0.7, this.radius * 0.45);
+        ctx.lineTo(this.radius * 0.7, this.radius * 0.45);
+        ctx.closePath();
+        ctx.fill();
+      } else if (config.trail === "ludwigStarlight") {
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        const ray = this.radius * (1.9 + Math.sin(this.phase || 0) * 0.45);
+        ctx.beginPath();
+        ctx.moveTo(0, -ray);
+        ctx.lineTo(ray * 0.42, 0);
+        ctx.lineTo(0, ray);
+        ctx.lineTo(-ray * 0.42, 0);
+        ctx.closePath();
+        ctx.fill();
+      } else if (config.trail === "batEmbers") {
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.beginPath();
+        ctx.moveTo(-this.radius * 1.8, 0);
+        ctx.lineTo(0, -this.radius * 0.7);
+        ctx.lineTo(this.radius * 1.8, 0);
+        ctx.lineTo(0, this.radius * 0.7);
+        ctx.closePath();
+        ctx.fill();
+      } else if (config.trail === "manderleySmoke") {
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.globalAlpha *= 0.72;
+        ctx.beginPath();
+        ctx.arc(-this.radius * 0.7, 0, this.radius * 0.72, 0, Math.PI * 2);
+        ctx.arc(this.radius * 0.55, -this.radius * 0.4, this.radius * 0.58, 0, Math.PI * 2);
         ctx.stroke();
+      } else if (config.trail === "marqueeGold") {
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        const ray = this.radius * 2.3;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius * 0.72, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha *= 0.65;
+        ctx.beginPath();
+        ctx.moveTo(-ray, 0);
+        ctx.lineTo(ray, 0);
+        ctx.moveTo(0, -ray);
+        ctx.lineTo(0, ray);
+        ctx.stroke();
+      } else if (config.trail === "seaStarlight") {
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        const ray = this.radius * (1.85 + Math.sin(this.phase || 0) * 0.35);
+        ctx.beginPath();
+        ctx.moveTo(0, -ray);
+        ctx.lineTo(ray * 0.36, 0);
+        ctx.lineTo(0, ray);
+        ctx.lineTo(-ray * 0.36, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha *= 0.52;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius * 2.2, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (config.trail === "airRoute") {
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        const length = this.radius * (this.variant ? 3.6 : 2.4);
+        ctx.lineWidth = this.variant ? 1.15 : 0.8;
+        ctx.beginPath();
+        ctx.moveTo(-length, 0);
+        ctx.lineTo(length, 0);
+        ctx.stroke();
+        if (this.variant) {
+          ctx.globalAlpha *= 0.55;
+          ctx.beginPath();
+          ctx.arc(length * 1.15, 0, this.radius * 1.5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      } else if (config.trail === "clockTicks") {
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        const length = this.radius * (this.variant ? 3.8 : 2.5);
+        ctx.lineWidth = this.variant ? 1.35 : 0.9;
+        ctx.beginPath();
+        ctx.moveTo(-length * 0.5, -length);
+        ctx.lineTo(length * 0.5, length);
+        ctx.stroke();
+        if (this.variant) {
+          ctx.globalAlpha *= 0.58;
+          ctx.beginPath();
+          ctx.arc(0, 0, length * 1.4, 0, Math.PI * 2);
+          ctx.stroke();
+        }
       } else if (config.trail === "moonMist") {
         ctx.shadowBlur = 2.5;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (config.trail === "thornEmbers") {
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.beginPath();
+        ctx.moveTo(-this.radius * 2.2, 0);
+        ctx.lineTo(this.radius * 2.2, 0);
+        ctx.moveTo(0, 0);
+        ctx.lineTo(this.radius * 0.9, -this.radius * 1.5);
+        ctx.stroke();
+      } else if (config.trail === "b612Stars") {
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        const outer = this.radius * 2.1;
+        const inner = this.radius * 0.8;
+        ctx.beginPath();
+        for (let point = 0; point < 10; point += 1) {
+          const angle = -Math.PI / 2 + point * Math.PI / 5;
+          const distance = point % 2 ? inner : outer;
+          const x = Math.cos(angle) * distance;
+          const y = Math.sin(angle) * distance;
+          if (point === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
         ctx.fill();
       }
       ctx.restore();
@@ -6947,6 +9661,190 @@ function renderReferenceCursor(show) {
         ctx.font = "700 14px Georgia";
         ctx.textAlign = "center";
         ctx.fillText("SPECTACULAR!", 0, -8 - progress * 12);
+      } else if (config.burst === "vampireBite") {
+        ctx.strokeStyle = "#b51e3d";
+        ctx.shadowColor = "#b51e3d";
+        ctx.shadowBlur = 7;
+        ctx.lineWidth = 2.4 - progress;
+        ctx.beginPath();
+        ctx.arc(-7, 0, radius * 0.58, -0.35, Math.PI + 0.35);
+        ctx.arc(7, 0, radius * 0.58, -Math.PI - 0.35, 0.35);
+        ctx.stroke();
+        ctx.fillStyle = "#fff0d3";
+        ctx.beginPath();
+        ctx.moveTo(-radius * 0.48, 1);
+        ctx.lineTo(-radius * 0.3, 1);
+        ctx.lineTo(-radius * 0.39, radius * 0.48);
+        ctx.closePath();
+        ctx.moveTo(radius * 0.3, 1);
+        ctx.lineTo(radius * 0.48, 1);
+        ctx.lineTo(radius * 0.39, radius * 0.48);
+        ctx.closePath();
+        ctx.fill();
+      } else if (config.burst === "castleGlow") {
+        const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+        glow.addColorStop(0, "rgba(230,214,160,0.74)");
+        glow.addColorStop(0.35, "rgba(138,164,200,0.34)");
+        glow.addColorStop(1, "rgba(138,164,200,0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#e6d6a0";
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.55, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.moveTo(0, -radius * 0.85);
+        ctx.lineTo(radius * 0.16, -radius * 0.18);
+        ctx.lineTo(radius * 0.78, -radius * 0.18);
+        ctx.lineTo(radius * 0.28, radius * 0.16);
+        ctx.lineTo(radius * 0.46, radius * 0.78);
+        ctx.lineTo(0, radius * 0.42);
+        ctx.lineTo(-radius * 0.46, radius * 0.78);
+        ctx.lineTo(-radius * 0.28, radius * 0.16);
+        ctx.lineTo(-radius * 0.78, -radius * 0.18);
+        ctx.lineTo(-radius * 0.16, -radius * 0.18);
+        ctx.closePath();
+        ctx.fill();
+      } else if (config.burst === "batFlare") {
+        ctx.strokeStyle = "#a82135";
+        ctx.shadowColor = "#a82135";
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 1.7;
+        ctx.beginPath();
+        ctx.moveTo(0, -2);
+        ctx.bezierCurveTo(-radius * 0.45, -radius * 0.8, -radius * 0.95, -radius * 0.55, -radius, -radius * 0.1);
+        ctx.lineTo(-radius * 0.54, radius * 0.08);
+        ctx.lineTo(-radius * 0.22, radius * 0.42);
+        ctx.moveTo(0, -2);
+        ctx.bezierCurveTo(radius * 0.45, -radius * 0.8, radius * 0.95, -radius * 0.55, radius, -radius * 0.1);
+        ctx.lineTo(radius * 0.54, radius * 0.08);
+        ctx.lineTo(radius * 0.22, radius * 0.42);
+        ctx.stroke();
+        ctx.fillStyle = "#f5c7a1";
+        ctx.beginPath();
+        ctx.arc(-3, -2, 1.2, 0, Math.PI * 2);
+        ctx.arc(3, -2, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (config.burst === "manderleyBurn") {
+        ctx.strokeStyle = "#426a91";
+        ctx.shadowColor = "#c9a75a";
+        ctx.shadowBlur = 7;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.72, -0.8, Math.PI * 1.65);
+        ctx.stroke();
+        ctx.strokeStyle = "#c9a75a";
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.48, Math.PI * 0.1, Math.PI * 1.9);
+        ctx.stroke();
+        ctx.fillStyle = "#b51e3d";
+        [[-radius * 0.76, -radius * 0.4], [radius * 0.72, radius * 0.18], [0, radius * 0.86]].forEach((spark) => {
+          ctx.beginPath();
+          ctx.arc(spark[0], spark[1], 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      } else if (config.burst === "curtainCall") {
+        ctx.strokeStyle = "#d59b3a";
+        ctx.shadowColor = "#e75b3c";
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.arc(0, 8, radius * 0.74, Math.PI * 1.1, Math.PI * 1.9);
+        ctx.stroke();
+        ctx.strokeStyle = "#e75b3c";
+        ctx.beginPath();
+        ctx.arc(0, 8, radius * 0.46, Math.PI * 1.12, Math.PI * 1.88);
+        ctx.stroke();
+        ctx.strokeStyle = "#fff5c4";
+        ctx.lineWidth = 1;
+        [[-radius * 0.72, -radius * 0.55], [radius * 0.72, -radius * 0.55], [0, -radius * 0.92]].forEach((ray) => {
+          ctx.beginPath();
+          ctx.moveTo(ray[0] * 0.62, ray[1] * 0.62);
+          ctx.lineTo(ray[0], ray[1]);
+          ctx.stroke();
+        });
+      } else if (config.burst === "oceanWave") {
+        ctx.strokeStyle = "#2d9fb6";
+        ctx.shadowColor = "#97d7dc";
+        ctx.shadowBlur = 7;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.arc(0, 7, radius * 0.74, Math.PI * 1.08, Math.PI * 1.92);
+        ctx.stroke();
+        ctx.strokeStyle = "#f0d58b";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(0, 4, radius * 0.48, Math.PI * 1.1, Math.PI * 1.9);
+        ctx.stroke();
+        ctx.globalAlpha *= 0.82;
+        ctx.beginPath();
+        ctx.moveTo(0, -radius * 0.72);
+        ctx.lineTo(0, radius * 0.42);
+        ctx.moveTo(-radius * 0.32, -radius * 0.72);
+        ctx.quadraticCurveTo(0, -radius * 0.25, radius * 0.32, -radius * 0.72);
+        ctx.stroke();
+      } else if (config.burst === "flightPath") {
+        ctx.strokeStyle = "#2d9fb6";
+        ctx.shadowColor = "#97d7dc";
+        ctx.shadowBlur = 7;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.arc(0, 5, radius * 0.78, Math.PI * 1.05, Math.PI * 1.92);
+        ctx.stroke();
+        ctx.strokeStyle = "#e3bd58";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2.5, 3.5]);
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.5, Math.PI * 1.08, Math.PI * 1.88);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#fff4d6";
+        ctx.strokeStyle = "#2d9fb6";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(radius * 0.5, -radius * 0.55);
+        ctx.lineTo(radius * 0.86, -radius * 0.66);
+        ctx.lineTo(radius * 0.62, -radius * 0.42);
+        ctx.lineTo(radius * 0.55, -radius * 0.12);
+        ctx.lineTo(radius * 0.42, -radius * 0.13);
+        ctx.lineTo(radius * 0.47, -radius * 0.4);
+        ctx.lineTo(radius * 0.16, -radius * 0.48);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else if (config.burst === "clockShockwave") {
+        ctx.strokeStyle = "#f3b33d";
+        ctx.shadowColor = "#f5e4a8";
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = Math.max(0.7, 2 - progress);
+        [0.52, 0.82].forEach((scale) => {
+          ctx.beginPath();
+          ctx.arc(0, 0, radius * scale, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+        ctx.strokeStyle = "#af86c8";
+        ctx.lineWidth = 1;
+        for (let index = 0; index < 12; index += 1) {
+          const angle = index * Math.PI / 6;
+          const outer = radius * 0.92;
+          const inner = outer - (index % 3 === 0 ? 5 : 3);
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+          ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+          ctx.stroke();
+        }
+        ctx.strokeStyle = "#fff2ad";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-radius * 0.28, -radius * 0.48);
+        ctx.moveTo(0, 0);
+        ctx.lineTo(radius * 0.42, radius * 0.18);
+        ctx.stroke();
       } else if (config.burst === "softDiamondGlow") {
         const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 0.7);
         glow.addColorStop(0, "rgba(255,255,255,0.8)");
@@ -7032,6 +9930,30 @@ function renderReferenceCursor(show) {
         ctx.shadowColor = "#d4af37";
         ctx.shadowBlur = 8;
         ctx.stroke();
+      } else if (config.burst === "cruciformHalo") {
+        ctx.strokeStyle = "#d8a33d";
+        ctx.shadowColor = "#d8a33d";
+        ctx.shadowBlur = 7;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.72, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, -radius);
+        ctx.lineTo(0, radius);
+        ctx.moveTo(-radius * 0.55, -radius * 0.28);
+        ctx.lineTo(radius * 0.55, -radius * 0.28);
+        ctx.stroke();
+      } else if (config.burst === "planetOrbit") {
+        ctx.strokeStyle = "#9ecbe8";
+        ctx.shadowColor = "#f4d976";
+        ctx.shadowBlur = 5;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radius, radius * 0.42, -0.35, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = "#f4d976";
+        ctx.beginPath();
+        ctx.arc(Math.cos(progress * Math.PI * 2) * radius, Math.sin(progress * Math.PI * 2) * radius * 0.42, 2.4, 0, Math.PI * 2);
+        ctx.fill();
       }
       ctx.restore();
     }
@@ -7240,18 +10162,26 @@ const root = path.resolve(__dirname, "..");
 const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const scriptJs = fs.readFileSync(path.join(root, "script.js"), "utf8");
 const styleCss = fs.readFileSync(path.join(root, "style.css"), "utf8");
-const songsJs = fs.readFileSync(path.join(root, "songs.js"), "utf8");
+const songsJs = fs.readFileSync(path.join(root, ${JSON.stringify(show.fullSongsFile || "songs.js")}), "utf8");
+const criticalSongsJs = fs.readFileSync(path.join(root, "songs.js"), "utf8");
 const songsInitialJs = fs.readFileSync(path.join(root, "songs-initial.js"), "utf8");
 const wordDataJs = fs.readFileSync(path.join(root, "word-data.js"), "utf8");
 const audioBuilderJs = fs.readFileSync(path.join(root, "scripts", "build-audio.js"), "utf8");
 const cursorJs = fs.readFileSync(path.join(root, "..", "shared", "cursors", "${show.slug}.js"), "utf8");
 const cursorMarker = ${JSON.stringify(getCursorMarker(show.slug))};
+const cursorProfile = ${JSON.stringify(getReferenceCursorConfig(show))};
 
 test("page uses the shared analytics module", () => {
   assert.match(indexHtml, /writeCriticalScript\\("\\.\\.\\/shared\\/analytics\\.js"\\)/);
   assert.match(scriptJs, /window\\.MusicalAnalytics\\.initShow/);
   assert.match(scriptJs, /showId:\\s*config\\.slug/);
   assert.doesNotMatch(indexHtml, /function gtag\\(\\)/);
+});
+
+test("page uses the show-specific cursor profile", () => {
+  assert.match(cursorJs, new RegExp(\`"motif":"\${cursorProfile.motif}"\`));
+  assert.match(cursorJs, new RegExp(\`"trail":"\${cursorProfile.trail}"\`));
+  assert.match(cursorJs, new RegExp(\`"burst":"\${cursorProfile.burst}"\`));
 });
 
 test("lyrics do not contain OCR acute apostrophes or glued Latin punctuation", () => {
@@ -7283,6 +10213,7 @@ test("Chinese, IPA, and optional English toggles exist", () => {
   assert.ok(indexHtml.indexOf('data-toggle="showIpa"') < indexHtml.indexOf('id="feedbackButton"'));
   if (${JSON.stringify(show.showEnglishToggle === false)}) {
     assert.doesNotMatch(indexHtml, /data-toggle="showEn"/);
+    assert.doesNotMatch(indexHtml, /data-toggle="showIpa"[^>]*>音标<\\/button>\\n[ \\t]+\\n[ \\t]+<button[^>]*id="feedbackButton"/);
   } else {
     assert.match(indexHtml, /data-toggle="showEn"/);
     assert.ok(indexHtml.indexOf('data-toggle="showEn"') < indexHtml.indexOf('id="feedbackButton"'));
@@ -7335,7 +10266,7 @@ test("first-screen lyrics do not wait for the word dictionary", () => {
   assert.match(scriptJs, /window\\.addEventListener\\("load", start, \\{ once: true \\}\\)/);
   assert.match(scriptJs, /showWordLoading\\(token, anchor\\);\\s*await ensureWordDataReady\\(\\)/);
   assert.match(styleCss, /content-visibility:\\s*auto/);
-  assert.ok(Buffer.byteLength(songsJs) < 520_000, \`critical songs.js too large: \${Buffer.byteLength(songsJs)}B\`);
+  assert.ok(Buffer.byteLength(criticalSongsJs) < 520_000, \`critical songs.js too large: \${Buffer.byteLength(songsJs)}B\`);
 });
 
 test("song header uses an unframed show logo and soft switching", () => {
@@ -7409,6 +10340,36 @@ test("songs and word data are populated", () => {
   assert.ok(Object.keys(sandbox.window.wordEntries).length > 0);
 });
 
+test("The Greatest Show compresses the opening vocalization and shows its repeat count", () => {
+  if (${JSON.stringify(show.slug)} !== "the-greatest-showman") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const opening = sandbox.window.songs.find((song) => song.sourceOrder === 1);
+  assert.equal(opening.lines[0].original, "Woah");
+  assert.equal(opening.lines[0].repeatCount, 9);
+  assert.equal(opening.lines[1].id, "the-greatest-showman-01-010");
+  assert.match(scriptJs, /lyric-repeat/);
+  assert.match(styleCss, /\\.lyric-repeat/);
+});
+
+test("Epic keeps all 40 songs and removes non-lyric stage directions", () => {
+  if (${JSON.stringify(show.slug)} !== "epic-the-musical") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const songs = sandbox.window.songs;
+  assert.equal(songs.length, 40);
+  assert.deepEqual(Array.from(songs, (song) => song.sourceOrder), Array.from({ length: 40 }, (_value, index) => index + 1));
+  const lines = songs.flatMap((song) => song.lines);
+  assert.ok(lines.every((line) => line.original && line.zh && line.ipa));
+  assert.doesNotMatch(lines.map((line) => line.original).join("\\n"), /Instrumental (?:Interlude|Break)|opens the door|picks up .*trident|drops the trident/iu);
+  assert.equal(songs[0].titleZh, "木马与婴儿");
+  assert.equal(songs.at(-1).titleZh, "你还会再次爱上我吗");
+  assert.match(cursorJs, /preRenderOdysseyTrident/);
+  assert.match(cursorJs, /config\.motif === "odysseyTrident"/);
+  assert.match(cursorJs, /config\.trail === "seaStarlight"/);
+  assert.match(cursorJs, /config\.burst === "oceanWave"/);
+});
+
 test("Dear Evan Hansen keeps slash-delimited line IPA and its upper-left note hotspot", () => {
   if (${JSON.stringify(show.slug)} !== "dear-evan-hansen") return;
   const sandbox = { window: {} };
@@ -7468,6 +10429,14 @@ test("Phantom and Love Never Dies stay in separate source ranges", () => {
     assert.equal(songs[0].title, "Prologue");
     assert.equal(songs[0].titleZh, "序幕");
     assert.ok(songs.every((song) => !/live|现场/iu.test(song.title) && !/live|现场/iu.test(song.titleZh)));
+    const allAskOfYou = songs.filter((song) => song.sourceOrder === 12 || song.sourceOrder === 13);
+    assert.equal(allAskOfYou.length, 2);
+    assert.equal(allAskOfYou[0].id, "12-all-i-ask-of-you-live");
+    assert.equal(allAskOfYou[0].title, "All I Ask Of You");
+    assert.equal(allAskOfYou[0].titleZh, "我对你唯一的请求");
+    assert.equal(allAskOfYou[1].id, "13-all-i-ask-of-you-live");
+    assert.equal(allAskOfYou[1].title, "All I Ask Of You (Reprise)");
+    assert.equal(allAskOfYou[1].titleZh, "我对你唯一的请求（重唱）");
     return;
   }
   assert.equal(songs.length, 26);
@@ -7744,9 +10713,26 @@ module.exports = {
   isInstrumentalMarkerText,
   isInstrumentalPlaceholderLine,
   parsePairedEnglishMarkdown,
+  parseEnglishChineseColumnsMarkdown,
+  parseEnglishChineseSingleColumnMarkdown,
+  parseGermanTripleMarkdown,
   parseMarkdown,
   extractSpeaker,
+  extractGermanTripleSpeaker,
   extractTranslationSpeaker,
   findStructuralLyricCandidates,
   assertLyricsReadyForGeneration,
+  assertNoUnreviewedContentChanges,
+  isSafeReviewedLineMerge,
+  splitSentenceSegments,
+  splitAlignedLongLine,
+  splitAlignedSentenceSegments,
+  buildWordEntries,
+  requiredWordKeys,
+  isReviewedWordCard,
+  loadRougeGlossary,
+  loadFreedictGlossary,
+  loadEnglishGlossary,
+  loadLegacyWordEntries,
+  loadLegacyEnglishWordEntries,
 };
