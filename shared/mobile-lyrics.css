@@ -1,0 +1,190 @@
+/* Shared first-pass phone/tablet rules. Theme-specific styles remain in each show. */
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.app-shell,
+.app-layout,
+.main-grid,
+.stage-shell,
+.dzw-shell,
+.content,
+.hero,
+.hero-copy,
+.lyrics,
+.lyrics-list,
+.lyric-card,
+.line-main,
+.mobile-picker,
+.mobile-song-picker {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.song-title-row h1,
+.song-title-row h2,
+.line-original,
+.line-zh,
+.line-en,
+.fr,
+.en,
+.zh,
+.song-button strong,
+.song-button span,
+.app-kicker,
+.musical-title,
+.musical-name,
+.song-subtitle {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.mobile-picker,
+.mobile-song-picker {
+  position: sticky;
+  top: 8px;
+  z-index: 30;
+  backdrop-filter: blur(12px);
+}
+
+.mobile-picker select,
+.mobile-song-picker select {
+  min-height: 44px;
+}
+
+.toggle-btn,
+.toggle,
+.feedback-btn,
+.feedback-button,
+.home-button,
+.lyrics-tools-search-toggle,
+.lyrics-tools-search-close,
+.song-play-button,
+.speak-button,
+.lyrics-tools-dock-pause,
+.lyrics-tools-dock-stop,
+.lyrics-tools-dock-rate,
+.playback-dock-pause,
+.playback-dock-stop,
+.playback-dock-rate {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.song-play-button,
+.speak-button,
+.lyrics-tools-dock-pause,
+.lyrics-tools-dock-stop,
+.lyrics-tools-dock-rate,
+.playback-dock-pause,
+.playback-dock-stop,
+.playback-dock-rate {
+  width: 44px;
+  height: 44px;
+}
+
+.toolbar-playback-tools .song-play-button {
+  width: 44px;
+  height: 44px;
+}
+
+.lyric-card {
+  grid-template-columns: minmax(0, 1fr) 44px;
+}
+
+.line-original {
+  font-size: clamp(1.125rem, 4.7vw, 1.375rem);
+}
+
+body.has-lyrics-tools-dock .app-shell,
+body.has-lyrics-tools-dock .app-layout,
+body.has-lyrics-tools-dock .stage-shell,
+body.has-lyrics-tools-dock .dzw-shell,
+body.has-playback-dock .app-shell,
+body.has-playback-dock .app-layout,
+body.has-playback-dock .stage-shell,
+body.has-playback-dock .dzw-shell {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 767px) {
+  .app-shell,
+  .stage-shell,
+  .dzw-shell {
+    width: calc(100% - 32px) !important;
+  }
+
+  .song-title-row h1,
+  .song-title-row h2 {
+    font-size: clamp(30px, 9vw, 42px);
+    line-height: 1.12;
+  }
+
+  .lyrics,
+  .lyrics-list {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .lyric-card {
+    padding-inline: 16px;
+  }
+
+  .line-zh,
+  .line-en,
+  .zh,
+  .en {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 359px) {
+  .app-shell,
+  .stage-shell,
+  .dzw-shell {
+    width: calc(100% - 24px) !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 959px) {
+  .app-shell,
+  .app-layout,
+  .main-grid {
+    display: block !important;
+    width: min(calc(100% - 32px), 760px) !important;
+  }
+
+  .song-sidebar {
+    display: none !important;
+  }
+
+  .mobile-picker,
+  .mobile-song-picker {
+    display: grid !important;
+  }
+
+  .hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .lyrics,
+  .lyrics-list {
+    max-width: 720px;
+    margin-inline: auto;
+  }
+}
+
+@media (min-width: 960px) {
+  .app-shell,
+  .app-layout,
+  .main-grid {
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  }
+
+  .song-sidebar {
+    max-width: 260px;
+  }
+}

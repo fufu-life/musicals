@@ -51,6 +51,11 @@ test("deployed entry pages suppress the implicit favicon request and do not prel
     "dazhuangwang/index.html",
     "Hamilton/index.html",
     "rouge-et-noir/index.html",
+    "phantom-of-the-opera/index.html",
+    "love-never-dies/index.html",
+    "elisabeth-das-musical/index.html",
+    "mozart-das-musical/index.html",
+    "rebecca-das-musical/index.html",
     "mozart-opera-rock/index.html",
     "romeo-et-juliette/index.html",
     "moliere-le-spectacle-musical/index.html",
@@ -83,6 +88,7 @@ test("Hamilton renders lyrics before loading analysis and word dictionaries", ()
   assert.doesNotMatch(index, /<script src="(?:songs|word-data)\.js"><\/script>/);
   assert.match(script, /renderCurrentSong\(\);\s*scheduleDeferredData\(\)/);
   assert.match(script, /showLoadingPopover\(part, button\);\s*await ensureWordDictionaryReady\(\)/);
+  assert.match(script, /button\.setAttribute\("aria-current", song\.id === current\?\.id \? "true" : "false"\)/);
   assert.match(script, /window\.addEventListener\("load", start, \{ once: true \}\)/);
   assert.doesNotMatch(index, /<audio\b|preload=["'](?:auto|metadata)["']/);
   assert.ok(gzipSize("Hamilton/lyrics-data.js") < 250_000);

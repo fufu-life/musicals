@@ -242,8 +242,9 @@ function renderSongList() {
     order.textContent = String(song.displayOrder || song.order).padStart(2, "0");
     const title = document.createElement("strong");
     title.textContent = song.title;
-    const sub = document.createElement("span");
-    sub.textContent = song.titleZh || "";
+  const sub = document.createElement("span");
+  sub.textContent = song.titleZh || "";
+  button.setAttribute("aria-current", song.id === state.currentSongId ? "true" : "false");
     button.append(order, title, sub);
     button.addEventListener("click", () => selectSong(song.id));
     return button;
@@ -373,9 +374,6 @@ function renderLine(song, line) {
   speak.setAttribute("aria-label", "播放整句发音");
   speak.textContent = "▶";
   const lineAudioPath = getLineAudioPath(song, line);
-  const primeLineAudio = () => window.MusicalAudio.preloadLocalAudio(lineAudioPath);
-  speak.addEventListener("pointerenter", primeLineAudio, { once: true });
-  speak.addEventListener("focus", primeLineAudio, { once: true });
   speak.addEventListener("click", () => {
     if (audioController.isSequenceActive() && card.classList.contains("is-sequence-active")) {
       audioController.stopSequence();

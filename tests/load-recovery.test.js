@@ -6,7 +6,7 @@ const vm = require("node:vm");
 const { libraryShows } = require("../shows.js");
 
 const root = path.resolve(__dirname, "..");
-const expectedAssets = new Map([["index.html", ["shared/analytics.js", "shows.js", "library.js"]]]);
+const expectedAssets = new Map();
 
 libraryShows.forEach((show) => {
   if (!show.deployed || !fs.existsSync(path.join(root, show.href))) return;
@@ -19,12 +19,14 @@ libraryShows.forEach((show) => {
   expectedAssets.set(show.href, assets);
 });
 
-test("the library and all available show pages retry failed critical assets once", () => {
+test("all available show pages retry failed critical assets once", () => {
   expectedAssets.forEach((assets, relativePath) => {
     const html = fs.readFileSync(path.join(root, relativePath), "utf8");
 
     assert.match(html, /window\.handleCriticalAssetError = \(source\) =>/);
     assert.match(html, /now - lastRetry < 30000/);
+    assert.match(html, /retryAlreadyAttempted/);
+    assert.match(html, /!retryAlreadyAttempted/);
     assert.match(html, /retryUrl\.searchParams\.set\("_retry"/);
     assert.match(html, /retryUrl\.searchParams\.set\(retryAssetParam/);
     assert.match(html, /assetUrl\.searchParams\.set\("_retry", retryToken\)/);
@@ -73,7 +75,7 @@ test("the library and all available show pages retry failed critical assets once
   });
 });
 
-test("the library and all available show pages load the shared analytics runtime as a critical asset", () => {
+test("show pages load the shared analytics runtime as a critical asset while the library keeps it optional", () => {
   const analyticsJs = fs.readFileSync(path.join(root, "shared/analytics.js"), "utf8");
   expectedAssets.forEach((assets, relativePath) => {
     const html = fs.readFileSync(path.join(root, relativePath), "utf8");
@@ -82,6 +84,11 @@ test("the library and all available show pages load the shared analytics runtime
     assert.match(html, /writeCriticalScript\((?:"shared\/analytics\.js"|"\.\.\/shared\/analytics\.js")\)/);
     assert.doesNotMatch(html, /function gtag\(\)/);
   });
+  const libraryHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  assert.match(libraryHtml, /<script src="shared\/analytics\.js" defer onerror="handleOptionalAssetError\(this\.src\)"><\/script>/);
+  assert.match(libraryHtml, /<script src="shows\.js" defer onerror="handleOptionalAssetError\(this\.src\)"><\/script>/);
+  assert.match(libraryHtml, /<script src="library\.js" defer onerror="handleOptionalAssetError\(this\.src\)"><\/script>/);
+  assert.match(libraryHtml, /id="language-yue"/);
   assert.match(analyticsJs, /scope\.addEventListener\?\.\("load", requestScript/);
   assert.match(analyticsJs, /https:\/\/www\.googletagmanager\.com\/gtag\/js\?id=\$\{MEASUREMENT_ID\}/);
 });

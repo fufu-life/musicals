@@ -37,10 +37,17 @@ test("library groups all forty-one shows by language", () => {
   ]);
   assert.equal(libraryShows.length, 41);
   assert.match(indexHtml, /id="languageGroups"/);
-  assert.match(
-    indexHtml,
-    /writeCriticalScript\("shows\.js"\)[\s\S]*writeCriticalScript\("library\.js"\)/,
-  );
+  assert.match(indexHtml, /id="language-yue"[\s\S]*id="language-en"[\s\S]*id="language-de"[\s\S]*id="language-fr"/);
+});
+
+test("homepage exposes every deployed show as a direct HTML link before JavaScript", () => {
+  const deployed = libraryShows.filter((show) => show.deployed);
+  assert.equal(deployed.length, 11);
+  deployed.forEach((show) => {
+    assert.match(indexHtml, new RegExp(`href="${show.href.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}"`));
+  });
+  assert.match(indexHtml, /<strong id="showCount">11<\/strong>/);
+  assert.doesNotMatch(indexHtml, /<strong id="showCount">0<\/strong>/);
 });
 
 test("show names and Cantonese feature labels stay accurate", () => {
@@ -53,10 +60,13 @@ test("show names and Cantonese feature labels stay accurate", () => {
   ]);
 });
 
-test("library cards keep one fixed shelf size and wrap as space narrows", () => {
-  assert.match(indexHtml, /grid-template-columns: repeat\(auto-fill, 180px\)/);
-  assert.match(indexHtml, /width: 180px;\s+height: 300px;/);
-  assert.doesNotMatch(indexHtml, /repeat\(auto-fit/);
+test("library cards use fluid phone and tablet grids", () => {
+  assert.match(indexHtml, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(indexHtml, /@media \(min-width: 768px\)[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(indexHtml, /@media \(min-width: 960px\)[\s\S]*grid-template-columns: repeat\(4, 180px\)/);
+  assert.match(indexHtml, /@media \(max-width: 389px\)[\s\S]*\.show-logo[\s\S]*width: min\(78%, 190px\)/);
+  assert.match(indexHtml, /@media \(max-width: 319px\)[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
+  assert.match(indexHtml, /min-width: 0/);
 });
 
 test("show cards omit generated description paragraphs", () => {
@@ -106,7 +116,8 @@ test("online library renders only explicitly deployed shows without network prob
 });
 
 test("homepage logos decode asynchronously and show links prefetch on intent", () => {
-  assert.match(libraryScript, /image\.loading = "lazy"/);
+  assert.match(libraryScript, /image\.loading = eager \? "eager" : "lazy"/);
+  assert.match(libraryScript, /image\.fetchPriority = "high"/);
   assert.match(libraryScript, /image\.decoding = "async"/);
   assert.match(libraryScript, /link\.rel = "prefetch"/);
   assert.match(libraryScript, /card\.addEventListener\("pointerenter"/);
@@ -144,7 +155,7 @@ test("library and all forty-one show pages use the shared analytics module", () 
     assert.match(html, /shared\/analytics\.js/, `${name}: shared analytics`);
     assert.doesNotMatch(html, /function gtag\(\)/, `${name}: no copied gtag bootstrap`);
   });
-  assert.match(libraryScript, /window\.MusicalAnalytics\.initLibrary/);
+  assert.match(libraryScript, /window\.MusicalAnalytics\?\.initLibrary\?\./);
   assert.match(libraryScript, /analytics\.trackLibraryEntry/);
 });
 

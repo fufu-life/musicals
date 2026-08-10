@@ -862,9 +862,6 @@ function renderLyricLine(song, line) {
   sentenceSpeakButton.setAttribute("aria-label", `朗读整句：${line.fr}`);
   sentenceSpeakButton.append(createSpeakerIcon());
   const lineAudioPath = getLineAudioPath(song, line);
-  const primeLineAudio = () => window.MusicalAudio.preloadLocalAudio(lineAudioPath);
-  sentenceSpeakButton.addEventListener("pointerenter", primeLineAudio, { once: true });
-  sentenceSpeakButton.addEventListener("focus", primeLineAudio, { once: true });
   sentenceSpeakButton.addEventListener("click", () => {
     if (audioController.isSequenceActive() && card.classList.contains("is-sequence-active")) {
       audioController.stopSequence();

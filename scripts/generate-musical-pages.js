@@ -1173,6 +1173,7 @@ const SONG_TITLE_TRANSLATIONS = {
     "Avion Dans La Nuit / Lever De Soleil / Dessine-Moi Un Mouton / Coucher De Soleil": "夜航／日出／给我画只绵羊／日落",
     "L'allumeur De RÉVerbÈRes": "点灯人",
     "Lever De Soleil / Retour Dans Le DÉSert : 8È Jour Coucher De Soleil": "日出／重返沙漠：第八天／日落",
+    "Lever De Soleil / Retour Dans Le DÉSert: 8È Jour Coucher De Soleil": "日出／重返沙漠：第八天／日落",
     "Le DÉPart": "离别",
   },
   "come-from-away": {
@@ -5027,6 +5028,7 @@ function renderLoadRecovery() {
       (() => {
         const retryKey = "musical-site-retry:" + window.location.pathname;
         const retryAssetParam = "_retry_asset";
+        const retryAlreadyAttempted = new URL(window.location.href).searchParams.has("_retry");
         let reloadStarted = false;
 
         window.writeCriticalScript = (source) => {
@@ -5088,7 +5090,7 @@ function renderLoadRecovery() {
             canRememberRetry = false;
           }
 
-          if (canRememberRetry && !recentlyRetried) {
+          if (canRememberRetry && !recentlyRetried && !retryAlreadyAttempted) {
             reloadStarted = true;
             const retryUrl = new URL(window.location.href);
             retryUrl.searchParams.set("_retry", String(now));
@@ -5132,6 +5134,7 @@ function renderIndex(show) {
     <title>${escapeHtml(show.title)}｜${escapeHtml(show.titleZh)}歌词学习</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="../shared/lyrics-page-tools.css" />
+    <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
   </head>
   <body>
     <canvas id="effectCanvas" aria-hidden="true"></canvas>
@@ -6454,6 +6457,7 @@ function renderSongList() {
     title.textContent = song.title;
     const sub = document.createElement("span");
     sub.textContent = song.titleZh || "";
+    button.setAttribute("aria-current", song.id === state.currentSongId ? "true" : "false");
     button.append(order, title, sub);
     button.addEventListener("click", () => selectSong(song.id));
     return button;
@@ -6583,9 +6587,6 @@ function renderLine(song, line) {
   speak.setAttribute("aria-label", "播放整句发音");
   speak.textContent = "▶";
   const lineAudioPath = getLineAudioPath(song, line);
-  const primeLineAudio = () => window.MusicalAudio.preloadLocalAudio(lineAudioPath);
-  speak.addEventListener("pointerenter", primeLineAudio, { once: true });
-  speak.addEventListener("focus", primeLineAudio, { once: true });
   speak.addEventListener("click", () => {
     if (audioController.isSequenceActive() && card.classList.contains("is-sequence-active")) {
       audioController.stopSequence();
@@ -7906,8 +7907,10 @@ function getReferenceCursorConfig(show) {
       hotspot: [0.5, 0.5],
     },
   };
+  const profile = profiles[show.slug];
+  if (!profile) return null;
   return {
-    ...profiles[show.slug],
+    ...profile,
     primary: show.effect.primary,
     secondary: show.effect.secondary,
   };
@@ -10179,9 +10182,13 @@ test("page uses the shared analytics module", () => {
 });
 
 test("page uses the show-specific cursor profile", () => {
-  assert.match(cursorJs, new RegExp(\`"motif":"\${cursorProfile.motif}"\`));
-  assert.match(cursorJs, new RegExp(\`"trail":"\${cursorProfile.trail}"\`));
-  assert.match(cursorJs, new RegExp(\`"burst":"\${cursorProfile.burst}"\`));
+  if (cursorProfile) {
+    assert.match(cursorJs, new RegExp(\`"motif":"\${cursorProfile.motif}"\`));
+    assert.match(cursorJs, new RegExp(\`"trail":"\${cursorProfile.trail}"\`));
+    assert.match(cursorJs, new RegExp(\`"burst":"\${cursorProfile.burst}"\`));
+  } else {
+    assert.match(cursorJs, new RegExp(cursorMarker));
+  }
 });
 
 test("lyrics do not contain OCR acute apostrophes or glued Latin punctuation", () => {

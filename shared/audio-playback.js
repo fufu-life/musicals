@@ -173,7 +173,7 @@
     if (!audio) {
       if (typeof globalScope.Audio !== "function") return null;
       audio = new globalScope.Audio(key);
-      audio.preload = "auto";
+      audio.preload = "none";
     } else {
       audioCache.delete(key);
     }

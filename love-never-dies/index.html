@@ -8,6 +8,7 @@
     <title>Love Never Dies｜真爱不死歌词学习</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="../shared/lyrics-page-tools.css" />
+    <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
   </head>
   <body>
     <canvas id="effectCanvas" aria-hidden="true"></canvas>
@@ -85,6 +86,7 @@
       (() => {
         const retryKey = "musical-site-retry:" + window.location.pathname;
         const retryAssetParam = "_retry_asset";
+        const retryAlreadyAttempted = new URL(window.location.href).searchParams.has("_retry");
         let reloadStarted = false;
 
         window.writeCriticalScript = (source) => {
@@ -146,7 +148,7 @@
             canRememberRetry = false;
           }
 
-          if (canRememberRetry && !recentlyRetried) {
+          if (canRememberRetry && !recentlyRetried && !retryAlreadyAttempted) {
             reloadStarted = true;
             const retryUrl = new URL(window.location.href);
             retryUrl.searchParams.set("_retry", String(now));
