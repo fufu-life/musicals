@@ -1536,6 +1536,7 @@ body:not(.js-ready) .app-layout {
 
     </style>
     <link rel="stylesheet" href="../shared/lyrics-page-tools.css" />
+    <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
   </head>
   <body>
     <canvas class="dragonfly-cursor" id="dragonflyCursor" aria-hidden="true" hidden></canvas>
@@ -10672,6 +10673,7 @@ body:not(.js-ready) .app-layout {
       (() => {
         const retryKey = `musical-site-retry:${window.location.pathname}`;
         const retryAssetParam = "_retry_asset";
+        const retryAlreadyAttempted = new URL(window.location.href).searchParams.has("_retry");
         let reloadStarted = false;
 
         window.writeCriticalScript = (source) => {
@@ -10733,7 +10735,7 @@ body:not(.js-ready) .app-layout {
             canRememberRetry = false;
           }
 
-          if (canRememberRetry && !recentlyRetried) {
+          if (canRememberRetry && !recentlyRetried && !retryAlreadyAttempted) {
             reloadStarted = true;
             const retryUrl = new URL(window.location.href);
             retryUrl.searchParams.set("_retry", String(now));
@@ -11596,9 +11598,6 @@ function renderSpeakToken(song, line, displayText, lineIndex) {
   speak.title = "朗读这一句";
   speak.setAttribute("aria-label", `朗读：${displayText}`);
   speak.append(createSpeakerIcon());
-  const primeLineAudio = () => window.MusicalAudio.preloadLocalAudio(line.audio);
-  speak.addEventListener("pointerenter", primeLineAudio, { once: true });
-  speak.addEventListener("focus", primeLineAudio, { once: true });
   speak.addEventListener("click", () => {
     const row = document.getElementById(line.id);
     if (audioController.isSequenceActive() && row?.classList.contains("is-sequence-active")) {

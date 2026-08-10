@@ -981,6 +981,7 @@ function renderSongNav() {
     button.className = "song-item";
     button.type = "button";
     button.classList.toggle("is-active", song.id === current?.id);
+    button.setAttribute("aria-current", song.id === current?.id ? "true" : "false");
     button.addEventListener("click", () => selectSong(song.id));
 
     const order = document.createElement("span");
@@ -1080,9 +1081,6 @@ function renderLine(song, line) {
   speak.setAttribute("aria-label", `朗读：${line.en}`);
   speak.append(createSpeakerIcon());
   const lineAudioPath = getLineAudioPath(song, line);
-  const primeLineAudio = () => window.MusicalAudio.preloadLocalAudio(lineAudioPath);
-  speak.addEventListener("pointerenter", primeLineAudio, { once: true });
-  speak.addEventListener("focus", primeLineAudio, { once: true });
   speak.addEventListener("click", () => {
     if (audioController.isSequenceActive() && card.classList.contains("is-sequence-active")) {
       audioController.stopSequence();

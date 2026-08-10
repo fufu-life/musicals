@@ -5,7 +5,9 @@
   const backToTop = document.querySelector("#libraryBackToTop");
   const copyrightNoticeButton = document.querySelector("#copyrightNoticeButton");
   const copyrightNotice = document.querySelector("#copyrightNotice");
-  const analytics = window.MusicalAnalytics.initLibrary();
+  const analytics = window.MusicalAnalytics?.initLibrary?.() || {
+    trackLibraryEntry() {},
+  };
   const prefetchedPages = new Set();
   const pinyinInitials = {
     dazhuangwang: "D", hamilton: "H", "les-miserables": "B", "moulin-rouge": "H",
@@ -25,14 +27,15 @@
   };
   const pinyinCollator = new Intl.Collator("zh-Hans-CN-u-co-pinyin", { sensitivity: "base" });
 
-  function appendCoverTitle(cover, show) {
+  function appendCoverTitle(cover, show, eager = false) {
     if (show.image) {
       const image = document.createElement("img");
       image.className = "show-logo";
       image.src = show.image;
       image.alt = "";
-      image.loading = "lazy";
+      image.loading = eager ? "eager" : "lazy";
       image.decoding = "async";
+      if (eager) image.fetchPriority = "high";
       cover.append(image);
       return;
     }
@@ -52,6 +55,7 @@
 
   function prefetchShowPage(show) {
     if (window.location.protocol === "file:") return;
+    if (!window.matchMedia?.("(pointer: fine)").matches) return;
 
     [show.href, ...(show.prefetch || [])].forEach((href) => {
       if (prefetchedPages.has(href)) return;
@@ -73,7 +77,7 @@
     const cover = document.createElement("div");
     cover.className = "cover";
     cover.setAttribute("aria-hidden", "true");
-    appendCoverTitle(cover, show);
+    appendCoverTitle(cover, show, isInitialCard);
 
     const copy = document.createElement("div");
     copy.className = "show-copy";
@@ -178,6 +182,8 @@
   }
 
   function renderLibrary() {
+    if (!Array.isArray(window.libraryShows) || !Array.isArray(window.libraryLanguages)) return;
+
     const availableShows = window.location.protocol === "file:"
       ? window.libraryShows
       : window.libraryShows.filter((show) => show.deployed);

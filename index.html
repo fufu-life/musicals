@@ -367,8 +367,8 @@
       .alpha-nav a {
         display: inline-grid;
         place-items: center;
-        min-width: 36px;
-        min-height: 30px;
+        min-width: 44px;
+        min-height: 44px;
         padding: 0 10px;
         border: 1px solid rgba(216, 177, 91, 0.22);
         border-radius: 999px;
@@ -462,8 +462,8 @@
       }
 
       .alpha-nav a {
-        min-width: 29px;
-        min-height: 27px;
+        min-width: 36px;
+        min-height: 36px;
         padding: 0 7px;
         border-radius: 5px;
         font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -505,10 +505,10 @@
         position: relative;
         z-index: 1;
         display: grid;
-        grid-template-columns: repeat(auto-fill, 180px);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 14px;
         align-items: stretch;
-        justify-content: start;
+        min-width: 0;
       }
 
       .show-card {
@@ -517,8 +517,10 @@
         display: grid;
         position: relative;
         grid-template-rows: auto 1fr;
-        width: 180px;
-        height: 300px;
+        width: 100%;
+        min-width: 0;
+        min-height: 270px;
+        height: auto;
         padding: 10px;
         border: 1px solid color-mix(in srgb, var(--accent), transparent 58%);
         border-radius: 6px;
@@ -777,6 +779,7 @@
         font-size: 1rem;
         line-height: 1.25;
         letter-spacing: 0;
+        overflow-wrap: anywhere;
       }
 
       .show-meta {
@@ -788,7 +791,7 @@
 
       @media (max-width: 860px) {
         main {
-          width: min(100% - 24px, 620px);
+          width: min(100% - 32px, 760px);
           padding: 36px 0 46px;
         }
 
@@ -831,7 +834,128 @@
         }
       }
 
-      @media (max-width: 320px) {
+      @media (min-width: 768px) {
+        main {
+          width: min(100% - 48px, 1320px);
+        }
+
+        .collection {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      @media (min-width: 960px) {
+        .collection {
+          grid-template-columns: repeat(4, 180px);
+          max-width: none;
+          margin-inline: 0;
+        }
+
+        .show-card {
+          min-height: 300px;
+        }
+      }
+
+      @media (max-width: 319px) {
+        main {
+          width: calc(100% - 24px);
+        }
+
+        .collection {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      @media (max-width: 479px) {
+        main {
+          padding-top: 24px;
+        }
+
+        .library-head {
+          padding-bottom: 20px;
+        }
+
+        h1 {
+          font-size: clamp(2rem, 10vw, 3rem);
+        }
+
+        .intro {
+          margin-top: 10px;
+          font-size: 0.92rem;
+          line-height: 1.65;
+        }
+
+        .display-case {
+          padding: 14px 12px 24px;
+        }
+
+        .collection {
+          gap: 10px;
+        }
+
+        .show-card {
+          min-height: 240px;
+          padding: 8px;
+        }
+
+        .show-copy {
+          gap: 5px;
+          padding-top: 8px;
+        }
+
+        .show-copy strong {
+          font-size: 0.94rem;
+        }
+
+        .show-meta {
+          font-size: 0.62rem;
+        }
+      }
+
+      @media (max-width: 389px) {
+        .display-case {
+          padding: 12px 10px 22px;
+        }
+
+        .collection {
+          gap: 8px;
+        }
+
+        .show-card {
+          min-height: 220px;
+          padding: 6px;
+        }
+
+        .show-logo {
+          width: min(78%, 190px);
+          max-height: 76%;
+        }
+
+        .show-card.dzw .show-logo {
+          width: 76%;
+          max-height: 74%;
+        }
+
+        .show-card.rouge .show-logo {
+          width: 82%;
+          max-height: 82%;
+        }
+
+        .show-copy {
+          gap: 4px;
+          padding: 6px 1px 1px;
+        }
+
+        .show-copy strong {
+          font-size: 0.88rem;
+        }
+
+        .show-meta {
+          font-size: 0.58rem;
+        }
+      }
+
+      @media (max-width: 319px) {
         .display-case {
           padding-inline: 12px;
         }
@@ -865,15 +989,97 @@
             <span class="library-update-notice">剧目更新动态可以关注<a href="https://xhslink.cn/m/5oUCF9o85fs" target="_blank" rel="noopener noreferrer">小红书</a>，进群反馈更实时噢～多多四连，阿浮更有动力上新呀！</span>
           </div>
           <p class="intro">感谢剧场让我们的轨迹短暂交叠，行走在志同道合的路上，愿我们一直望着<span class="no-break">同一个月亮。</span></p>
-          <nav class="library-nav" id="languageNav" aria-label="按语种快速定位"></nav>
+          <nav class="library-nav" id="languageNav" aria-label="按语种快速定位">
+            <a href="#language-yue">粤语</a>
+            <a href="#language-en">英语</a>
+            <a href="#language-de">德语</a>
+            <a href="#language-fr">法语</a>
+          </nav>
         </div>
         <div class="counter" aria-label="当前收录剧目数量">
-          <strong id="showCount">0</strong>
+          <strong id="showCount">11</strong>
           <span>shows on shelf</span>
         </div>
       </header>
 
-      <div class="language-groups" id="languageGroups" aria-live="polite"></div>
+      <div class="language-groups" id="languageGroups" aria-live="polite">
+        <section class="language-group" id="language-yue" aria-labelledby="yue-heading">
+          <div class="language-heading"><h2 id="yue-heading">粤语音乐剧</h2><span>1 部</span></div>
+          <nav class="alpha-nav" aria-label="粤语音乐剧首字母索引"><a href="#letter-yue-D">D</a></nav>
+          <div class="display-case">
+            <div class="collection">
+              <a class="show-card dzw" id="letter-yue-D" data-initial="D" href="dazhuangwang/index.html">
+                <div class="cover" aria-hidden="true"><img class="show-logo" src="dazhuangwang/assets/show-logo.png" alt="" loading="eager" decoding="async" /></div>
+                <div class="show-copy"><span class="show-meta">粤语 / 粤拼 / 注释</span><strong>大状王</strong></div>
+              </a>
+            </div>
+          </div>
+        </section>
+        <section class="language-group" id="language-en" aria-labelledby="en-heading">
+          <div class="language-heading"><h2 id="en-heading">英语音乐剧</h2><span>3 部</span></div>
+          <nav class="alpha-nav" aria-label="英语音乐剧首字母索引"><a href="#letter-en-H">H</a><a href="#letter-en-J">J</a><a href="#letter-en-Z">Z</a></nav>
+          <div class="display-case">
+            <div class="collection">
+              <a class="show-card hamilton" id="letter-en-H" data-initial="H" href="Hamilton/index.html">
+                <div class="cover" aria-hidden="true"><img class="show-logo" src="Hamilton/assets/Hamilton-Logo-1.svg" alt="" loading="eager" decoding="async" /></div>
+                <div class="show-copy"><span class="show-meta">英语 / IPA / 中文对照</span><strong>汉密尔顿</strong></div>
+              </a>
+              <a class="show-card phantom" id="letter-en-J" data-initial="J" href="phantom-of-the-opera/index.html">
+                <div class="cover" aria-hidden="true"><img class="show-logo" src="phantom-of-the-opera/assets/show-logo.png" alt="" loading="lazy" decoding="async" /></div>
+                <div class="show-copy"><span class="show-meta">英语 / IPA / 中文对照</span><strong>剧院魅影</strong></div>
+              </a>
+              <a class="show-card love-never-dies" id="letter-en-Z" data-initial="Z" href="love-never-dies/index.html">
+                <div class="cover" aria-hidden="true"><img class="show-logo" src="love-never-dies/assets/show-title-logo.webp" alt="" loading="lazy" decoding="async" /></div>
+                <div class="show-copy"><span class="show-meta">英语 / IPA / 中文对照</span><strong>真爱不死</strong></div>
+              </a>
+            </div>
+          </div>
+        </section>
+        <section class="language-group" id="language-de" aria-labelledby="de-heading">
+          <div class="language-heading"><h2 id="de-heading">德语音乐剧</h2><span>3 部</span></div>
+          <nav class="alpha-nav" aria-label="德语音乐剧首字母索引"><a href="#letter-de-H">H</a><a href="#letter-de-M">M</a><a href="#letter-de-Y">Y</a></nav>
+          <div class="display-case">
+            <div class="collection">
+              <a class="show-card rebecca-das-musical" id="letter-de-H" data-initial="H" href="rebecca-das-musical/index.html">
+                <div class="cover" aria-hidden="true"><img class="show-logo" src="rebecca-das-musical/assets/show-logo.png" alt="" loading="lazy" decoding="async" /></div>
+                <div class="show-copy"><span class="show-meta">德语 / IPA / 中英对照</span><strong>蝴蝶梦</strong></div>
+              </a>
+              <a class="show-card mozart-musical" id="letter-de-M" data-initial="M" href="mozart-das-musical/index.html">
+                <div class="cover" aria-hidden="true"><img class="show-logo" src="mozart-das-musical/assets/show-logo.png" alt="" loading="lazy" decoding="async" /></div>
+                <div class="show-copy"><span class="show-meta">德语 / IPA / 中英对照</span><strong>莫扎特！</strong></div>
+              </a>
+              <a class="show-card elisabeth" id="letter-de-Y" data-initial="Y" href="elisabeth-das-musical/index.html">
+                <div class="cover" aria-hidden="true"><img class="show-logo" src="elisabeth-das-musical/assets/show-logo.png" alt="" loading="lazy" decoding="async" /></div>
+                <div class="show-copy"><span class="show-meta">德语 / IPA / 中英对照</span><strong>伊丽莎白</strong></div>
+              </a>
+            </div>
+          </div>
+        </section>
+        <section class="language-group" id="language-fr" aria-labelledby="fr-heading">
+          <div class="language-heading"><h2 id="fr-heading">法语音乐剧</h2><span>4 部</span></div>
+          <nav class="alpha-nav" aria-label="法语音乐剧首字母索引"><a href="#letter-fr-L">L</a><a href="#letter-fr-M">M</a><a href="#letter-fr-Y">Y</a></nav>
+          <div class="display-case">
+            <div class="collection">
+              <a class="show-card romeo" id="letter-fr-L" data-initial="L" href="romeo-et-juliette/index.html">
+                <div class="cover" aria-hidden="true"><img class="show-logo" src="romeo-et-juliette/assets/show-logo.png" alt="" loading="lazy" decoding="async" /></div>
+                <div class="show-copy"><span class="show-meta">法语 / IPA / 中英对照</span><strong>罗密欧与朱丽叶</strong></div>
+              </a>
+              <a class="show-card moliere" id="letter-fr-M" data-initial="M" href="moliere-le-spectacle-musical/index.html">
+                <div class="cover" aria-hidden="true"><img class="show-logo" src="moliere-le-spectacle-musical/assets/show-logo.png" alt="" loading="lazy" decoding="async" /></div>
+                <div class="show-copy"><span class="show-meta">法语 / IPA / 中英对照</span><strong>莫里哀</strong></div>
+              </a>
+              <a class="show-card mozart" id="letter-fr-Y-mozart" data-initial="Y" href="mozart-opera-rock/index.html">
+                <div class="cover" aria-hidden="true"><img class="show-logo" src="mozart-opera-rock/assets/show-logo.png" alt="" loading="lazy" decoding="async" /></div>
+                <div class="show-copy"><span class="show-meta">法语 / IPA / 中英对照</span><strong>摇滚莫扎特</strong></div>
+              </a>
+              <a class="show-card rouge" id="letter-fr-Y" data-initial="Y" href="rouge-et-noir/index.html">
+                <div class="cover" aria-hidden="true"><img class="show-logo" src="rouge-et-noir/assets/show-logo.png" alt="" loading="lazy" decoding="async" /></div>
+                <div class="show-copy"><span class="show-meta">法语 / IPA / 中英对照</span><strong>摇滚红与黑</strong></div>
+              </a>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
     <dialog class="copyright-dialog" id="copyrightNotice" aria-labelledby="copyrightNoticeTitle">
       <div class="copyright-dialog-inner">
@@ -898,6 +1104,7 @@
       (() => {
         const retryKey = `musical-site-retry:${window.location.pathname}`;
         const retryAssetParam = "_retry_asset";
+        const retryAlreadyAttempted = new URL(window.location.href).searchParams.has("_retry");
         let reloadStarted = false;
 
         window.writeCriticalScript = (source) => {
@@ -908,6 +1115,17 @@
             assetUrl.searchParams.set("_retry", retryToken);
           }
           document.write('<script src="' + assetUrl.href + '" onerror="handleCriticalAssetError(this.src)"><\/script>');
+        };
+
+        window.handleOptionalAssetError = () => {
+          if (document.querySelector("#optionalLoadNotice")) return;
+          const notice = document.createElement("aside");
+          notice.id = "optionalLoadNotice";
+          notice.setAttribute("role", "status");
+          notice.textContent = "部分交互暂未加载，剧目入口仍可正常使用。";
+          notice.style.cssText = "position:fixed;left:50%;bottom:18px;z-index:100000;width:min(420px,calc(100% - 28px));padding:10px 14px;border:1px solid rgba(216,177,91,.35);border-radius:8px;color:#fff;background:rgba(20,16,14,.94);box-shadow:0 18px 48px rgba(0,0,0,.32);font:13px/1.5 system-ui,-apple-system,sans-serif;transform:translateX(-50%)";
+          document.body.append(notice);
+          window.setTimeout(() => notice.remove(), 7000);
         };
 
         function showLoadError() {
@@ -959,7 +1177,7 @@
             canRememberRetry = false;
           }
 
-          if (canRememberRetry && !recentlyRetried) {
+          if (canRememberRetry && !recentlyRetried && !retryAlreadyAttempted) {
             reloadStarted = true;
             const retryUrl = new URL(window.location.href);
             retryUrl.searchParams.set("_retry", String(now));
@@ -986,9 +1204,9 @@
         }, { once: true });
       })();
     </script>
-    <script>writeCriticalScript("shared/analytics.js");</script>
-    <script>writeCriticalScript("shows.js");</script>
-    <script>writeCriticalScript("library.js");</script>
+    <script src="shared/analytics.js" defer onerror="handleOptionalAssetError(this.src)"></script>
+    <script src="shows.js" defer onerror="handleOptionalAssetError(this.src)"></script>
+    <script src="library.js" defer onerror="handleOptionalAssetError(this.src)"></script>
     <script src="library-cursor.js?v=20260728-spotlight-3"></script>
   </body>
 </html>
