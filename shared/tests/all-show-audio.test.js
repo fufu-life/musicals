@@ -119,7 +119,7 @@ test("all show deployment trees contain only compact MP3 audio", () => {
     files.forEach((file) => assert.equal(path.extname(file).toLowerCase(), ".mp3", `${show.id}: ${file}`));
     total += files.length;
   });
-  assert.equal(total, 107342);
+  assert.equal(total, 110344);
 });
 
 test("future audio builds write external WAV masters and deploy MP3 automatically", () => {

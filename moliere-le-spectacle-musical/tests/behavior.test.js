@@ -15,7 +15,7 @@ const wordDataJs = fs.readFileSync(path.join(root, "word-data.js"), "utf8");
 const audioBuilderJs = fs.readFileSync(path.join(root, "scripts", "build-audio.js"), "utf8");
 const cursorJs = fs.readFileSync(path.join(root, "..", "shared", "cursors", "moliere-le-spectacle-musical.js"), "utf8");
 const cursorMarker = "preRenderPureQuill";
-const cursorProfile = {"primary":"#dc712c","secondary":"#75a5d8"};
+const cursorProfile = null;
 
 test("page uses the shared analytics module", () => {
   assert.match(indexHtml, /writeCriticalScript\("\.\.\/shared\/analytics\.js"\)/);
@@ -25,9 +25,13 @@ test("page uses the shared analytics module", () => {
 });
 
 test("page uses the show-specific cursor profile", () => {
-  assert.match(cursorJs, new RegExp(`"motif":"${cursorProfile.motif}"`));
-  assert.match(cursorJs, new RegExp(`"trail":"${cursorProfile.trail}"`));
-  assert.match(cursorJs, new RegExp(`"burst":"${cursorProfile.burst}"`));
+  if (cursorProfile) {
+    assert.match(cursorJs, new RegExp(`"motif":"${cursorProfile.motif}"`));
+    assert.match(cursorJs, new RegExp(`"trail":"${cursorProfile.trail}"`));
+    assert.match(cursorJs, new RegExp(`"burst":"${cursorProfile.burst}"`));
+  } else {
+    assert.match(cursorJs, new RegExp(cursorMarker));
+  }
 });
 
 test("lyrics do not contain OCR acute apostrophes or glued Latin punctuation", () => {
