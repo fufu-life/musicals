@@ -1555,7 +1555,12 @@ function bindRougeCursor() {
   const canvas = document.querySelector("#rougeCursor");
   const canHover = window.matchMedia("(hover: hover) and (pointer: fine)");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  if (!canvas || !canHover.matches || reduceMotion.matches) {
+  if (
+    !canvas
+    || document.documentElement.dataset.musicalCursor === "native"
+    || !canHover.matches
+    || reduceMotion.matches
+  ) {
     return;
   }
 
@@ -1572,7 +1577,7 @@ function bindRougeCursor() {
   let isHoveringInteractive = false;
 
   function resizeCanvas() {
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     canvas.width = Math.ceil(window.innerWidth * dpr);
     canvas.height = Math.ceil(window.innerHeight * dpr);
     canvas.style.width = `${window.innerWidth}px`;
@@ -1660,6 +1665,7 @@ function bindRougeCursor() {
       for (let index = 0; index < 2; index += 1) {
         particles.push(new BlurCircleParticle(mouse.x, mouse.y));
       }
+      if (particles.length > 72) particles.splice(0, particles.length - 72);
     }
   }
 
@@ -1691,7 +1697,7 @@ function bindRougeCursor() {
     rafId = requestAnimationFrame(animate);
   }
 
-  for (let index = 0; index < 40; index += 1) {
+  for (let index = 0; index < 28; index += 1) {
     backgroundStars.push(new BackgroundStar());
   }
 

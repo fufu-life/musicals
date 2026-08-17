@@ -180,7 +180,7 @@ select {
   gap: 8px;
   width: 100%;
   min-width: 0;
-  border: 1px solid transparent;
+  border: 0 solid transparent;
   border-radius: var(--radius);
   padding: 8px;
   color: var(--muted);
@@ -298,8 +298,8 @@ select {
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--line);
   border-radius: 50%;
   color: var(--gold-bright);
@@ -342,14 +342,15 @@ select {
 
 .lyrics-search-control {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: flex-end;
-  width: 34px;
-  min-width: 34px;
-  height: 36px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
   overflow: hidden;
-  border: 1px solid transparent;
-  border-radius: 18px;
+  border: 0 solid transparent;
+  border-radius: 22px;
   background: transparent;
   transition: width 200ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
 }
@@ -357,6 +358,7 @@ select {
 .lyrics-search-control.is-open {
   width: min(340px, calc(100vw - 120px));
   padding: 0 4px;
+  border-width: 1px;
   border-color: rgba(255, 216, 120, 0.42);
   background: rgba(15, 9, 3, 0.96);
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.38);
@@ -364,8 +366,10 @@ select {
 
 .lyrics-search-control.is-open .search-toggle-button,
 .lyrics-search-control.is-open .search-close-button {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
   border-color: transparent;
   background: transparent;
   box-shadow: none;
@@ -1168,7 +1172,7 @@ body.has-playback-dock .back-to-top {
   }
 
   .lyrics-search-control.is-open {
-    width: min(300px, calc(100vw - 100px));
+    width: min(300px, calc(100vw - 156px));
   }
 
   .song-play-button {
@@ -1276,7 +1280,7 @@ body.has-playback-dock .back-to-top {
 
 @media (max-width: 360px) {
   .lyrics-search-control.is-open {
-    width: calc(100vw - 100px);
+    width: calc(100vw - 156px);
   }
 
   .search-title-match {

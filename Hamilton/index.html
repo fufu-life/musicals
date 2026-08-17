@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
     <link rel="preload" href="lyrics-initial.js" as="script" />
+    <script src="../shared/display-settings-preload.js" data-musical-page="hamilton"></script>
     <title>Hamilton 中英歌词</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
+    <link rel="stylesheet" href="../shared/display-settings.css?v=20260817-display-buttons-4" />
   </head>
   <body>
     <canvas id="effectCanvas" aria-hidden="true"></canvas>
@@ -202,6 +204,7 @@
     <script>writeCriticalScript("../shared/audio-playback.js");</script>
     <script>writeCriticalScript("../shared/playback-rate.js");</script>
     <script>writeCriticalScript("../shared/lyrics-search.js");</script>
+    <script src="../shared/display-settings.js"></script>
     <script>writeCriticalScript("script.js");</script>
     <script>
       if (new URLSearchParams(window.location.search).has("editor")) {

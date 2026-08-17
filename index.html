@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
+    <script src="shared/display-settings-preload.js" data-musical-page="library"></script>
     <title>阿浮的音乐剧歌词集</title>
     <style>
       :root {
@@ -135,6 +136,34 @@
         filter: blur(1px) brightness(1.2);
       }
 
+      html[data-musical-theme="light"][data-musical-page="library"] .spotlight-mouse {
+        mix-blend-mode: normal;
+      }
+
+      html[data-musical-theme="light"][data-musical-page="library"] .mouse-beam {
+        background: linear-gradient(to bottom, transparent 0%, rgba(255, 245, 220, 0.14) 38%, rgba(255, 245, 220, 0.52) 90%, transparent 96%);
+        filter: blur(1.5px) drop-shadow(0 2px 2px rgba(48, 39, 27, 0.42));
+      }
+
+      html[data-musical-theme="light"][data-musical-page="library"] .mouse-puddle {
+        background: radial-gradient(ellipse closest-side, rgba(255, 255, 255, 0.96) 0%, rgba(255, 245, 200, 0.48) 58%, transparent 100%);
+        filter: blur(0.5px) drop-shadow(0 1px 2px rgba(48, 39, 27, 0.48));
+      }
+
+      html[data-musical-theme="light"][data-musical-page="library"] .mouse-dot {
+        background: #fffdf1;
+        box-shadow: 0 0 5px 2px rgba(255, 220, 140, 0.82);
+      }
+
+      html[data-musical-theme="light"][data-musical-page="library"] .spotlight-mouse.is-hover .mouse-beam {
+        background: linear-gradient(to bottom, transparent 0%, rgba(255, 255, 240, 0.22) 38%, rgba(255, 255, 240, 0.7) 90%, transparent 96%);
+      }
+
+      html[data-musical-theme="light"][data-musical-page="library"] .spotlight-mouse.is-hover .mouse-puddle,
+      html[data-musical-theme="light"][data-musical-page="library"] .spotlight-mouse.is-click .mouse-puddle {
+        background: radial-gradient(ellipse closest-side, rgba(255, 255, 255, 1) 0%, rgba(255, 245, 200, 0.66) 60%, transparent 100%);
+      }
+
       .library-back-to-top {
         position: fixed;
         right: 22px;
@@ -182,7 +211,9 @@
       @media (pointer: fine) {
         body.library-cursor-active,
         body.library-cursor-active a,
-        body.library-cursor-active button {
+        body.library-cursor-active button,
+        body.library-cursor-active input,
+        body.library-cursor-active [role="button"] {
           cursor: none;
         }
       }
@@ -241,16 +272,23 @@
       }
 
       .copyright-notice-trigger {
+        display: grid;
         flex: 0 0 auto;
-        padding: 4px 9px;
-        border: 1px solid rgba(216, 177, 91, 0.34);
-        border-radius: 999px;
-        color: var(--muted);
-        font: 0.78rem/1.35 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        letter-spacing: 0.04em;
-        background: rgba(255, 255, 255, 0.025);
+        align-self: center;
+        width: 44px;
+        min-width: 44px;
+        height: 44px;
+        min-height: 44px;
+        place-items: center;
+        padding: 0;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        color: var(--ink);
+        font: 1.18rem/1 Georgia, "Times New Roman", serif;
+        background: color-mix(in srgb, var(--panel) 94%, transparent);
+        box-shadow: 0 12px 32px var(--shadow);
         cursor: pointer;
-        transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+        transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
       }
 
       .copyright-notice-trigger:hover,
@@ -258,6 +296,7 @@
         border-color: color-mix(in srgb, var(--gold), white 12%);
         color: var(--ink);
         background: color-mix(in srgb, var(--gold), transparent 86%);
+        transform: translateY(-1px);
         outline: none;
       }
 
@@ -279,14 +318,14 @@
         backdrop-filter: blur(3px);
       }
 
-      body:has(.copyright-dialog[open]),
-      body:has(.copyright-dialog[open]) a,
-      body:has(.copyright-dialog[open]) button {
-        cursor: auto !important;
+      html[data-library-cursor-blocked] body,
+      html[data-library-cursor-blocked] body * {
+        cursor: revert !important;
       }
 
-      body:has(.copyright-dialog[open]) .spotlight-mouse,
-      body:has(.copyright-dialog[open]) .spotlight-spark {
+      html[data-library-cursor-blocked] .spotlight-mouse,
+      html[data-library-cursor-blocked] .spotlight-spark {
+        display: none !important;
         opacity: 0 !important;
       }
 
@@ -846,7 +885,7 @@
 
       @media (min-width: 960px) {
         .collection {
-          grid-template-columns: repeat(4, 180px);
+          grid-template-columns: repeat(auto-fill, 180px);
           max-width: none;
           margin-inline: 0;
         }
@@ -977,6 +1016,8 @@
         }
       }
     </style>
+    <link rel="stylesheet" href="shared/display-settings.css?v=20260817-cursor-visibility" />
+    <link rel="stylesheet" href="shared/version-history.css?v=20260817-timeline-fix" />
   </head>
   <body>
     <div class="spotlight-mouse" aria-hidden="true"><div class="mouse-beam"></div><div class="mouse-puddle"></div><div class="mouse-dot"></div></div>
@@ -985,7 +1026,7 @@
         <div>
           <div class="library-title-row">
             <h1>阿浮的音乐剧歌词集</h1>
-            <button class="copyright-notice-trigger" id="copyrightNoticeButton" type="button" aria-haspopup="dialog" aria-controls="copyrightNotice">版权声明</button>
+            <button class="copyright-notice-trigger" id="copyrightNoticeButton" type="button" aria-label="版权声明" title="版权声明" aria-haspopup="dialog" aria-controls="copyrightNotice"><span aria-hidden="true">©</span></button>
             <span class="library-update-notice">剧目更新动态可以关注<a href="https://xhslink.cn/m/5oUCF9o85fs" target="_blank" rel="noopener noreferrer">小红书</a>，进群反馈更实时噢～多多四连，阿浮更有动力上新呀！</span>
           </div>
           <p class="intro">感谢剧场让我们的轨迹短暂交叠，行走在志同道合的路上，愿我们一直望着<span class="no-break">同一个月亮。</span></p>
@@ -1206,7 +1247,8 @@
     </script>
     <script src="shared/analytics.js" defer onerror="handleOptionalAssetError(this.src)"></script>
     <script src="shows.js" defer onerror="handleOptionalAssetError(this.src)"></script>
-    <script src="library.js" defer onerror="handleOptionalAssetError(this.src)"></script>
-    <script src="library-cursor.js?v=20260728-spotlight-3"></script>
+    <script src="library.js?v=20260817-cursor-controller" defer onerror="handleOptionalAssetError(this.src)"></script>
+    <script src="shared/display-settings.js?v=20260817-version-order"></script>
+    <script src="library-cursor.js?v=20260817-state-controller"></script>
   </body>
 </html>

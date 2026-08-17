@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
     <link rel="preload" href="songs-initial.js" as="script" />
+    <script src="../shared/display-settings-preload.js" data-musical-page="rouge-et-noir"></script>
     <title>Le Rouge et le Noir</title>
     <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="../shared/lyrics-page-tools.css" />
+    <link rel="stylesheet" href="../shared/lyrics-page-tools.css?v=20260817-display-buttons-4" />
     <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
+    <link rel="stylesheet" href="../shared/display-settings.css?v=20260817-display-buttons-4" />
   </head>
   <body>
     <canvas class="rouge-cursor" id="rougeCursor" aria-hidden="true" hidden></canvas>
@@ -195,6 +197,7 @@
     <script>writeCriticalScript("../shared/playback-rate.js");</script>
     <script>writeCriticalScript("../shared/lyrics-search.js");</script>
     <script>writeCriticalScript("../shared/lyrics-page-tools.js");</script>
+    <script src="../shared/display-settings.js"></script>
     <script>writeCriticalScript("script.js");</script>
     <script src="../shared/feedback-widget.js"></script>
     <script>

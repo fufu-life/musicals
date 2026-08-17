@@ -242,9 +242,9 @@ function renderSongList() {
     order.textContent = String(song.displayOrder || song.order).padStart(2, "0");
     const title = document.createElement("strong");
     title.textContent = song.title;
-  const sub = document.createElement("span");
-  sub.textContent = song.titleZh || "";
-  button.setAttribute("aria-current", song.id === state.currentSongId ? "true" : "false");
+    const sub = document.createElement("span");
+    sub.textContent = song.titleZh || "";
+    button.setAttribute("aria-current", song.id === state.currentSongId ? "true" : "false");
     button.append(order, title, sub);
     button.addEventListener("click", () => selectSong(song.id));
     return button;

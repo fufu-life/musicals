@@ -5,6 +5,58 @@
   const backToTop = document.querySelector("#libraryBackToTop");
   const copyrightNoticeButton = document.querySelector("#copyrightNoticeButton");
   const copyrightNotice = document.querySelector("#copyrightNotice");
+  const versionHistory = [
+    {
+      date: "2026-06-21",
+      title: "《大状王》歌词上线",
+      summary: "首个公开剧目歌词页面上线，提供粤语歌词、中文翻译、粤拼提示和唱段朗读。",
+    },
+    {
+      date: "2026-06-27",
+      title: "《摇滚红与黑》歌词上线",
+      summary: "上线法语歌词、中文翻译、逐行音标、单词学习提示和唱段播放。",
+    },
+    {
+      date: "2026-07-07",
+      title: "《汉密尔顿》歌词上线",
+      summary: "上线英语歌词、翻译、发音/词卡和唱段播放页面。",
+    },
+    {
+      date: "2026-07-17",
+      title: "提供逐句朗读、整曲播放与歌词同步",
+      summary: "新增逐句朗读、整曲顺序播放、暂停/停止、当前歌词跟随播放，以及更快的网页音频加载体验。",
+    },
+    {
+      date: "2026-07-22",
+      title: "全站学习工具上线：歌词搜索、倍速与悬浮播放条",
+      summary: "新增歌词和中文翻译搜索、命中定位、1.0× 至 3.0× 倍速，以及可暂停、继续、停止的悬浮播放条。",
+    },
+    {
+      date: "2026-07-25",
+      title: "《莫里哀》《摇滚莫扎特》《罗密欧与朱丽叶》歌词上线",
+      summary: "三部法语剧目歌词页面上线，分别提供歌词、翻译、发音提示和唱段播放。",
+    },
+    {
+      date: "2026-07-28",
+      title: "唱段人标签与歌词分层上线",
+      summary: "唱段人以独立标签显示，歌词正文、音标、词卡、搜索和朗读内容不再重复混入角色名。",
+    },
+    {
+      date: "2026-08-02",
+      title: "《剧院魅影》《真爱不死》歌词上线",
+      summary: "两部英语剧目歌词页面上线，提供各自的歌词、翻译、发音提示和唱段播放。",
+    },
+    {
+      date: "2026-08-09",
+      title: "《伊丽莎白》《蝴蝶梦》《莫扎特！》歌词上线",
+      summary: "三部德语剧目歌词页面上线，提供对应的歌词、翻译、发音提示和唱段播放。",
+    },
+    {
+      date: "2026-08-17",
+      title: "浅色模式与显示原生鼠标功能上线",
+      summary: "新增浅色模式，并支持在剧目专属鼠标与系统原生鼠标之间切换。",
+    },
+  ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
     trackLibraryEntry() {},
   };
@@ -175,10 +227,105 @@
     backToTop.classList.toggle("is-visible", window.scrollY > 420);
   }
 
-  function setLibraryCursorMode(active) {
-    document.body.classList.toggle("library-cursor-active", active);
-    const cursor = document.querySelector(".spotlight-mouse");
-    if (cursor) cursor.style.opacity = active ? "" : "0";
+  function setLibraryOverlayOpen(name, open) {
+    window.LibraryCursorController?.setOverlay(name, open);
+  }
+
+  function mountVersionHistory() {
+    if (document.querySelector("#versionHistoryControl")) return;
+
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "version-history-trigger";
+    trigger.setAttribute("aria-label", "打开版本历程");
+    trigger.title = "版本历程";
+    trigger.setAttribute("aria-haspopup", "dialog");
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.setAttribute("aria-controls", "versionHistoryDialog");
+    trigger.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 5v14M7 7h10M7 12h7M7 17h10" />
+        <circle cx="7" cy="5" r="1.5" />
+        <circle cx="7" cy="12" r="1.5" />
+        <circle cx="7" cy="19" r="1.5" />
+      </svg>`;
+
+    const control = document.createElement("div");
+    control.id = "versionHistoryControl";
+    control.className = "version-history-control";
+    control.append(trigger);
+
+    const dialog = document.createElement("dialog");
+    dialog.id = "versionHistoryDialog";
+    dialog.className = "version-history-dialog";
+    dialog.setAttribute("aria-labelledby", "versionHistoryTitle");
+
+    const inner = document.createElement("div");
+    inner.className = "version-history-dialog-inner";
+
+    const head = document.createElement("div");
+    head.className = "version-history-dialog-head";
+    const titleWrap = document.createElement("div");
+    const title = document.createElement("h2");
+    title.id = "versionHistoryTitle";
+    title.textContent = "版本历程";
+    titleWrap.append(title);
+
+    const closeForm = document.createElement("form");
+    closeForm.method = "dialog";
+    const close = document.createElement("button");
+    close.type = "submit";
+    close.className = "version-history-dialog-close";
+    close.setAttribute("aria-label", "关闭版本历程");
+    close.textContent = "×";
+    closeForm.append(close);
+    head.append(titleWrap, closeForm);
+
+    const list = document.createElement("ol");
+    list.className = "version-history-list";
+    versionHistory.slice().reverse().forEach((entry) => {
+      const item = document.createElement("li");
+      item.className = "version-history-item";
+      const date = document.createElement("time");
+      date.className = "version-history-date";
+      date.dateTime = entry.date;
+      date.textContent = entry.date;
+      const itemTitle = document.createElement("h3");
+      itemTitle.textContent = entry.title;
+      const summary = document.createElement("div");
+      summary.className = "version-history-item-summary";
+      summary.textContent = entry.summary;
+      item.append(date, itemTitle, summary);
+      list.append(item);
+    });
+
+    inner.append(head, list);
+    dialog.append(inner);
+    document.body.append(dialog);
+
+    const displaySettings = document.querySelector("#musicalDisplaySettings");
+    if (copyrightNoticeButton?.parentElement) {
+      copyrightNoticeButton.after(control);
+    } else if (displaySettings?.parentElement) {
+      displaySettings.after(control);
+    } else {
+      document.body.append(control);
+    }
+
+    function closeHistory() {
+      trigger.setAttribute("aria-expanded", "false");
+      setLibraryOverlayOpen("version-history", false);
+    }
+
+    trigger.addEventListener("click", () => {
+      setLibraryOverlayOpen("version-history", true);
+      dialog.showModal();
+      trigger.setAttribute("aria-expanded", "true");
+    });
+    dialog.addEventListener("close", closeHistory);
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close();
+    });
   }
 
   function renderLibrary() {
@@ -202,13 +349,14 @@
   }
 
   renderLibrary();
+  mountVersionHistory();
   window.addEventListener("scroll", updateActiveNavigation, { passive: true });
   backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
   copyrightNoticeButton.addEventListener("click", () => {
+    setLibraryOverlayOpen("copyright", true);
     copyrightNotice.showModal();
-    setLibraryCursorMode(false);
   });
-  copyrightNotice.addEventListener("close", () => setLibraryCursorMode(true));
+  copyrightNotice.addEventListener("close", () => setLibraryOverlayOpen("copyright", false));
   copyrightNotice.addEventListener("click", (event) => {
     if (event.target === copyrightNotice) copyrightNotice.close();
   });

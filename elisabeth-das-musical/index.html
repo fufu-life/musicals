@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
     <link rel="preload" href="songs-initial.js" as="script" />
+    <script src="../shared/display-settings-preload.js" data-musical-page="elisabeth-das-musical"></script>
     <title>Elisabeth｜伊丽莎白歌词学习</title>
     <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="../shared/lyrics-page-tools.css" />
+    <link rel="stylesheet" href="../shared/lyrics-page-tools.css?v=20260817-display-buttons-4" />
     <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
+    <link rel="stylesheet" href="../shared/display-settings.css?v=20260817-display-buttons-4" />
   </head>
   <body>
     <canvas id="effectCanvas" aria-hidden="true"></canvas>
@@ -182,7 +184,15 @@
     <script>writeCriticalScript("../shared/playback-rate.js");</script>
     <script>writeCriticalScript("../shared/lyrics-search.js");</script>
     <script>writeCriticalScript("../shared/lyrics-page-tools.js");</script>
-    <script src="../shared/cursors/elisabeth-das-musical.js?v=20260808-show-assets-1"></script>
+    <script src="../shared/display-settings.js"></script>
+    <script>
+      if (
+        window.MusicalDisplaySettings?.customCursorEnabled() !== false
+        && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        document.write('<script src="../shared/cursors/elisabeth-das-musical.js?v=20260817-come-from-away-globe-2"><\/script>');
+      }
+    </script>
     <script>writeCriticalScript("script.js");</script>
     <script src="../shared/feedback-widget.js"></script>
     <script>

@@ -12,32 +12,56 @@
 
 .lyrics-tools-hero-actions .home-button {
   position: static;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--highlight, var(--accent));
+  background: var(--panel, var(--surface, transparent));
+  box-shadow: none;
+}
+
+.lyrics-tools-hero-actions .home-button:hover,
+.lyrics-tools-hero-actions .home-button:focus-visible {
+  color: var(--bg);
+  border-color: var(--highlight, var(--accent));
+  background: var(--highlight, var(--accent));
+  outline: none;
 }
 
 .lyrics-tools-search {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: flex-end;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   overflow: hidden;
-  border: 1px solid transparent;
-  border-radius: 18px;
+  border: 0 solid transparent;
+  border-radius: 22px;
   transition: width 180ms ease, border-color 160ms ease, background 160ms ease;
 }
 
 .lyrics-tools-search.is-open {
   width: min(340px, calc(100vw - 120px));
   padding: 0 4px;
+  border-width: 1px;
   border-color: var(--line);
-  background: color-mix(in srgb, var(--panel) 96%, #000 4%);
+  background: color-mix(in srgb, var(--panel, var(--surface, #181410)) 96%, #000 4%);
   box-shadow: 0 14px 32px var(--shadow);
 }
 
 .lyrics-tools-search.is-open .lyrics-tools-search-toggle,
 .lyrics-tools-search.is-open .lyrics-tools-search-close {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
   border-color: transparent;
   background: transparent;
   box-shadow: none;
@@ -48,13 +72,13 @@
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--line);
   border-radius: 50%;
   padding: 0;
   color: var(--highlight, var(--accent));
-  background: var(--panel);
+  background: var(--panel, var(--surface, transparent));
 }
 
 .lyrics-tools-search svg {
@@ -348,6 +372,10 @@ body.has-lyrics-tools-dock .back-to-top {
 }
 
 @media (max-width: 480px) {
+  .lyrics-tools-search.is-open {
+    width: min(300px, calc(100vw - 156px));
+  }
+
   .musical-rate-menu {
     min-width: 70px;
   }

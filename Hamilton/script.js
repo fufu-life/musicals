@@ -1553,16 +1553,24 @@ function createSpeakerIcon() {
 
 function initQuillCursor() {
   const canvas = document.querySelector("#effectCanvas");
-  if (!canvas || !window.matchMedia("(pointer: fine)").matches) return;
+  const canHover = window.matchMedia("(hover: hover) and (pointer: fine)");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  if (
+    !canvas
+    || document.documentElement.dataset.musicalCursor === "native"
+    || !canHover.matches
+    || reduceMotion.matches
+  ) return;
 
   const ctx = canvas.getContext("2d");
   let particles = [];
   let mouse = { x: -100, y: -100, targetX: -100, targetY: -100 };
   let isMouseDown = false;
   let quillScale = 1;
+  let rafId = 0;
 
   const resizeCanvas = () => {
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     canvas.width = Math.ceil(window.innerWidth * dpr);
     canvas.height = Math.ceil(window.innerHeight * dpr);
     canvas.style.width = `${window.innerWidth}px`;
@@ -1652,7 +1660,7 @@ function initQuillCursor() {
 
   const addSpark = (spark) => {
     particles.push(spark);
-    if (particles.length > 260) particles.splice(0, particles.length - 260);
+    if (particles.length > 96) particles.splice(0, particles.length - 96);
   };
 
   window.addEventListener(
@@ -1663,7 +1671,7 @@ function initQuillCursor() {
       mouse.targetX = event.clientX;
       mouse.targetY = event.clientY;
       if (Math.abs(vx) > 0.5 || Math.abs(vy) > 0.5) {
-        for (let index = 0; index < 3; index += 1) {
+        for (let index = 0; index < 2; index += 1) {
           addSpark(new GoldSpark(mouse.x, mouse.y, vx * -0.15, vy * -0.15));
         }
       }
@@ -1699,9 +1707,10 @@ function initQuillCursor() {
     mouse.x += (mouse.targetX - mouse.x) * 0.65;
     mouse.y += (mouse.targetY - mouse.y) * 0.65;
     if (mouse.targetX !== -100) drawActualQuill(ctx, mouse.x, mouse.y);
-    requestAnimationFrame(animate);
+    rafId = requestAnimationFrame(animate);
   };
 
+  window.addEventListener("pagehide", () => cancelAnimationFrame(rafId), { once: true });
   resizeCanvas();
   animate();
 }

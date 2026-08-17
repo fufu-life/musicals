@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
     <link rel="preload" href="songs-initial.js" as="script" />
+    <script src="../shared/display-settings-preload.js" data-musical-page="dazhuangwang"></script>
     <title>大状王歌词粤拼</title>
     <style>
 :root {
@@ -1537,8 +1538,9 @@ body:not(.js-ready) .app-layout {
 }
 
     </style>
-    <link rel="stylesheet" href="../shared/lyrics-page-tools.css" />
+    <link rel="stylesheet" href="../shared/lyrics-page-tools.css?v=20260817-display-buttons-4" />
     <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
+    <link rel="stylesheet" href="../shared/display-settings.css?v=20260817-display-buttons-4" />
   </head>
   <body>
     <canvas class="dragonfly-cursor" id="dragonflyCursor" aria-hidden="true" hidden></canvas>
@@ -10770,6 +10772,7 @@ body:not(.js-ready) .app-layout {
     <script>writeCriticalScript("../shared/playback-rate.js");</script>
     <script>writeCriticalScript("../shared/lyrics-search.js");</script>
     <script>writeCriticalScript("../shared/lyrics-page-tools.js");</script>
+    <script src="../shared/display-settings.js"></script>
     <script>
 const DZW_SETTINGS_KEY = "dzw-display-settings-v2";
 const DZW_CURRENT_SONG_KEY = "dzw-current-song-id";
@@ -11014,7 +11017,12 @@ function bindDragonflyCursor() {
   const canvas = document.querySelector("#dragonflyCursor");
   const canHover = window.matchMedia("(hover: hover) and (pointer: fine)");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  if (!canvas || !canHover.matches || reduceMotion.matches) {
+  if (
+    !canvas
+    || document.documentElement.dataset.musicalCursor === "native"
+    || !canHover.matches
+    || reduceMotion.matches
+  ) {
     return;
   }
 
@@ -11031,7 +11039,7 @@ function bindDragonflyCursor() {
   let rafId = 0;
 
   function resizeCanvas() {
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     canvas.width = Math.ceil(window.innerWidth * dpr);
     canvas.height = Math.ceil(window.innerHeight * dpr);
     canvas.style.width = `${window.innerWidth}px`;
@@ -11134,6 +11142,7 @@ function bindDragonflyCursor() {
       for (let index = 0; index < 2; index += 1) {
         particles.push(new GoldDust(mouse.x + (Math.random() - 0.5) * 4, mouse.y + (Math.random() - 0.5) * 4));
       }
+      if (particles.length > 72) particles.splice(0, particles.length - 72);
     }
   }
 
