@@ -198,6 +198,25 @@ html[data-musical-theme="light"] :is(.line-original, .fr, .original, .lyric-text
   color: var(--ink);
 }
 
+html[data-musical-theme="light"] .word-popover {
+  color: var(--musical-light-ink);
+  border-color: color-mix(in srgb, var(--musical-light-accent) 38%, transparent);
+  background: var(--musical-light-panel);
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--musical-light-ink) 18%, transparent);
+}
+
+html[data-musical-theme="light"] .word-popover strong {
+  color: var(--musical-light-accent);
+}
+
+html[data-musical-theme="light"] .word-popover p {
+  color: var(--musical-light-ink);
+}
+
+html[data-musical-theme="light"] .word-popover .word-note {
+  color: var(--musical-light-muted);
+}
+
 html[data-musical-theme="light"] :is(.lyrics-tools-search, .lyrics-search-control) input::placeholder {
   color: color-mix(in srgb, var(--musical-light-ink) 78%, transparent);
   opacity: 1;
@@ -1300,6 +1319,23 @@ html[data-musical-settings-open] :is(
 .musical-display-option small {
   font-size: 0.72rem;
   line-height: 1.35;
+}
+
+/* Dazhuangwang's dark page uses a deep teal stage surface rather than the
+   generic brown fallback used by the shared settings panel. */
+html[data-musical-theme="dark"][data-musical-page="dazhuangwang"] .musical-display-panel {
+  background:
+    linear-gradient(145deg, rgba(215, 199, 161, 0.09), transparent 48%),
+    color-mix(in srgb, var(--bg-deep) 88%, var(--surface-strong));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.44);
+}
+
+html[data-musical-theme="dark"][data-musical-page="dazhuangwang"] .musical-display-option {
+  background: color-mix(in srgb, var(--surface-strong) 86%, var(--bg-deep));
+}
+
+html[data-musical-theme="dark"][data-musical-page="dazhuangwang"] .musical-display-option:is(:hover, :focus-visible, .is-selected) {
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-deep));
 }
 
 body.has-lyrics-tools-dock .musical-display-settings.is-floating,

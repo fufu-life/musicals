@@ -1540,7 +1540,7 @@ body:not(.js-ready) .app-layout {
     </style>
     <link rel="stylesheet" href="../shared/lyrics-page-tools.css?v=20260817-display-buttons-4" />
     <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
-    <link rel="stylesheet" href="../shared/display-settings.css?v=20260817-display-buttons-4" />
+    <link rel="stylesheet" href="../shared/display-settings.css?v=20260818-dazhuang-popover-2" />
   </head>
   <body>
     <canvas class="dragonfly-cursor" id="dragonflyCursor" aria-hidden="true" hidden></canvas>
@@ -11410,6 +11410,7 @@ function renderSongAnnotations(song) {
     term.append(termText);
     if (annotation.lineId) {
       term.classList.add("is-jump-link");
+      term.dataset.lineId = annotation.lineId;
       term.tabIndex = 0;
       term.setAttribute("role", "link");
       term.setAttribute("aria-label", `跳到歌词中的${annotation.term}`);
@@ -11446,8 +11447,18 @@ function renderSongAnnotations(song) {
   refs.songAnnotations.append(head, summary, list, footer);
 }
 
-function jumpToAnnotationLine(lineId) {
-  const target = document.getElementById(lineId);
+async function jumpToAnnotationLine(lineId) {
+  let target = document.getElementById(lineId);
+  if (!target) {
+    try {
+      await ensureFullSongs();
+      renderCurrentSong();
+      target = document.getElementById(lineId);
+    } catch (error) {
+      console.error("注释定位所需的完整歌词加载失败", error);
+      return;
+    }
+  }
   if (!target) return;
   target.scrollIntoView({ behavior: "smooth", block: "center" });
   target.classList.remove("is-annotation-target");
