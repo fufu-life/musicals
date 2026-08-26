@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, "..");
 const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const scriptJs = fs.readFileSync(path.join(root, "script.js"), "utf8");
 const styleCss = fs.readFileSync(path.join(root, "style.css"), "utf8");
+const displaySettingsCss = fs.readFileSync(path.join(root, "..", "shared", "display-settings.css"), "utf8");
 const songsJs = fs.readFileSync(path.join(root, "songs.js"), "utf8");
 const criticalSongsJs = fs.readFileSync(path.join(root, "songs.js"), "utf8");
 const songsInitialJs = fs.readFileSync(path.join(root, "songs-initial.js"), "utf8");
@@ -178,6 +179,40 @@ test("page includes a themed canvas cursor effect", () => {
   assert.match(cursorJs, /document\.hidden/);
 });
 
+test("shared page-style trigger matches the generated hero action buttons", () => {
+  assert.match(indexHtml, /lyrics-page-tools\.css\?v=20260818-dazhuang-popover-2/);
+  assert.match(indexHtml, /display-settings\.css\?v=20260818-dazhuang-popover-2/);
+  assert.match(displaySettingsCss, /\.musical-display-trigger\s*\{[\s\S]*?color:\s*var\(--highlight/);
+  assert.match(displaySettingsCss, /\.musical-display-trigger\s*\{[\s\S]*?background:\s*var\(--panel/);
+  assert.match(displaySettingsCss, /\.musical-display-trigger\s*\{[\s\S]*?box-shadow:\s*none/);
+  assert.match(displaySettingsCss, /html\[data-musical-theme="light"\]\[data-musical-page\] :is\([\s\S]*?\.musical-display-trigger/);
+});
+
+test("generated hero action buttons share the dark-theme button treatment", () => {
+  assert.match(indexHtml, /class="home-button"/);
+  const pageToolsCss = fs.readFileSync(path.join(root, "..", "shared", "lyrics-page-tools.css"), "utf8");
+  assert.match(pageToolsCss, /\.lyrics-tools-hero-actions \.home-button\s*\{[\s\S]*?width:\s*44px/);
+  assert.match(pageToolsCss, /\.lyrics-tools-hero-actions \.home-button\s*\{[\s\S]*?background:\s*var\(--panel/);
+  assert.match(pageToolsCss, /\.lyrics-tools-hero-actions \.home-button\s*\{[\s\S]*?box-shadow:\s*none/);
+});
+
+test("Come From Away keeps the reviewed count-in and globe cursor", () => {
+  if ("les-miserables" !== "come-from-away") return;
+  const lyricSandbox = { window: {} };
+  vm.runInNewContext(songsJs, lyricSandbox);
+  const finale = lyricSandbox.window.songs.find((song) => song.sourceOrder === 22);
+  const opening = finale?.lines?.[0];
+  const toledo = finale?.lines?.find((line) => line.id === "come-from-away-22-004");
+  assert.equal(opening?.original, "One, two, a-one, two, three, four");
+  assert.equal(opening?.zh, "1，2，预备—1，2，3，4");
+  assert.equal(toledo?.original.includes("Toldeo"), false);
+  assert.match(cursorJs, /"motif":"comeFromAwayGlobe"/);
+  assert.match(cursorJs, /"size":50/);
+  assert.match(cursorJs, /musical-light-accent/);
+  assert.match(cursorJs, /MutationObserver/);
+  assert.doesNotMatch(cursorJs, /comeFromAwayPlane/);
+});
+
 test("songs and word data are populated", () => {
   const sandbox = { window: {} };
   vm.runInNewContext(songsJs, sandbox);
@@ -188,6 +223,28 @@ test("songs and word data are populated", () => {
   const versionLabel = /(?:[（(\[［]\s*(?:live|现场)|[-–—]\s*live)/iu;
   assert.ok(sandbox.window.songs.every((song) => !versionLabel.test(song.title) && !versionLabel.test(song.titleZh)));
   assert.ok(Object.keys(sandbox.window.wordEntries).length > 0);
+});
+
+test("Les Misérables keeps the English additions in concert order", () => {
+  if ("les-miserables" !== "les-miserables") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const songs = sandbox.window.songs;
+  assert.equal(songs.length, 39);
+  assert.deepEqual(Array.from(songs, (song) => song.displayOrder), Array.from({ length: 39 }, (_value, index) => index + 1));
+  const doYouHear = songs.find((song) => song.sourceOrder === 38);
+  const epilogue = songs.find((song) => song.sourceOrder === 39);
+  const encore = songs.find((song) => song.sourceOrder === 40);
+  assert.equal(doYouHear?.title, "Do You Hear the People Sing?");
+  assert.equal(doYouHear?.displayOrder, 18);
+  assert.equal(doYouHear?.lines.length, 36);
+  assert.equal(epilogue?.title, "Epilogue (Finale)");
+  assert.equal(epilogue?.displayOrder, 38);
+  assert.equal(epilogue?.lines.length, 86);
+  assert.equal(encore?.title, "Encore: One Day More");
+  assert.equal(encore?.displayOrder, 39);
+  assert.equal(encore?.lines.length, 72);
+  assert.ok([doYouHear, epilogue, encore].every((song) => song?.lines.every((line) => line.original && line.zh && line.ipa)));
 });
 
 test("The Greatest Show compresses the opening vocalization and shows its repeat count", () => {
@@ -266,6 +323,15 @@ test("Starmania opening keeps the reviewed Chinese translation", () => {
   assert.equal(opening.titleZh, "垄断城出大事了");
   assert.equal(opening.lines.find((line) => line.lineIndex === 3).zh, "垄断城");
   assert.equal(opening.lines.find((line) => line.lineIndex === 29).zh, "当太阳落下");
+});
+
+test("Moulin Rouge keeps source IPA corrections when lyric text is unchanged", () => {
+  if ("les-miserables" !== "moulin-rouge") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const encore = sandbox.window.songs.find((song) => song.sourceOrder === 19);
+  assert.equal(encore.lines[0].ipa, "/vulevu kuʃe avɛk mwa sə swar/");
+  assert.equal(encore.lines[1].ipa, "/vulevu kuʃe avɛk mwa/");
 });
 
 test("Phantom and Love Never Dies stay in separate source ranges", () => {
