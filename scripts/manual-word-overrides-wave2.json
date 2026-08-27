@@ -679,6 +679,8 @@
     "las": { "zh": "最后（原文 las 的拼写误差）", "en": "last", "speak": "last" }
   },
   "hadestown": {
+    "hadestown": { "zh": "冥界", "en": "Hadestown", "speak": "Hadestown" },
+    "underworld": { "zh": "冥界", "en": "underworld", "speak": "underworld" },
     "aight": { "zh": "好；行（alright 的口语缩略）", "en": "all right; okay", "speak": "aight" },
     "shady": { "zh": "阴暗的；可疑的", "en": "shadowy; suspicious", "speak": "shady" },
     "whether": { "zh": "是否；不论", "en": "whether", "speak": "whether" },

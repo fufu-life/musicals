@@ -269,10 +269,11 @@ const libraryShows = [
   },
 {
     id: "hadestown",
+    deployed: true,
     language: "en",
     cardClass: "hadestown",
     href: "hadestown/index.html",
-    title: "冥城",
+    title: "冥界",
     image: "hadestown/assets/show-logo.jpg",
     prefetch: ["hadestown/songs-initial.js"],
     originalTitle: "Hadestown · Original Broadway Cast Recording",

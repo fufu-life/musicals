@@ -42,11 +42,11 @@ test("library groups all forty-one shows by language", () => {
 
 test("homepage exposes every deployed show as a direct HTML link before JavaScript", () => {
   const deployed = libraryShows.filter((show) => show.deployed);
-  assert.equal(deployed.length, 11);
+  assert.equal(deployed.length, 15);
   deployed.forEach((show) => {
     assert.match(indexHtml, new RegExp(`href="${show.href.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}"`));
   });
-  assert.match(indexHtml, /<strong id="showCount">11<\/strong>/);
+  assert.match(indexHtml, /<strong id="showCount">15<\/strong>/);
   assert.doesNotMatch(indexHtml, /<strong id="showCount">0<\/strong>/);
 });
 
@@ -98,15 +98,19 @@ test("online library renders only explicitly deployed shows without network prob
     [
       "dazhuangwang",
       "hamilton",
+      "les-miserables",
       "phantom-of-the-opera",
       "love-never-dies",
       "elisabeth-das-musical",
       "mozart-das-musical",
       "rebecca-das-musical",
+      "hadestown",
       "rouge-et-noir",
       "mozart-opera-rock",
       "romeo-et-juliette",
       "moliere-le-spectacle-musical",
+      "les-miserables-1980",
+      "les-miserables-cityprod-2017",
     ],
   );
   assert.match(libraryScript, /window\.location\.protocol === "file:"/);

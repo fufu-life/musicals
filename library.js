@@ -60,6 +60,16 @@
       title: "浅色模式与显示原生鼠标功能上线",
       summary: "新增浅色模式，并支持在剧目专属鼠标与系统原生鼠标之间切换。",
     },
+    {
+      date: "2026-08-19",
+      title: "《悲惨世界》三个版本歌词上线",
+      summary: "英语版、1980 法语原创概念专辑版和 2017 Cityprod 法语版三个版本的歌词页面上线。",
+    },
+    {
+      date: "2026-08-27",
+      title: "《冥界》（Hadestown）歌词上线",
+      summary: "英语剧目《冥界》（Hadestown）歌词页面上线，提供歌词、翻译、发音提示、词卡和唱段播放。",
+    },
   ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
     trackLibraryEntry() {},
