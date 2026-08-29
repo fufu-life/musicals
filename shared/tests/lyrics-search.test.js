@@ -66,6 +66,12 @@ test("highlight ranges map normalized apostrophe-free queries back to source tex
   assert.deepEqual(ranges.map((range) => value.slice(range.start, range.end)), ["I'm", "throwing"]);
 });
 
+test("closing an unopened search does not unhide initially hidden page sections", () => {
+  const tools = fs.readFileSync(require.resolve("../lyrics-page-tools.js"), "utf8");
+  assert.match(tools, /if \(open\) \{[\s\S]*hiddenStates\.set\(element, element\.hidden\);[\s\S]*element\.hidden = true;/);
+  assert.match(tools, /if \(hiddenStates\.has\(element\)\) element\.hidden = hiddenStates\.get\(element\);/);
+});
+
 test("search translation previews use the shared Chinese lyric font", () => {
   const css = fs.readFileSync(require.resolve("../lyrics-page-tools.css"), "utf8");
   assert.match(css, /\.lyrics-tools-results-header h2\s*\{[\s\S]*font-family:\s*"Songti SC",\s*"Noto Serif CJK SC",\s*serif;/);

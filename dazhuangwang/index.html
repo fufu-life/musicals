@@ -176,6 +176,18 @@ select {
   flex: 0 0 auto;
 }
 
+.controls #musicalDisplaySettings .musical-display-trigger {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+}
+
+.controls #musicalDisplaySettings .musical-display-trigger svg {
+  width: 16px;
+  height: 16px;
+}
+
 .musical-title-line .home-button {
   width: auto;
   min-width: 0;
@@ -1227,7 +1239,7 @@ h1 {
   }
 
   :root {
-    --font-song: "STSong", "Noto Serif CJK SC", "Noto Serif CJK TC", "Songti SC", "Songti TC", serif;
+    --font-song: "STFangsong", "FangSong", "STKaiti", "Kaiti SC", "Kaiti TC", "STSong", "Songti SC", "Songti TC", "Noto Serif CJK SC", "Noto Serif CJK TC", serif;
     --jyutping-row-height: 0.84rem;
     --jyutping-font-size: 0.61rem;
     --lyric-font-size: 0.96rem;
@@ -10900,6 +10912,20 @@ const pageTools = window.MusicalLyricsPageTools.create({
     }
   },
 });
+
+function moveDisplaySettingsBeforeSimplifiedToggle() {
+  const controls = document.querySelector(".controls");
+  const displaySettings = document.querySelector("#musicalDisplaySettings");
+  const simplifiedToggle = controls?.querySelector('[data-toggle="useTraditional"]');
+  if (!controls || !displaySettings || !simplifiedToggle) return;
+  controls.insertBefore(displaySettings, simplifiedToggle);
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", moveDisplaySettingsBeforeSimplifiedToggle, { once: true });
+} else {
+  moveDisplaySettingsBeforeSimplifiedToggle();
+}
 
 const audioController = window.MusicalAudio.createController({
   stopCurrent: stopCurrentPlayback,

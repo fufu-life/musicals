@@ -1338,6 +1338,28 @@ html[data-musical-theme="dark"][data-musical-page="dazhuangwang"] .musical-displ
   background: color-mix(in srgb, var(--accent) 14%, var(--bg-deep));
 }
 
+html[data-musical-theme="dark"] .musical-display-trigger {
+  background: var(--panel, var(--surface, var(--paper, var(--wood, var(--bg-2, #181410)))));
+}
+
+html[data-musical-theme="dark"][data-musical-page="library"] .musical-display-trigger {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--panel, #181410) 94%, transparent);
+  box-shadow: 0 12px 32px var(--shadow);
+}
+
+html[data-musical-theme="dark"][data-musical-page="library"] .musical-display-trigger svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.6;
+}
+
+html[data-musical-theme="dark"][data-musical-page="rouge-et-noir"] .musical-display-trigger {
+  color: var(--gold-soft);
+  background: transparent;
+  box-shadow: none;
+}
+
 body.has-lyrics-tools-dock .musical-display-settings.is-floating,
 body.has-playback-dock .musical-display-settings.is-floating {
   bottom: calc(94px + env(safe-area-inset-bottom, 0px));

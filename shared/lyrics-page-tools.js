@@ -158,6 +158,12 @@
       searchForm.classList.toggle("is-open", open);
       searchToggle.setAttribute("aria-expanded", String(open));
       searchInput.disabled = !open;
+      if (open) {
+        hideWhileSearching.forEach((element) => {
+          if (!hiddenStates.has(element)) hiddenStates.set(element, element.hidden);
+          element.hidden = true;
+        });
+      }
       if (open && focus) requestAnimationFrame(() => searchInput.focus());
     }
 
@@ -169,7 +175,7 @@
       lyrics.hidden = false;
       if (mobilePicker) mobilePicker.hidden = false;
       hideWhileSearching.forEach((element) => {
-        element.hidden = hiddenStates.get(element) ?? false;
+        if (hiddenStates.has(element)) element.hidden = hiddenStates.get(element);
       });
       hiddenStates.clear();
     }

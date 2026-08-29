@@ -643,10 +643,10 @@ h1 .lyric-word:focus-visible {
 }
 
 .fr-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  position: relative;
+  display: block;
   min-width: 0;
+  padding-right: calc(26px + 8px);
 }
 
 .fr {
@@ -704,8 +704,10 @@ h1 .lyric-word:focus-visible {
 }
 
 .fr-row .sentence-speak {
-  flex: 0 0 auto;
-  margin-top: 0.16em;
+  position: absolute;
+  top: 0.16em;
+  right: 0;
+  margin-top: 0;
 }
 
 .sentence-speak:hover,
@@ -1107,6 +1109,12 @@ h1 .lyric-word:focus-visible {
   .word-item {
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+}
+
+@media (max-width: 767px) {
+  .fr-row {
+    padding-right: calc(44px + 8px);
   }
 }
 

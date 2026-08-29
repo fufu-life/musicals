@@ -119,8 +119,8 @@ body.has-playback-dock .dzw-shell {
 
   .song-title-row h1,
   .song-title-row h2 {
-    font-size: clamp(30px, 9vw, 42px);
-    line-height: 1.12;
+    font-size: clamp(1.42rem, 6.4vw, 2rem);
+    line-height: 1.18;
   }
 
   .lyrics,
