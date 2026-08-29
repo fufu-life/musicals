@@ -121,6 +121,7 @@ test("镜中缘 is recorded as a separate slash-free cut song with aligned Jyutp
   assert.match(page, /删减曲/u);
   assert.match(page, /\.song-cut-badge\[hidden\][\s\S]*display: none !important/u);
   assert.match(page, /\.dzw-shell \.song-title-row h1[\s\S]*font-size: clamp\(1\.4rem, 6vw, 2rem\)/u);
+  assert.match(page, /--font-song: "STSong", "Noto Serif CJK SC", "Noto Serif CJK TC", "Songti SC"/u);
   assert.match(page, /--jyutping-row-height: 0\.88rem/u);
   assert.match(page, /\.lyrics-list \{\s*gap: 4px;/u);
   assert.match(page, /\.lyric-row \{\s*align-items: start;\s*gap: 5px;\s*padding-block: 2px;/u);
