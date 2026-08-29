@@ -176,16 +176,16 @@ select {
   flex: 0 0 auto;
 }
 
-.controls #musicalDisplaySettings .musical-display-trigger {
-  width: 32px;
-  min-width: 32px;
-  height: 32px;
-  min-height: 32px;
+/* Keep the custom cursor above this trigger, as it is above the other controls. */
+html[data-musical-page="dazhuangwang"] .controls #musicalDisplaySettings {
+  z-index: 1;
 }
 
-.controls #musicalDisplaySettings .musical-display-trigger svg {
-  width: 16px;
-  height: 16px;
+html[data-musical-page="dazhuangwang"] .controls #musicalDisplaySettings .musical-display-trigger:is(:hover, :focus-visible) {
+  color: var(--ink);
+  border-color: rgba(215, 199, 161, 0.62);
+  background: rgba(215, 199, 161, 0.12);
+  outline: none;
 }
 
 .musical-title-line .home-button {

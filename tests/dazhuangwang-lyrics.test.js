@@ -124,6 +124,10 @@ test("镜中缘 is recorded as a separate slash-free cut song with aligned Jyutp
   assert.match(page, /--font-song: "Songti SC", "Songti TC", "STSongti-SC", "STSongti-TC", "STSongti-SC-Regular", "STSongti-TC-Regular"/u);
   assert.match(page, /@media \(max-width: 860px\)[\s\S]*--font-song: "STFangsong", "FangSong", "STKaiti", "Kaiti SC", "Kaiti TC", "STSong"/u);
   assert.match(page, /function moveDisplaySettingsBeforeSimplifiedToggle\(\)[\s\S]*controls\.insertBefore\(displaySettings, simplifiedToggle\)/u);
+  assert.doesNotMatch(page, /#musicalDisplaySettings \.musical-display-trigger\s*\{[^}]*width: 32px/u);
+  assert.doesNotMatch(page, /#musicalDisplaySettings \.musical-display-trigger svg\s*\{[^}]*width: 16px/u);
+  assert.match(page, /#musicalDisplaySettings\s*\{\s*z-index: 1;/u);
+  assert.match(page, /#musicalDisplaySettings \.musical-display-trigger:is\(:hover, :focus-visible\)[\s\S]*background: rgba\(215, 199, 161, 0\.12\)/u);
   assert.match(page, /--jyutping-row-height: 0\.88rem/u);
   assert.match(page, /\.lyrics-list \{\s*gap: 4px;/u);
   assert.match(page, /\.lyric-row \{\s*align-items: start;\s*gap: 5px;\s*padding-block: 2px;/u);
