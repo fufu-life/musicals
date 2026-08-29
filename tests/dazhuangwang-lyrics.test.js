@@ -91,7 +91,7 @@ test("镜中缘 is recorded as a separate slash-free cut song with aligned Jyutp
   );
   const sourceSong = cutSource.songs.find((song) => song.order === 20);
   assert.equal(sourceSong.titleTraditional, "鏡中緣");
-  assert.equal(sourceSong.lines.length, 18);
+  assert.equal(sourceSong.lines.length, 23);
   sourceSong.lines.forEach((line) => {
     assert.doesNotMatch(line.traditional, /\//u);
     assert.doesNotMatch(line.simplified, /\//u);
@@ -104,6 +104,16 @@ test("镜中缘 is recorded as a separate slash-free cut song with aligned Jyutp
   });
   assert.equal(sourceSong.lines[9].jyutping, "do1 hiu3 dak1 sam1 ci5 hin1 si1 ngau5");
   assert.equal(sourceSong.lines[15].jyutping, "mou4 noi6 zeoi3 zung1 fu2 zau2 kok3 zoi6 hau4");
+  assert.deepEqual(
+    sourceSong.lines.slice(-5).map((line) => [line.traditional, line.simplified, line.jyutping]),
+    [
+      ["不折 不扣 心鏡中間有粒星宿", "不折 不扣 心镜中间有粒星宿", "bat1 zit3 bat1 kau3 sam1 geng3 zung1 gaan1 jau5 lap1 sing1 sau3"],
+      ["照心裏 黑暗 一瞬間反照出錦繡", "照心里 黑暗 一瞬间反照出锦绣", "ziu3 sam1 leoi5 hak1 am3 jat1 si6 gaan3 faan2 ziu3 ceot1 gam2 sau3"],
+      ["用葡萄造就美酒", "用葡萄造就美酒", "jung6 pou4 tou4 zou6 zau6 mei5 zau2"],
+      ["飲一口山清水秀", "饮一口山清水秀", "jam2 jat1 hau2 saan1 cing1 seoi2 sau3"],
+      ["知道與否 是醇是厚", "知道与否 是醇是厚", "zi1 dou6 jyu5 fau2 si6 seon4 si6 hau5"],
+    ],
+  );
 
   const builtSong = loadSongs(path.join(ROOT, "..", "大状王", "songs.js")).find(
     (song) => song.id === "20-镜中缘",
@@ -131,6 +141,25 @@ test("镜中缘 is recorded as a separate slash-free cut song with aligned Jyutp
   assert.match(page, /--jyutping-row-height: 0\.88rem/u);
   assert.match(page, /\.lyrics-list \{\s*gap: 4px;/u);
   assert.match(page, /\.lyric-row \{\s*align-items: start;\s*gap: 5px;\s*padding-block: 2px;/u);
+});
+
+test("镜中缘新增删减段落 has source and web audio", () => {
+  const ids = ["dzw-20-019", "dzw-20-020", "dzw-20-021", "dzw-20-022", "dzw-20-023"];
+  const sourceSongs = loadSongs(path.join(ROOT, "..", "大状王", "songs.js"));
+  const pageSongs = loadSongs(path.join(ROOT, "dazhuangwang", "songs.js"));
+  const sourceSong = sourceSongs.find((song) => song.id === "20-镜中缘");
+  const pageSong = pageSongs.find((song) => song.id === "20-镜中缘");
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "..", "大状王", "audio-sinji-manifest.json"), "utf8"));
+
+  ids.forEach((id) => {
+    const sourceLine = sourceSong.lines.find((line) => line.id === id);
+    const pageLine = pageSong.lines.find((line) => line.id === id);
+    assert.equal(sourceLine.audio, `audio/20-镜中缘/${id}.wav`);
+    assert.equal(pageLine.audio, `audio/20-镜中缘/${id}.mp3`);
+    assert.ok(fs.existsSync(path.join(ROOT, "..", "大状王", sourceLine.audio)), id);
+    assert.ok(fs.existsSync(path.join(ROOT, "dazhuangwang", pageLine.audio)), id);
+    assert.ok(manifest.some((entry) => entry.song === "镜中缘" && entry.id === id), id);
+  });
 });
 
 test("every Dazhuangwang annotation points to a real full-data lyric line", () => {
