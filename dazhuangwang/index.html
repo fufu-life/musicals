@@ -486,6 +486,10 @@ body.about-modal-open {
   line-height: 1;
 }
 
+.song-cut-badge[hidden] {
+  display: none !important;
+}
+
 .nav-title .song-cut-badge {
   padding: 0.22em 0.5em;
   font-size: 0.56rem;
@@ -1272,6 +1276,12 @@ h1 {
     padding-right: 0;
   }
 
+  .dzw-shell .song-title-row h1,
+  .dzw-shell .song-title-row h2 {
+    font-size: clamp(1.4rem, 6vw, 2rem);
+    line-height: 1.16;
+  }
+
   .song-header-tools {
     display: block;
     margin-top: 10px;
@@ -1361,7 +1371,7 @@ h1 {
 
 @media (max-width: 480px) {
   :root {
-    --jyutping-row-height: 0.76rem;
+    --jyutping-row-height: 0.88rem;
     --jyutping-font-size: 0.51rem;
     --lyric-font-size: 0.78rem;
     --token-min-width: 0.98rem;
@@ -1400,6 +1410,10 @@ h1 {
   .lyric-row .speak-button.is-sequence-stop::before {
     width: 5px;
     height: 5px;
+  }
+
+  .tone {
+    transform: translateY(-0.34em);
   }
 
   .topbar {
@@ -1466,13 +1480,13 @@ h1 {
   }
 
   .lyrics-list {
-    gap: 3px;
+    gap: 4px;
   }
 
   .lyric-row {
     align-items: start;
     gap: 5px;
-    padding-block: 1px;
+    padding-block: 2px;
   }
 
   .lyric-char {
