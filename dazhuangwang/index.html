@@ -450,6 +450,9 @@ body.about-modal-open {
 }
 
 .nav-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
   overflow: hidden;
   color: inherit;
@@ -458,6 +461,34 @@ body.about-modal-open {
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.nav-title-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.song-cut-badge {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 0.28em 0.62em;
+  border: 1px solid color-mix(in srgb, var(--accent) 72%, transparent);
+  border-radius: 999px;
+  color: var(--bg-deep);
+  background: var(--accent);
+  font-family: var(--font-ui);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+
+.nav-title .song-cut-badge {
+  padding: 0.22em 0.5em;
+  font-size: 0.56rem;
 }
 
 .content-shell {
@@ -1584,6 +1615,7 @@ body:not(.js-ready) .app-layout {
             <div class="song-title-row">
               <div class="song-title-heading">
                 <h1 id="songTitle"></h1>
+                <span id="songCutBadge" class="song-cut-badge" hidden></span>
                 <img class="title-dragonfly" src="assets/dragonfly-title.png" alt="" aria-hidden="true" />
               </div>
               <div class="song-playback-tools" aria-label="本曲播放控制">
@@ -10801,6 +10833,7 @@ const refs = {
   songNav: document.querySelector("#songNav"),
   songSelect: document.querySelector("#songSelect"),
   songTitle: document.querySelector("#songTitle"),
+  songCutBadge: document.querySelector("#songCutBadge"),
   songPlayButton: document.querySelector("#songPlayButton"),
   songAnnotations: document.querySelector("#songAnnotations"),
   lyricsList: document.querySelector("#lyricsList"),
@@ -11308,14 +11341,23 @@ function renderSongNav() {
 
     const title = document.createElement("span");
     title.className = "nav-title";
-    title.textContent = getSongTitle(song);
+    const titleText = document.createElement("span");
+    titleText.className = "nav-title-text";
+    titleText.textContent = getSongTitle(song);
+    title.append(titleText);
+    if (song.isCutSong) {
+      const badge = document.createElement("span");
+      badge.className = "song-cut-badge";
+      badge.textContent = song.cutLabel || "删减曲";
+      title.append(badge);
+    }
 
     button.append(order, title);
     refs.songNav.append(button);
 
     const option = document.createElement("option");
     option.value = song.id;
-    option.textContent = getSongTitle(song);
+    option.textContent = `${getSongTitle(song)}${song.isCutSong ? " · 删减曲" : ""}`;
     option.selected = active;
     refs.songSelect.append(option);
   });
@@ -11329,6 +11371,7 @@ function renderCurrentSong() {
 
   if (!song) {
     refs.songTitle.textContent = "暂无歌曲";
+    refs.songCutBadge.hidden = true;
     refs.songPlayButton.disabled = true;
     renderSongAnnotations(null);
     refs.lyricsList.innerHTML = "";
@@ -11338,6 +11381,8 @@ function renderCurrentSong() {
   const songTitle = getSongTitle(song);
   document.title = `${songTitle}｜大状王歌词粤拼`;
   refs.songTitle.textContent = songTitle;
+  refs.songCutBadge.hidden = !song.isCutSong;
+  refs.songCutBadge.textContent = song.cutLabel || "删减曲";
   refs.songPlayButton.disabled = !song.lines.length;
   renderSongAnnotations(song);
   refs.lyricsList.innerHTML = "";

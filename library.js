@@ -70,6 +70,11 @@
       title: "《冥界》（Hadestown）歌词上线",
       summary: "英语剧目《冥界》（Hadestown）歌词页面上线，提供歌词、翻译、发音提示、词卡和唱段播放。",
     },
+    {
+      date: "2026-08-29",
+      title: "《大状王》新增删减曲《镜中缘》",
+      summary: "新增 18 行删减曲歌词、粤拼和粤语朗读，并在曲目列表与标题处单独标注“删减曲”。",
+    },
   ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
     trackLibraryEntry() {},

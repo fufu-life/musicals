@@ -119,7 +119,7 @@ test("all show deployment trees contain only compact MP3 audio", () => {
     files.forEach((file) => assert.equal(path.extname(file).toLowerCase(), ".mp3", `${show.id}: ${file}`));
     total += files.length;
   });
-  assert.equal(total, 110344);
+  assert.equal(total, 110438);
 });
 
 test("future audio builds write external WAV masters and deploy MP3 automatically", () => {
@@ -211,7 +211,7 @@ test("dazhuangwang deploys compact MP3 sentence audio without stale WAV referenc
     .flatMap((song) => song.lines)
     .filter((line) => line.audio);
 
-  assert.equal(audioLines.length, 1351);
+  assert.equal(audioLines.length, 1369);
   audioLines.forEach((line) => {
     assert.match(line.audio, /\.mp3$/i, `${line.id}: compact web audio path`);
     assert.equal(fs.existsSync(path.join(directory, line.audio)), true, `${line.id}: audio file exists`);
