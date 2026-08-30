@@ -68,7 +68,7 @@ function readDisplayedLyricText(show) {
 }
 
 test("all show pages load the shared audio guard and expose a playlist button", () => {
-  assert.equal(libraryShows.length, 41);
+  assert.equal(libraryShows.length, 43);
   libraryShows.forEach((show) => {
     const { index, script, style } = readShowFiles(show);
     assert.match(index, /\.\.\/shared\/audio-playback\.js/, `${show.id}: shared audio controller`);
@@ -119,11 +119,12 @@ test("all show deployment trees contain only compact MP3 audio", () => {
     files.forEach((file) => assert.equal(path.extname(file).toLowerCase(), ".mp3", `${show.id}: ${file}`));
     total += files.length;
   });
-  assert.equal(total, 110438);
+  assert.equal(total, 117126);
 });
 
 test("future audio builds write external WAV masters and deploy MP3 automatically", () => {
   const builder = fs.readFileSync(path.join(root, "shared/build-natural-audio.js"), "utf8");
+  const systemTts = fs.readFileSync(path.join(root, "shared/batch-system-tts.swift"), "utf8");
   const pruner = fs.readFileSync(path.join(root, "shared/prune-generated-audio.js"), "utf8");
   const validator = fs.readFileSync(path.join(root, "shared/validate-audio-library.js"), "utf8");
 
@@ -132,6 +133,8 @@ test("future audio builds write external WAV masters and deploy MP3 automaticall
   assert.match(builder, /libmp3lame/);
   assert.match(builder, /\.mp3/);
   assert.match(builder, /!isValidFile\(job\.output\)\s*\|\|\s*manifest\.jobs\[job\.manifestKey\]\s*!==\s*job\.speechVersion/s);
+  assert.doesNotMatch(systemTts, /synthesizeWithEspeak/);
+  assert.match(systemTts, /MUSICAL_TTS_ENGINE=espeak is disabled/);
   assert.match(pruner, /\.mp3/);
   assert.match(validator, /\.mp3/);
 });
@@ -211,7 +214,7 @@ test("dazhuangwang deploys compact MP3 sentence audio without stale WAV referenc
     .flatMap((song) => song.lines)
     .filter((line) => line.audio);
 
-  assert.equal(audioLines.length, 1369);
+  assert.equal(audioLines.length, 1374);
   audioLines.forEach((line) => {
     assert.match(line.audio, /\.mp3$/i, `${line.id}: compact web audio path`);
     assert.equal(fs.existsSync(path.join(directory, line.audio)), true, `${line.id}: audio file exists`);

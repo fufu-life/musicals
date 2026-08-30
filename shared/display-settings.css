@@ -1901,3 +1901,255 @@ html[data-musical-theme="light"][data-musical-page="rouge-et-noir"] .hero {
     border-inline-start-width: 2px;
   }
 }
+
+/* The Sound of Music: alpine daylight, cloud-white score paper, and a quiet
+   five-line staff. The gold belongs to the sunrise; the blue carries the
+   mountain air and the page's original cover palette. */
+html[data-musical-theme="light"][data-musical-page="sound-of-music-the"] body {
+  background:
+    radial-gradient(ellipse at 88% -4%, color-mix(in srgb, var(--musical-light-highlight) 32%, transparent), transparent 24rem),
+    radial-gradient(ellipse at 10% 12%, color-mix(in srgb, var(--musical-light-motif) 18%, transparent), transparent 28rem),
+    repeating-linear-gradient(0deg, transparent 0 34px, color-mix(in srgb, var(--musical-light-motif) 7%, transparent) 34px 35px, transparent 35px 44px),
+    linear-gradient(180deg, #eaf6f9 0%, #fffef9 54%, #f4ecd6 100%);
+  background-color: #eaf6f9;
+}
+
+html[data-musical-theme="light"][data-musical-page="sound-of-music-the"] body::before {
+  opacity: 0.56;
+  background:
+    radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--musical-light-highlight) 22%, transparent), transparent 13rem),
+    linear-gradient(145deg, transparent 0 64%, color-mix(in srgb, var(--musical-light-motif) 8%, transparent) 64% 65%, transparent 65% 100%);
+}
+
+html[data-musical-theme="light"][data-musical-page="sound-of-music-the"] .hero {
+  border-color: color-mix(in srgb, var(--musical-light-motif) 34%, transparent);
+  background:
+    radial-gradient(circle at 88% 20%, color-mix(in srgb, var(--musical-light-highlight) 26%, transparent), transparent 11rem),
+    linear-gradient(106deg, #fffef9 0 66%, color-mix(in srgb, var(--musical-light-bg) 58%, #ffffff));
+  box-shadow: inset 0 3px 0 color-mix(in srgb, var(--musical-light-highlight) 82%, #ffffff 18%), 0 18px 42px color-mix(in srgb, var(--musical-light-motif) 15%, transparent);
+}
+
+html[data-musical-theme="light"][data-musical-page="sound-of-music-the"] :is(
+  .song-sidebar,
+  .lyric-card,
+  .word-popover,
+  .lyrics-tools-dock,
+  .playback-dock,
+  .musical-display-panel,
+  .musical-rate-menu
+) {
+  border-color: color-mix(in srgb, var(--musical-light-motif) 28%, #ffffff 72%);
+  background: #fffdf7;
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--musical-light-motif) 13%, transparent);
+}
+
+html[data-musical-theme="light"][data-musical-page="sound-of-music-the"] :is(
+  .lyric-card,
+  .lyric-card.is-sequence-active,
+  .lyric-card.is-search-target
+) {
+  border-inline-start: 4px solid color-mix(in srgb, var(--musical-light-highlight) 82%, var(--musical-light-accent) 18%);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--musical-light-highlight) 17%, transparent), transparent 17%),
+    repeating-linear-gradient(0deg, transparent 0 34px, color-mix(in srgb, var(--musical-light-motif) 5%, transparent) 34px 35px, transparent 35px 44px),
+    #fffdf7;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--musical-light-motif) 18%, transparent), 0 12px 30px color-mix(in srgb, var(--musical-light-motif) 11%, transparent);
+}
+
+html[data-musical-theme="light"][data-musical-page="sound-of-music-the"] :is(.song-button, .song-item, .song-nav-item).is-active {
+  border-color: color-mix(in srgb, var(--musical-light-accent) 42%, transparent);
+  background: color-mix(in srgb, var(--musical-light-highlight) 43%, #ffffff 57%);
+  box-shadow: inset 4px 0 0 var(--musical-light-accent);
+}
+
+html[data-musical-theme="light"][data-musical-page="sound-of-music-the"] :is(.song-button, .song-item, .song-nav-item):is(:hover, :focus-visible) {
+  border-color: color-mix(in srgb, var(--musical-light-accent) 38%, transparent);
+  background: color-mix(in srgb, var(--musical-light-highlight) 30%, #ffffff 70%);
+}
+
+html[data-musical-theme="light"][data-musical-page="sound-of-music-the"] :is(
+  .toggle-btn.is-active,
+  .feedback-btn:hover,
+  .song-play-button:hover,
+  .speak-button:hover,
+  .lyrics-tools-rate:hover,
+  .musical-display-option.is-selected
+) {
+  color: #fffef9;
+  border-color: var(--musical-light-accent);
+  background: var(--musical-light-accent);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--musical-light-accent) 20%, transparent);
+}
+
+html[data-musical-theme="light"][data-musical-page="sound-of-music-the"] :is(.line-ipa, .word-phonetic, .popover-ipa) {
+  color: var(--musical-light-motif);
+}
+
+/* Matilda: a warm schoolbook page with ruled paper, chalk-blue ink, and
+   raspberry-gold accents from the RSC cover and the show's storybook world. */
+html[data-musical-theme="light"][data-musical-page="matilda"] body {
+  background:
+    radial-gradient(circle at 88% 0%, color-mix(in srgb, var(--musical-light-motif) 18%, transparent), transparent 25rem),
+    radial-gradient(circle at 9% 22%, color-mix(in srgb, var(--musical-light-accent) 10%, transparent), transparent 23rem),
+    repeating-linear-gradient(0deg, transparent 0 27px, color-mix(in srgb, var(--musical-light-motif) 8%, transparent) 27px 28px, transparent 28px 34px),
+    linear-gradient(180deg, #fffaf0 0%, #fffdf8 52%, #f7efd9 100%);
+  background-color: #fffaf0;
+}
+
+html[data-musical-theme="light"][data-musical-page="matilda"] body::before {
+  opacity: 0.62;
+  background:
+    radial-gradient(circle at 88% 2%, color-mix(in srgb, var(--musical-light-motif) 16%, transparent) 0 7rem, transparent 7.2rem),
+    radial-gradient(circle at 11% 86%, color-mix(in srgb, var(--musical-light-highlight) 18%, transparent) 0 6rem, transparent 6.2rem),
+    linear-gradient(132deg, transparent 0 72%, color-mix(in srgb, var(--musical-light-accent) 7%, transparent) 72% 73%, transparent 73% 100%);
+}
+
+html[data-musical-theme="light"][data-musical-page="matilda"] .hero {
+  border-color: color-mix(in srgb, var(--musical-light-accent) 30%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--musical-light-motif) 9%, #ffffff) 0 17%, transparent 17% 100%),
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--musical-light-highlight) 32%, transparent), transparent 11rem),
+    #fffdf8;
+  box-shadow: inset 0 3px 0 color-mix(in srgb, var(--musical-light-highlight) 88%, #ffffff 12%), 0 18px 42px color-mix(in srgb, var(--musical-light-motif) 14%, transparent);
+}
+
+html[data-musical-theme="light"][data-musical-page="matilda"] :is(
+  .song-sidebar,
+  .lyric-card,
+  .word-popover,
+  .lyrics-tools-dock,
+  .playback-dock,
+  .musical-display-panel,
+  .musical-rate-menu
+) {
+  border-color: color-mix(in srgb, var(--musical-light-accent) 26%, #ffffff 74%);
+  background: #fffdf8;
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--musical-light-accent) 12%, transparent);
+}
+
+html[data-musical-theme="light"][data-musical-page="matilda"] :is(
+  .lyric-card,
+  .lyric-card.is-sequence-active,
+  .lyric-card.is-search-target
+) {
+  border-inline-start: 4px solid var(--musical-light-accent);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--musical-light-accent) 9%, transparent), transparent 24%),
+    repeating-linear-gradient(0deg, transparent 0 30px, color-mix(in srgb, var(--musical-light-motif) 5%, transparent) 30px 31px, transparent 31px 38px),
+    #fffdf8;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--musical-light-highlight) 48%, transparent), 0 12px 30px color-mix(in srgb, var(--musical-light-accent) 10%, transparent);
+}
+
+html[data-musical-theme="light"][data-musical-page="matilda"] :is(.song-button, .song-item, .song-nav-item).is-active {
+  border-color: color-mix(in srgb, var(--musical-light-accent) 38%, transparent);
+  background: color-mix(in srgb, var(--musical-light-highlight) 46%, #ffffff 54%);
+  box-shadow: inset 4px 0 0 var(--musical-light-accent);
+}
+
+html[data-musical-theme="light"][data-musical-page="matilda"] :is(.song-button, .song-item, .song-nav-item):is(:hover, :focus-visible) {
+  border-color: color-mix(in srgb, var(--musical-light-motif) 34%, transparent);
+  background: color-mix(in srgb, var(--musical-light-motif) 10%, #ffffff 90%);
+}
+
+html[data-musical-theme="light"][data-musical-page="matilda"] :is(
+  .toggle-btn.is-active,
+  .feedback-btn:hover,
+  .song-play-button:hover,
+  .speak-button:hover,
+  .lyrics-tools-rate:hover,
+  .musical-display-option.is-selected
+) {
+  color: #fffdf8;
+  border-color: var(--musical-light-accent);
+  background: var(--musical-light-accent);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--musical-light-accent) 20%, transparent);
+}
+
+html[data-musical-theme="light"][data-musical-page="matilda"] :is(.line-ipa, .word-phonetic, .popover-ipa) {
+  color: var(--musical-light-motif);
+}
+
+/* Legally Blonde: the dark wine-and-hot-pink identity opened into blush
+   stationery, pearl-white cards, and crisp courtroom-magenta accents. */
+html[data-musical-theme="light"][data-musical-page="legally-blonde"] body {
+  background:
+    radial-gradient(circle at 88% -5%, color-mix(in srgb, var(--musical-light-highlight) 72%, transparent), transparent 22rem),
+    radial-gradient(circle at 7% 84%, color-mix(in srgb, var(--musical-light-motif) 11%, transparent), transparent 25rem),
+    repeating-linear-gradient(90deg, transparent 0 47px, color-mix(in srgb, var(--musical-light-accent) 4%, transparent) 47px 48px),
+    linear-gradient(180deg, #fff1f7 0%, #fffafd 52%, #fae7f0 100%);
+  background-color: #fff1f7;
+}
+
+html[data-musical-theme="light"][data-musical-page="legally-blonde"] body::before {
+  opacity: 0.58;
+  background:
+    linear-gradient(112deg, transparent 0 16%, color-mix(in srgb, var(--musical-light-accent) 8%, transparent) 16% 16.25%, transparent 16.25% 100%),
+    radial-gradient(circle at 84% 7%, color-mix(in srgb, var(--musical-light-highlight) 34%, transparent), transparent 12rem);
+}
+
+html[data-musical-theme="light"][data-musical-page="legally-blonde"] .hero {
+  border-color: color-mix(in srgb, var(--musical-light-accent) 28%, #ffffff 72%);
+  background:
+    radial-gradient(circle at 90% 12%, color-mix(in srgb, var(--musical-light-highlight) 58%, transparent), transparent 12rem),
+    linear-gradient(112deg, #fffafd 0 68%, color-mix(in srgb, var(--musical-light-bg) 76%, #ffffff 24%));
+  box-shadow:
+    inset 0 3px 0 color-mix(in srgb, var(--musical-light-highlight) 82%, #ffffff 18%),
+    0 18px 42px color-mix(in srgb, var(--musical-light-accent) 13%, transparent);
+}
+
+html[data-musical-theme="light"][data-musical-page="legally-blonde"] :is(
+  .song-sidebar,
+  .lyric-card,
+  .word-popover,
+  .lyrics-tools-dock,
+  .playback-dock,
+  .musical-display-panel,
+  .musical-rate-menu
+) {
+  border-color: color-mix(in srgb, var(--musical-light-accent) 24%, #ffffff 76%);
+  background: #fffafd;
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--musical-light-accent) 11%, transparent);
+}
+
+html[data-musical-theme="light"][data-musical-page="legally-blonde"] :is(
+  .lyric-card,
+  .lyric-card.is-sequence-active,
+  .lyric-card.is-search-target
+) {
+  border-inline-start: 4px solid var(--musical-light-motif);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--musical-light-highlight) 26%, transparent), transparent 24%),
+    #fffafd;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--musical-light-highlight) 70%, transparent),
+    0 12px 30px color-mix(in srgb, var(--musical-light-accent) 9%, transparent);
+}
+
+html[data-musical-theme="light"][data-musical-page="legally-blonde"] :is(.song-button, .song-item, .song-nav-item).is-active {
+  border-color: color-mix(in srgb, var(--musical-light-accent) 38%, transparent);
+  background: color-mix(in srgb, var(--musical-light-highlight) 56%, #ffffff 44%);
+  box-shadow: inset 4px 0 0 var(--musical-light-accent);
+}
+
+html[data-musical-theme="light"][data-musical-page="legally-blonde"] :is(.song-button, .song-item, .song-nav-item):is(:hover, :focus-visible) {
+  border-color: color-mix(in srgb, var(--musical-light-motif) 32%, transparent);
+  background: color-mix(in srgb, var(--musical-light-highlight) 36%, #ffffff 64%);
+}
+
+html[data-musical-theme="light"][data-musical-page="legally-blonde"] :is(
+  .toggle-btn.is-active,
+  .feedback-btn:hover,
+  .song-play-button:hover,
+  .speak-button:hover,
+  .lyrics-tools-rate:hover,
+  .musical-display-option.is-selected
+) {
+  color: #fffafd;
+  border-color: var(--musical-light-accent);
+  background: var(--musical-light-accent);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--musical-light-accent) 22%, transparent);
+}
+
+html[data-musical-theme="light"][data-musical-page="legally-blonde"] :is(.line-ipa, .word-phonetic, .popover-ipa) {
+  color: var(--musical-light-motif);
+}

@@ -6,6 +6,8 @@
   // [场景底, 歌词面, 高亮块, 主强调, 正文, 次级文字, 意象色]
   const profiles = {
     library: ["#c9bda8", "#e2d8c6", "#cbae6c", "#61471f", "#29251f", "#625a4e", "#8a682e"],
+    "sound-of-music-the": ["#edf7fa", "#fffdf7", "#f0d48a", "#1f6578", "#173844", "#4c6870", "#2b8496"],
+    matilda: ["#fff9ed", "#fffdf8", "#f1d67c", "#a52c67", "#2d1d2c", "#675267", "#2d6f9b"],
     dazhuangwang: ["#ccd8cd", "#e6e6d5", "#d7c58f", "#275f50", "#16382f", "#52675f", "#9a7a2f"],
     hamilton: ["#d8c8a2", "#eee4cb", "#ddc78f", "#3b2c16", "#251e14", "#62533a", "#9a751f"],
     "jesus-christ-superstar-1996-london": ["#c9a575", "#e1c7a4", "#c98972", "#8a3429", "#2b211a", "#68523d", "#8a6a32"],
@@ -49,6 +51,20 @@
     "les-miserables-cityprod-2017": ["#8f9fb8", "#d0dae7", "#c8878f", "#315688", "#1d2a3c", "#495b70", "#9a2e3a"],
   };
 
+  function parseGeneratedProfile(value) {
+    const profile = String(value || "").split("|");
+    if (profile.length !== 7 || profile.some((color) => !/^#[0-9a-f]{6}$/i.test(color))) return null;
+    return profile.map((color) => color.toLowerCase());
+  }
+
+  const generatedProfile = parseGeneratedProfile(script?.dataset.musicalLightProfile);
+
+  function resolveProfile(pageId = page) {
+    if (profiles[pageId]) return profiles[pageId];
+    if (pageId === page && generatedProfile) return generatedProfile;
+    return profiles.library;
+  }
+
   function normalize(value) {
     return {
       theme: value?.theme === "light" ? "light" : "dark",
@@ -66,7 +82,7 @@
 
   function apply(settings) {
     const normalized = normalize(settings);
-    const profile = profiles[page] || profiles.library;
+    const profile = resolveProfile();
     const root = document.documentElement;
     root.dataset.musicalPage = page;
     root.dataset.musicalTheme = normalized.theme;
@@ -87,6 +103,7 @@
     defaults: DEFAULTS,
     page,
     profiles,
+    resolvedProfile: () => [...resolveProfile()],
     normalize,
     read,
     apply,

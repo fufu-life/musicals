@@ -710,6 +710,13 @@
         --cover-bright: #3b2111;
       }
 
+      .show-card.legally-blonde {
+        --accent: #d72d78;
+        --accent-soft: rgba(215, 45, 120, 0.2);
+        --cover-deep: #f7d2e4;
+        --cover-bright: #fffafd;
+      }
+
       .cover {
         display: grid;
         place-items: center;
@@ -760,6 +767,14 @@
           linear-gradient(180deg, var(--cover-bright), var(--cover-deep));
       }
 
+      .show-card.legally-blonde .cover {
+        border-color: rgba(159, 31, 88, 0.26);
+        background:
+          radial-gradient(circle at 50% 18%, rgba(215, 45, 120, 0.16), transparent 40%),
+          linear-gradient(145deg, rgba(255, 255, 255, 0.72), transparent 54%),
+          linear-gradient(180deg, var(--cover-bright), var(--cover-deep));
+      }
+
       .show-card.dzw .cover-title span,
       .show-card.dzw .show-meta {
         text-transform: none;
@@ -803,6 +818,12 @@
       .show-card.rouge .show-logo {
         width: 92%;
         max-height: 88%;
+      }
+
+      .show-card.legally-blonde .show-logo {
+        width: min(92%, 260px);
+        max-height: 72%;
+        filter: drop-shadow(0 12px 18px rgba(75, 16, 47, 0.24));
       }
 
       .show-copy {
@@ -1039,7 +1060,7 @@
           </nav>
         </div>
         <div class="counter" aria-label="当前收录剧目数量">
-          <strong id="showCount">15</strong>
+          <strong id="showCount">16</strong>
           <span>shows on shelf</span>
         </div>
       </header>
@@ -1106,7 +1127,7 @@
           </div>
         </section>
         <section class="language-group" id="language-fr" aria-labelledby="fr-heading">
-          <div class="language-heading"><h2 id="fr-heading">法语音乐剧</h2><span>6 部</span></div>
+          <div class="language-heading"><h2 id="fr-heading">法语音乐剧</h2><span>7 部</span></div>
           <nav class="alpha-nav" aria-label="法语音乐剧首字母索引"><a href="#letter-fr-B">B</a><a href="#letter-fr-L">L</a><a href="#letter-fr-M">M</a><a href="#letter-fr-Y">Y</a></nav>
           <div class="display-case">
             <div class="collection">
@@ -1117,6 +1138,10 @@
               <a class="show-card lesmis" data-initial="B" href="les-miserables-cityprod-2017/index.html">
                 <div class="cover" aria-hidden="true"><img class="show-logo" src="les-miserables-cityprod-2017/assets/show-logo.jpg" alt="" loading="lazy" decoding="async" /></div>
                 <div class="show-copy"><span class="show-meta">法语 / IPA / 中英对照</span><strong>悲惨世界（2017 Cityprod法语版）</strong></div>
+              </a>
+              <a class="show-card ndp" data-initial="B" href="notre-dame-de-paris/index.html">
+                <div class="cover" aria-hidden="true"><img class="show-logo" src="notre-dame-de-paris/assets/show-logo.png" alt="" loading="lazy" decoding="async" /></div>
+                <div class="show-copy"><span class="show-meta">法语 / IPA / 中英对照</span><strong>巴黎圣母院</strong></div>
               </a>
               <a class="show-card romeo" id="letter-fr-L" data-initial="L" href="romeo-et-juliette/index.html">
                 <div class="cover" aria-hidden="true"><img class="show-logo" src="romeo-et-juliette/assets/show-logo.png" alt="" loading="lazy" decoding="async" /></div>
@@ -1264,7 +1289,7 @@
     </script>
     <script src="shared/analytics.js" defer onerror="handleOptionalAssetError(this.src)"></script>
     <script src="shows.js" defer onerror="handleOptionalAssetError(this.src)"></script>
-    <script src="library.js?v=20260829-dazhuangwang-history" defer onerror="handleOptionalAssetError(this.src)"></script>
+    <script src="library.js?v=20260830-legally-blonde-order-1" defer onerror="handleOptionalAssetError(this.src)"></script>
     <script src="shared/display-settings.js?v=20260817-version-order"></script>
     <script src="library-cursor.js?v=20260817-state-controller"></script>
   </body>

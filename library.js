@@ -75,6 +75,11 @@
       title: "《大状王》新增删减曲《镜中缘》",
       summary: "新增 18 行删减曲歌词、粤拼和粤语朗读，并在曲目列表与标题处单独标注“删减曲”。",
     },
+    {
+      date: "2026-08-30",
+      title: "《巴黎圣母院》歌词上线",
+      summary: "法语剧目《巴黎圣母院》（Notre-Dame de Paris）歌词页面上线，提供歌词、翻译、发音提示、词卡和唱段播放。",
+    },
   ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
     trackLibraryEntry() {},
@@ -87,13 +92,14 @@
     "elisabeth-das-musical": "Y", "mozart-das-musical": "M", "rouge-et-noir": "Y",
     "tanz-der-vampire": "X", "ludwig-ii-sehnsucht-nach-dem-paradies": "L",
     "dracula-das-musical": "D", "rebecca-das-musical": "H", "the-greatest-showman": "M", "epic-the-musical": "E",
-    starmania: "X", "les-souliers-rouges": "H", "la-legende-du-roi-arthur": "Y",
+    starmania: "X", "la-legende-du-roi-arthur": "Y",
     "notre-dame-de-paris": "B", "mozart-opera-rock": "Y", "romeo-et-juliette": "L",
     "le-roi-soleil": "T", "1789-les-amants-de-la-bastille": "#", "don-juan": "T",
     "moliere-le-spectacle-musical": "M", "cyrano-de-bergerac": "D",
     "les-miserables-1980": "B", "les-miserables-cityprod-2017": "B",
     "jesus-christ-superstar-1996-london": "Y", "le-petit-prince-2cd": "X",
     "come-from-away": "Y", rent: "J", "tick-tick-boom": "D", wicked: "M", hadestown: "M",
+    "legally-blonde": "L", matilda: "M", "sound-of-music-the": "Y",
     "les-dix-commandements": "S",
   };
   const pinyinCollator = new Intl.Collator("zh-Hans-CN-u-co-pinyin", { sensitivity: "base" });

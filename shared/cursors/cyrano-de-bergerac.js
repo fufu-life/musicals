@@ -28,32 +28,52 @@ window.referenceCursorActive = true;
             
             cCtx.save();
             cCtx.translate(c, c);
-            cCtx.scale(1.8, 1.8); 
-            
-            // 右机翼
-            cCtx.fillStyle = '#b0b8c4';
-            cCtx.beginPath();
-            cCtx.moveTo(0, 0);       
-            cCtx.lineTo(12, 28);
-            cCtx.lineTo(0, 24);
-            cCtx.fill();
+            cCtx.rotate(-0.12);
+            cCtx.scale(1.55, 1.55);
 
-            // 左机翼
-            cCtx.fillStyle = '#ffffff';
+            // Cyrano 的纸飞机：酒红轮廓和清晰折痕让它与系统箭头保持距离。
+            cCtx.fillStyle = '#fff8ef';
+            cCtx.strokeStyle = '#8f3542';
+            cCtx.lineWidth = 1.7;
+            cCtx.lineJoin = 'round';
+            cCtx.shadowColor = 'rgba(39, 20, 28, 0.58)';
+            cCtx.shadowBlur = 4;
             cCtx.beginPath();
-            cCtx.moveTo(0, 0);       
-            cCtx.lineTo(-12, 28);
-            cCtx.lineTo(0, 24);
+            cCtx.moveTo(0, -31);
+            cCtx.lineTo(24, 17);
+            cCtx.lineTo(3, 10);
+            cCtx.lineTo(-3, 29);
+            cCtx.lineTo(-8, 10);
+            cCtx.lineTo(-24, 18);
+            cCtx.closePath();
             cCtx.fill();
+            cCtx.stroke();
+            cCtx.shadowBlur = 0;
 
-            // 底部折叠暗部
-            cCtx.fillStyle = '#7a8594';
+            // 两条折痕和中央压线强化“折纸”而非箭头的识别。
+            cCtx.strokeStyle = '#b86a78';
+            cCtx.lineWidth = 1.05;
             cCtx.beginPath();
-            cCtx.moveTo(0, 0);
-            cCtx.lineTo(0, 24);
-            cCtx.lineTo(-2, 32);
-            cCtx.fill();
+            cCtx.moveTo(0, -30);
+            cCtx.lineTo(3, 10);
+            cCtx.lineTo(24, 17);
+            cCtx.moveTo(0, -30);
+            cCtx.lineTo(-8, 10);
+            cCtx.lineTo(-24, 18);
+            cCtx.moveTo(3, 10);
+            cCtx.lineTo(-3, 29);
+            cCtx.stroke();
 
+            // 一枚小玫瑰印记，连接 Cyrano 的诗意与红色主题。
+            cCtx.fillStyle = '#8f3542';
+            cCtx.beginPath();
+            cCtx.arc(2, 6, 3.2, 0, Math.PI * 2);
+            cCtx.fill();
+            cCtx.strokeStyle = '#f4c7c3';
+            cCtx.lineWidth = 0.9;
+            cCtx.beginPath();
+            cCtx.arc(1, 5, 1.7, 0.2, Math.PI * 1.45);
+            cCtx.stroke();
             cCtx.restore();
         }
         preRenderPaperAirplane();

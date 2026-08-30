@@ -19,6 +19,8 @@ test("library uses the requested title and introduction", () => {
 
 test("library provides an accessible copyright notice beside the title", () => {
   assert.match(indexHtml, /id="copyrightNoticeButton"[^>]*aria-haspopup="dialog"[^>]*aria-controls="copyrightNotice"/);
+  assert.match(indexHtml, /id="copyrightNoticeButton"[^>]*aria-label="版权声明"[^>]*title="版权声明"[^>]*>[\s\S]*©/);
+  assert.match(indexHtml, /\.copyright-notice-trigger\s*\{[\s\S]*width:\s*44px;[\s\S]*height:\s*44px;[\s\S]*border-radius:\s*50%;/);
   assert.match(indexHtml, /<dialog class="copyright-dialog" id="copyrightNotice" aria-labelledby="copyrightNoticeTitle">/);
   assert.match(indexHtml, /本站所展示的歌词内容，其原始版权归歌曲作者、词曲版权所有者、音乐发行公司及相关版权方所有。/);
   assert.match(indexHtml, /莫里哀的中文翻译歌词由「扒喜扒拉字幕组」制作。/);
@@ -28,25 +30,25 @@ test("library provides an accessible copyright notice beside the title", () => {
   assert.match(libraryScript, /event\.target === copyrightNotice/);
 });
 
-test("library groups all forty-one shows by language", () => {
+test("library groups all forty-three shows by language", () => {
   assert.deepEqual(libraryLanguages, [
     { id: "yue", label: "粤语音乐剧" },
     { id: "en", label: "英语音乐剧" },
     { id: "de", label: "德语音乐剧" },
     { id: "fr", label: "法语音乐剧" },
   ]);
-  assert.equal(libraryShows.length, 41);
+  assert.equal(libraryShows.length, 43);
   assert.match(indexHtml, /id="languageGroups"/);
   assert.match(indexHtml, /id="language-yue"[\s\S]*id="language-en"[\s\S]*id="language-de"[\s\S]*id="language-fr"/);
 });
 
 test("homepage exposes every deployed show as a direct HTML link before JavaScript", () => {
   const deployed = libraryShows.filter((show) => show.deployed);
-  assert.equal(deployed.length, 15);
+  assert.equal(deployed.length, 16);
   deployed.forEach((show) => {
     assert.match(indexHtml, new RegExp(`href="${show.href.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}"`));
   });
-  assert.match(indexHtml, /<strong id="showCount">15<\/strong>/);
+  assert.match(indexHtml, /<strong id="showCount">16<\/strong>/);
   assert.doesNotMatch(indexHtml, /<strong id="showCount">0<\/strong>/);
 });
 
@@ -63,7 +65,7 @@ test("show names and Cantonese feature labels stay accurate", () => {
 test("library cards use fluid phone and tablet grids", () => {
   assert.match(indexHtml, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(indexHtml, /@media \(min-width: 768px\)[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
-  assert.match(indexHtml, /@media \(min-width: 960px\)[\s\S]*grid-template-columns: repeat\(4, 180px\)/);
+  assert.match(indexHtml, /@media \(min-width: 960px\)[\s\S]*grid-template-columns: repeat\(auto-fill, 180px\)/);
   assert.match(indexHtml, /@media \(max-width: 389px\)[\s\S]*\.show-logo[\s\S]*width: min\(78%, 190px\)/);
   assert.match(indexHtml, /@media \(max-width: 319px\)[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
   assert.match(indexHtml, /min-width: 0/);
@@ -71,7 +73,11 @@ test("library cards use fluid phone and tablet grids", () => {
 
 test("show cards omit generated description paragraphs", () => {
   assert.ok(libraryShows.every((show) => !("description" in show)));
-  assert.doesNotMatch(libraryScript, /createElement\("p"\)/);
+  const cardStart = libraryScript.indexOf("function createCard");
+  const cardEnd = libraryScript.indexOf("function createAnchor", cardStart);
+  assert.ok(cardStart >= 0);
+  assert.ok(cardEnd > cardStart);
+  assert.doesNotMatch(libraryScript.slice(cardStart, cardEnd), /createElement\("p"\)/);
 });
 
 test("every shelf card uses a local title-bearing show logo", () => {
@@ -85,7 +91,7 @@ test("every shelf card uses a local title-bearing show logo", () => {
 test("every show card links directly to its page instead of a folder", () => {
   const links = libraryShows.map((show) => show.href);
 
-  assert.equal(links.length, 41);
+  assert.equal(links.length, 43);
   assert.ok(links.every((href) => href.endsWith("/index.html")));
   for (const href of links) {
     assert.ok(fs.existsSync(path.join(root, href)), `Missing show page: ${href}`);
@@ -106,6 +112,7 @@ test("online library renders only explicitly deployed shows without network prob
       "rebecca-das-musical",
       "hadestown",
       "rouge-et-noir",
+      "notre-dame-de-paris",
       "mozart-opera-rock",
       "romeo-et-juliette",
       "moliere-le-spectacle-musical",
@@ -147,7 +154,7 @@ test("deployed cards prefetch their first-screen data without probing undeployed
   assert.doesNotMatch(libraryScript, /window\.libraryShows\.flatMap\([^)]*prefetch/);
 });
 
-test("library and all forty-one show pages use the shared analytics module", () => {
+test("library and all forty-three show pages use the shared analytics module", () => {
   const pages = [
     ["library", indexHtml],
     ...libraryShows.map((show) => [
@@ -163,7 +170,7 @@ test("library and all forty-one show pages use the shared analytics module", () 
   assert.match(libraryScript, /analytics\.trackLibraryEntry/);
 });
 
-test("all forty-one show runtimes report songs, audio lifecycle, and features through the shared module", () => {
+test("all forty-three show runtimes report songs, audio lifecycle, and features through the shared module", () => {
   const customInline = new Set(["dazhuangwang"]);
   const customScripts = new Map([
     ["hamilton", "Hamilton/script.js"],
@@ -203,14 +210,14 @@ test("library spotlight cursor follows the supplied three-layer theatre-light re
   assert.match(indexHtml, /class="mouse-puddle"/);
   assert.match(indexHtml, /class="mouse-dot"/);
   assert.match(indexHtml, /src="library-cursor\.js\?v=/);
-  assert.match(cursorScript, /pointer: coarse/);
+  assert.match(cursorScript, /pointer: fine/);
   assert.match(cursorScript, /prefers-reduced-motion: reduce/);
   assert.match(cursorScript, /show-card/);
   assert.match(indexHtml, /skewX\(-25deg\)/);
   assert.match(indexHtml, /is-hover \.mouse-beam/);
   assert.match(indexHtml, /is-click \.mouse-puddle/);
   assert.match(indexHtml, /spotlight-stardust/);
-  assert.match(cursorScript, /activeSparks < 10/);
+  assert.match(cursorScript, /activeSparks >= 4/);
   assert.match(cursorScript, /spotlight-spark/);
 });
 
@@ -229,6 +236,12 @@ test("every library show has a stable Chinese-title initial", () => {
   const ids = [...initialBlock[1].matchAll(/(?:"([\w-]+)"|([\w-]+)):\s*"[A-Z#]"/g)].map((match) => match[1] || match[2]);
   const missing = libraryShows.map((show) => show.id).filter((id) => !ids.includes(id));
   assert.deepEqual(missing, []);
+});
+
+test("Legally Blonde is placed in the L initial group", () => {
+  const initialBlock = libraryScript.match(/const pinyinInitials = \{([\s\S]*?)\n  \};/);
+  assert.ok(initialBlock);
+  assert.match(initialBlock[1], /"legally-blonde": "L"/u);
 });
 
 test("Hamilton keeps its Chinese display title in the library", () => {
