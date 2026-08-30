@@ -345,6 +345,7 @@ const libraryShows = [
   },
 {
     id: "notre-dame-de-paris",
+    deployed: true,
     language: "fr",
     cardClass: "ndp",
     href: "notre-dame-de-paris/index.html",
