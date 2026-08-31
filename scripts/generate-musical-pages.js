@@ -6,7 +6,8 @@ const { writeFileAtomic } = require("./generator-write-guard.js");
 
 const ROOT = path.resolve(__dirname, "..");
 let generationWritesEnabled = false;
-const CURSOR_ASSET_VERSION = "20260808-show-assets-1";
+const CURSOR_ASSET_VERSION = "20260830-legally-blonde-balance-1";
+const SHARED_UI_ASSET_VERSION = "20260830-derived-light-profiles-4";
 const LYRICS_ROOT = path.resolve(ROOT, "..", "lyrics");
 const LEGACY_OUTPUT_ROOT = path.resolve(ROOT, "..", "outputs", "lyrics-web");
 const ROUGE_SCRIPT = path.join(ROOT, "rouge-et-noir", "script.js");
@@ -34,6 +35,10 @@ const MERGED_LINE_TEXT_OVERRIDES = JSON.parse(
 );
 const MAX_REVIEWED_LINE_MERGE_ROWS = 4;
 const MAX_REVIEWED_LINE_MERGE_WORDS = 18;
+const REVIEWED_LONG_LINE_MERGE_START_IDS = new Set([
+  "mozart-das-musical-48-031",
+  "mozart-das-musical-48-047",
+]);
 const INSTRUMENTAL_MARKERS = new Set([
   "instrumental",
   "instrumental music",
@@ -47,6 +52,73 @@ const INSTRUMENTAL_MARKERS = new Set([
   "器乐曲",
 ]);
 const existingLineIpaCache = new Map();
+
+function parseHexColor(value) {
+  const match = /^#([0-9a-f]{6})$/i.exec(String(value || ""));
+  if (!match) return null;
+  return [0, 2, 4].map((offset) => parseInt(match[1].slice(offset, offset + 2), 16));
+}
+
+function mixHexColors(base, target, targetWeight) {
+  const baseChannels = parseHexColor(base);
+  const targetChannels = parseHexColor(target);
+  if (!baseChannels || !targetChannels) {
+    throw new Error(`Light-theme colors must use six-digit hex values: ${base}, ${target}`);
+  }
+  const weight = Math.min(1, Math.max(0, Number(targetWeight)));
+  const channels = baseChannels.map((channel, index) => (
+    Math.round(channel * (1 - weight) + targetChannels[index] * weight)
+  ));
+  return `#${channels.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function relativeColorLuminance(value) {
+  const channels = parseHexColor(value);
+  if (!channels) return 0;
+  const linear = channels.map((channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.04045
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+}
+
+function colorContrastRatio(first, second) {
+  const firstLuminance = relativeColorLuminance(first);
+  const secondLuminance = relativeColorLuminance(second);
+  return (Math.max(firstLuminance, secondLuminance) + 0.05)
+    / (Math.min(firstLuminance, secondLuminance) + 0.05);
+}
+
+function darkenForLightSurface(color, surface, minimumContrast) {
+  let candidate = parseHexColor(color) ? color.toLowerCase() : "#49333f";
+  for (let step = 0; step < 24 && colorContrastRatio(candidate, surface) < minimumContrast; step += 1) {
+    candidate = mixHexColors(candidate, "#000000", 0.08);
+  }
+  return candidate;
+}
+
+function deriveLightProfile(show) {
+  const fields = ["bg", "panel", "highlight", "accent", "ink", "muted", "motif"];
+  if (show.lightTheme) {
+    const profile = fields.map((field) => show.lightTheme[field]);
+    if (profile.some((color) => !parseHexColor(color))) {
+      throw new Error(`${show.slug} lightTheme must define seven six-digit hex colors`);
+    }
+    return profile.map((color) => color.toLowerCase());
+  }
+
+  const theme = show.theme || {};
+  const background = mixHexColors(theme.bg || "#201820", "#ffffff", 0.9);
+  const panel = mixHexColors(theme.panel || theme.bg || "#2c202c", "#ffffff", 0.95);
+  const highlight = mixHexColors(theme.highlight || theme.accent || "#c9a6b6", "#ffffff", 0.48);
+  const accent = darkenForLightSurface(theme.accent || show.effect?.primary, panel, 4.5);
+  const ink = darkenForLightSurface(mixHexColors(theme.bg || "#201820", "#000000", 0.08), background, 7);
+  const muted = darkenForLightSurface(mixHexColors(ink, panel, 0.25), panel, 4.5);
+  const motif = darkenForLightSurface(show.effect?.primary || theme.accent, panel, 3);
+  return [background, panel, highlight, accent, ink, muted, motif];
+}
 
 const SHOWS = [
   {
@@ -79,6 +151,30 @@ const SHOWS = [
     audioVoice: "Samantha",
     logo: "assets/show-logo.png",
     showEnglishToggle: false,
+    displayOrderOverrides: {
+      18: 19,
+      19: 20,
+      20: 21,
+      21: 22,
+      22: 23,
+      23: 24,
+      24: 25,
+      25: 26,
+      26: 27,
+      27: 28,
+      28: 29,
+      29: 30,
+      30: 31,
+      32: 32,
+      33: 33,
+      34: 34,
+      35: 35,
+      36: 36,
+      37: 37,
+      38: 18,
+      39: 38,
+      40: 39,
+    },
     effect: { icon: "flag", trail: "smoke", click: "dawnRays", primary: "#c92535", secondary: "#f1d792" },
     theme: {
       bg: "#071021",
@@ -400,7 +496,7 @@ const SHOWS = [
     audioVoice: "Samantha",
     logo: "assets/show-logo.png",
     showEnglishToggle: false,
-    effect: { icon: "flag", trail: "letters", click: "dawnRays", primary: "#f0c62b", secondary: "#7e4fa1" },
+    effect: { icon: "flag", trail: "none", click: "subtleRing", primary: "#f0c62b", secondary: "#7e4fa1" },
     theme: {
       bg: "#12100b",
       panel: "#282113",
@@ -661,7 +757,7 @@ const SHOWS = [
     audioVoice: "Samantha",
     logo: "assets/show-logo.png",
     showEnglishToggle: false,
-    effect: { icon: "musicNote", trail: "seaStarlight", click: "oceanWave", primary: "#2d9fb6", secondary: "#f0d58b" },
+    effect: { icon: "musicNote", trail: "seaStarlight", click: "softOceanWave", primary: "#2d9fb6", secondary: "#f0d58b" },
     theme: {
       bg: "#06131c",
       panel: "#0d2630",
@@ -894,7 +990,7 @@ const SHOWS = [
     audioVoice: "Daniel",
     logo: "assets/show-logo.png",
     showEnglishToggle: false,
-    effect: { icon: "star", trail: "goldDust", click: "dawnRays", primary: "#d5a23c", secondary: "#efe1b1" },
+    effect: { icon: "star", trail: "none", click: "subtleRing", primary: "#d5a23c", secondary: "#efe1b1" },
     theme: {
       bg: "#110c08",
       panel: "#24160f",
@@ -936,7 +1032,7 @@ const SHOWS = [
     audioVoice: "Samantha",
     logo: "assets/show-logo.jpg",
     showEnglishToggle: false,
-    effect: { icon: "plane", trail: "airRoute", click: "flightPath", primary: "#2d9fb6", secondary: "#e3bd58" },
+    effect: { icon: "globe", trail: "none", click: "none", primary: "#2d9fb6", secondary: "#e3bd58" },
     theme: {
       bg: "#07171c",
       panel: "#102b32",
@@ -1002,7 +1098,7 @@ const SHOWS = [
     audioVoice: "Samantha",
     logo: "assets/show-logo.jpg",
     showEnglishToggle: false,
-    effect: { icon: "mask", trail: "magicDust", click: "crispShockwave", primary: "#8dc63f", secondary: "#f4f0df" },
+    effect: { icon: "mask", trail: "magicDust", click: "softGreenRipple", primary: "#8dc63f", secondary: "#f4f0df" },
     theme: {
       bg: "#090f08",
       panel: "#162211",
@@ -1036,6 +1132,56 @@ const SHOWS = [
     },
   },
   {
+    slug: "sound-of-music-the",
+    source: "The Sound of Music (Music From the NBC Television Event) (2720138)/The Sound of Music (Music From the NBC Television Event) (2720138).md",
+    legacyOutputSlug: "sound-of-music-the",
+    title: "The Sound of Music",
+    titleZh: "音乐之声",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-logo.jpg",
+    showEnglishToggle: false,
+    sourceFormat: "paired-english-loose",
+    looseSkipLeadingRows: { 1: 2 },
+    effect: { icon: "musicNote", trail: "none", click: "softDiamondGlow", primary: "#4fb6d7", secondary: "#cfeff7" },
+    theme: {
+      bg: "#07151c",
+      panel: "#112b35",
+      accent: "#4fb6d7",
+      highlight: "#8fb9cc",
+      ink: "#f7f3e6",
+      muted: "rgba(221, 232, 224, 0.72)",
+      serif: 'Baskerville, "Times New Roman", "Songti SC", serif',
+    },
+  },
+  {
+    slug: "matilda",
+    source: "Matilda The Musical (Original London Cast 2011) (207463)/Matilda The Musical (Original London Cast 2011) (207463).md",
+    legacyOutputSlug: "matilda",
+    title: "Matilda The Musical",
+    titleZh: "玛蒂尔达",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-logo.jpg",
+    showEnglishToggle: false,
+    sourceFormat: "paired-english-loose",
+    looseMergeLeadingSourceRows: [11],
+    looseTrailingNotePatterns: { 14: [/Wikipedia/iu] },
+    looseSpeakerMarkers: ["Miss Honey", "Miss Honey/ Matilda/ Escapologist"],
+    effect: { icon: "book", trail: "none", click: "subtleRing", primary: "#df72a6", secondary: "#e8c56a" },
+    theme: {
+      bg: "#170c18",
+      panel: "#2d162b",
+      accent: "#df72a6",
+      highlight: "#e8c56a",
+      ink: "#fff4f7",
+      muted: "rgba(245, 216, 231, 0.74)",
+      serif: 'Georgia, "Songti SC", serif',
+    },
+  },
+  {
     slug: "les-dix-commandements",
     source: "Les Dix Commandements (2000 French Cast) 网页数据源.md",
     legacyOutputSlug: "les-dix-commandements-com-die-musicale",
@@ -1055,6 +1201,38 @@ const SHOWS = [
       ink: "#f5f7ef",
       muted: "rgba(199, 225, 232, 0.72)",
       serif: '"Times New Roman", "Songti SC", serif',
+    },
+  },
+  {
+    slug: "legally-blonde",
+    source: "Legally Blonde (2007 Broadway Production) 网页数据源.md",
+    legacyOutputSlug: "legally-blonde",
+    title: "Legally Blonde",
+    titleZh: "律政俏佳人",
+    language: "en",
+    voice: "en-us",
+    audioVoice: "Samantha",
+    logo: "assets/show-title-logo-sharp-v2.webp",
+    showEnglishToggle: false,
+    sourceFormat: "english-chinese-columns",
+    effect: { icon: "scales", trail: "none", click: "subtleRing", primary: "#d72d78", secondary: "#f3c4d8" },
+    theme: {
+      bg: "#180b16",
+      panel: "#2b1325",
+      accent: "#d72d78",
+      highlight: "#f3c4d8",
+      ink: "#fff3f8",
+      muted: "rgba(255, 220, 236, 0.72)",
+      serif: '"Avenir Next", Avenir, "PingFang SC", sans-serif',
+    },
+    lightTheme: {
+      bg: "#fff1f7",
+      panel: "#fffafd",
+      highlight: "#f7d2e4",
+      accent: "#9f1f58",
+      ink: "#321423",
+      muted: "#6c4b5d",
+      motif: "#c82b71",
     },
   },
 ];
@@ -1087,10 +1265,56 @@ const WAVE2_SHOW_SLUGS = new Set([
   "tick-tick-boom",
   "wicked",
   "hadestown",
+  "sound-of-music-the",
+  "matilda",
   "les-dix-commandements",
+  "legally-blonde",
 ]);
 
 const SONG_TITLE_TRANSLATIONS = {
+  "sound-of-music-the": {
+    Preludium: "前奏曲",
+    "The Sound of Music": "音乐之声",
+    Maria: "玛丽亚",
+    "My Favorite Things": "我最喜欢的东西",
+    "Do-Re-Mi": "哆来咪",
+    "Sixteen Going On Seventeen": "十六岁与十七岁",
+    "The Lonely Goatherd": "孤独的牧羊人",
+    "How Can Love Survive?": "爱如何生存？",
+    "Reprise: The Sound of Music": "音乐之声（重唱）",
+    "The Grand Waltz": "盛大华尔兹",
+    "Ländler": "伦德勒舞曲",
+    "So Long, Farewell": "再见，再见",
+    "Climb Ev'ry Mountain": "攀登每一座山",
+    "No Way To Stop It": "无法阻止",
+    "Something Good": "美好事物",
+    "Processional & Maria (The Wedding)": "婚礼进行曲与玛丽亚（婚礼）",
+    "Reprise: Sixteen Going On Seventeen": "十六岁与十七岁（重唱）",
+    "Reprise: Do-Re-Mi (The Concert)": "哆来咪（音乐会重唱）",
+    "Edelweiss (The Concert)": "雪绒花（音乐会）",
+    "Reprise: So Long, Farewell (The Concert)": "再见，再见（音乐会重唱）",
+    "Finale Ultimo: Climb Ev'ry Mountain": "终曲：攀登每一座山",
+    "End Credits": "片尾字幕",
+  },
+  matilda: {
+    Miracle: "奇迹",
+    Naughty: "淘气鬼",
+    "School Song": "校歌",
+    Pathetic: "可悲",
+    "The Hammer": "锤子",
+    Loud: "喧闹",
+    "This Little Girl": "这个小女孩",
+    Bruce: "布鲁斯",
+    Telly: "电视",
+    "Entr'acte": "幕间曲",
+    "When I Grow Up": "当我长大",
+    "I'm Here": "我在这里",
+    "The Smell Of Rebellion": "叛逆的气息",
+    Quiet: "安静",
+    "My House": "我的家",
+    "Revolting Children": "叛逆的孩子们",
+    "When I Grow Up (Reprise)": "当我长大（重唱）",
+  },
   "the-greatest-showman": {
     "The Greatest Show": "最伟大的表演",
     "A Million Dreams": "一百万个梦想",
@@ -1640,9 +1864,12 @@ const SONG_TITLE_TRANSLATIONS = {
     "Dog Eats Dog": "弱肉强食",
     "Javert's Suicide": "沙威自尽",
     "Turning": "转过街角",
-    "Empty Chairs at Empty Tables": "空桌空椅",
+    "Empty Chairs at Empty Tables": "空桌椅",
     "Every Day/A Heart Full of Love (Reprise)": "每一天／满怀爱意（重唱）",
     "Wedding Chorale/Beggars at the Feast": "婚礼赞歌／宴席上的乞丐",
+    "Do You Hear the People Sing?": "听啊，人民在歌唱",
+    "Epilogue (Finale)": "尾声（终曲）",
+    "Encore: One Day More": "安可：只待明日",
   },
   "romeo-et-juliette": {
     "Ouverture": "序曲",
@@ -1793,6 +2020,7 @@ const SHOW_WORD_OVERRIDES = {
     jerusalem: ["耶路撒冷", "Jerusalem", "Jérusalem"],
     luceat: ["愿……照耀（拉丁语）", "may it shine", "luceat"],
     nouvelle: ["新的；新出现的", "new", "nouvelle", "/nuvɛl/"],
+    "nœud": ["活结；绞索", "noose; slipknot", "nœud", "/nø/"],
     orationem: ["祈祷（拉丁语）", "prayer", "orationem"],
     oserais: ["敢；会敢", "would dare", "oserais"],
     "oserais-tu": ["你敢吗", "would you dare", "oserais-tu"],
@@ -1813,6 +2041,9 @@ const SHOW_WORD_OVERRIDES = {
     viendrais: ["会来；本会来", "would come", "viendrais"],
     "viendrais-tu": ["你会来吗", "would you come", "viendrais-tu"],
     "voudrais-tu": ["你愿意吗；你想要吗", "would you like", "voudrais-tu"],
+  },
+  "tick-tick-boom": {
+    "clean-up": ["清理打者；四棒打者", "cleanup batter", "clean-up", "/ˈkliːnʌp/"],
   },
 };
 
@@ -2810,7 +3041,13 @@ function main() {
     if (textOnly && writeRequested) {
       assertSourceWordCardsReady(songs, show, loadExistingWordEntries(outDir));
       fs.mkdirSync(outDir, { recursive: true });
-      writeFile(outDir, "songs.js", `window.songs=${JSON.stringify(songs)};\n`);
+      const runtimeSongs = show.fullSongsFile ? buildInitialSongs(songs) : songs;
+      let songsRuntimeSource = `window.songs=${JSON.stringify(runtimeSongs)};\n`;
+      if (show.fullSongsFile) {
+        songsRuntimeSource += `window.fullSongsFile=${JSON.stringify(show.fullSongsFile)};\n`;
+        writeFile(outDir, show.fullSongsFile, `window.songs=${JSON.stringify(songs)};\n`);
+      }
+      writeFile(outDir, "songs.js", songsRuntimeSource);
       writeFile(outDir, "songs-initial.js", `window.songsInitial=${JSON.stringify(buildInitialSongs(songs))};\n`);
       summary.push({
         slug: show.slug,
@@ -3100,7 +3337,7 @@ function buildInitialSongs(songs) {
   return songs.map((song, index) => index === 0 ? song : { ...song, lines: [] });
 }
 
-function existingLineIpa(show, lineId, original) {
+function existingLineIpa(show, lineId, original, sourceIpa = "") {
   if (!existingLineIpaCache.has(show.slug)) {
     const file = path.join(ROOT, show.slug, "songs.js");
     const cache = new Map();
@@ -3114,6 +3351,7 @@ function existingLineIpa(show, lineId, original) {
     existingLineIpaCache.set(show.slug, cache);
   }
   const previous = existingLineIpaCache.get(show.slug).get(lineId);
+  if (String(sourceIpa || "").trim() && previous?.ipa && String(sourceIpa).trim() !== previous.ipa) return "";
   return previous?.ipaKey === ipaCacheKey(original) && previous.ipa ? previous.ipa : "";
 }
 
@@ -3243,6 +3481,9 @@ function addGlossaryEntry(target, term, entry) {
 }
 
 function parseMarkdown(file, show) {
+  if (show.sourceFormat === "paired-english-loose") {
+    return parseLoosePairedEnglishMarkdown(file, show);
+  }
   if (show.sourceFormat === "paired-english") {
     return parsePairedEnglishMarkdown(file, show);
   }
@@ -3312,13 +3553,13 @@ function parseMarkdown(file, show) {
     const row = rowByHeader(header, cells);
     const original = row["法语歌词（校订）"] || row["德语歌词（校订）"] || row["英文歌词（校订）"] || "";
     const note = cleanReleaseNote(row["备注"] || "");
-    const noteSpeaker = extractNoteSpeaker(note);
+    const noteSpeaker = normalizeSpeakerForShow(contentShow, extractNoteSpeaker(note));
     if (!original.trim()) {
       pendingSpeaker = noteSpeaker || pendingSpeaker;
       return;
     }
     if (/^--.*--$/u.test(original.trim())) return;
-    if (!/^\s*(?:\[|【)/u.test(original) && isKnownSourceRole(original) && !/[:：]\s*\S/u.test(cleanCell(original))) {
+    if (!/^\s*(?:\[|【)/u.test(original) && isKnownSourceRole(original, contentShow) && !/[:：]\s*\S/u.test(cleanCell(original))) {
       pendingSpeaker = cleanCell(original).replace(/[:：]\s*$/u, "") || pendingSpeaker;
       return;
     }
@@ -3328,17 +3569,18 @@ function parseMarkdown(file, show) {
       || cleanCell(row["中文翻译（校订）"] || "")
       || cleanCell(row["English Translation"] || ""),
     );
-    const speakerCell = bracketedLyric && hasAlignedText && !isStandaloneBracketedSpeakerRow(original, row)
+    const speakerCell = bracketedLyric && hasAlignedText && !isStandaloneBracketedSpeakerRow(original, row, contentShow)
       ? { speaker: "", text: (bracketedLyric[1] || bracketedLyric[2] || "").trim() }
-      : extractSpeaker(original);
+      : extractSpeaker(original, contentShow);
     if (!speakerCell.text) {
       pendingSpeaker = speakerCell.speaker || pendingSpeaker;
       return;
     }
     const zhSource = bracketedLyric ? stripOuterBrackets(row["中文翻译（校订）"] || "") : (row["中文翻译（校订）"] || "");
     const enSource = bracketedLyric ? stripOuterBrackets(row["English Translation"] || "") : (row["English Translation"] || "");
-    const zhTranslationSpeaker = extractTranslationSpeaker(zhSource);
-    const enTranslationSpeaker = extractTranslationSpeaker(enSource);
+    if (isTranslationRoleOnly(zhSource, contentShow)) return;
+    const zhTranslationSpeaker = extractTranslationSpeaker(zhSource, contentShow);
+    const enTranslationSpeaker = extractTranslationSpeaker(enSource, contentShow);
     const translationSpeaker = speakerCell.speaker || noteSpeaker
       ? { speaker: "", text: "" }
       : [zhTranslationSpeaker, enTranslationSpeaker].find((entry) => entry.speaker) || { speaker: "", text: "" };
@@ -3362,10 +3604,12 @@ function parseMarkdown(file, show) {
       zh: normalizeGeneratedLineText(contentShow, textOverride.zh ?? cleanLineCell(contentShow, zhTranslationSpeaker.speaker ? zhTranslationSpeaker.text : stripTranslationSpeaker(
         zhSource,
         speaker,
+        contentShow,
       ), "zh"), "zh"),
       en: normalizeGeneratedLineText(contentShow, textOverride.en ?? cleanLineCell(contentShow, enTranslationSpeaker.speaker ? enTranslationSpeaker.text : stripTranslationSpeaker(
         enSource,
         speaker,
+        contentShow,
       ), "en"), "en"),
       note: noteSpeaker ? "" : note,
     });
@@ -3434,7 +3678,7 @@ function parseGermanTripleMarkdown(file, show) {
 
     const row = rowByHeader(header, cells);
     const originalCell = row["德语"] || "";
-    const speakerCell = extractGermanTripleSpeaker(originalCell);
+    const speakerCell = extractGermanTripleSpeaker(originalCell, contentShow);
     currentLineNumber += 1;
     if (!speakerCell.text.trim()) return;
     if (/^(?:\.\.\.|…|—+)$/u.test(speakerCell.text.trim())) return;
@@ -3444,14 +3688,20 @@ function parseGermanTripleMarkdown(file, show) {
     const textOverride = LINE_TEXT_OVERRIDES[lineId] || {};
     const original = cleanLineCell(contentShow, speakerCell.text, "original");
     if (!original) return;
+    const translationSpeaker = speakerCell.speaker
+      ? { speaker: "", text: "" }
+      : extractTranslationSpeaker(row["中文"] || "", contentShow);
+    if (!speakerCell.speaker && translationSpeaker.speaker && !translationSpeaker.text) return;
     current.lines.push({
       id: lineId,
       lineIndex: currentLineNumber,
-      speaker: speakerCell.speaker,
+      speaker: speakerCell.speaker || translationSpeaker.speaker,
       original,
       ipa: existingLineIpa(contentShow, lineId, original) || ipaFor(original, contentShow.voice),
-      en: normalizeGeneratedLineText(contentShow, textOverride.en ?? cleanLineCell(contentShow, stripGermanTripleTranslationSpeaker(row["英文"] || "", speakerCell.speaker, "en"), "en"), "en"),
-      zh: normalizeGeneratedLineText(contentShow, textOverride.zh ?? cleanLineCell(contentShow, stripGermanTripleTranslationSpeaker(row["中文"] || "", speakerCell.speaker, "zh"), "zh"), "zh"),
+      en: normalizeGeneratedLineText(contentShow, textOverride.en ?? cleanLineCell(contentShow, stripGermanTripleTranslationSpeaker(row["英文"] || "", speakerCell.speaker, "en", contentShow), "en"), "en"),
+      zh: normalizeGeneratedLineText(contentShow, textOverride.zh ?? cleanLineCell(contentShow, translationSpeaker.speaker
+        ? translationSpeaker.text
+        : stripGermanTripleTranslationSpeaker(row["中文"] || "", speakerCell.speaker, "zh", contentShow), "zh"), "zh"),
       note: "",
     });
   });
@@ -3466,6 +3716,7 @@ function parseEnglishChineseColumnsMarkdown(file, show) {
   let current = null;
   let inLyricTable = false;
   let pendingSpeaker = "";
+  let sourceLineIndex = 0;
 
   const flushSong = () => {
     if (!current) return;
@@ -3491,6 +3742,7 @@ function parseEnglishChineseColumnsMarkdown(file, show) {
       songs.push(current);
       inLyricTable = false;
       pendingSpeaker = "";
+      sourceLineIndex = 0;
       return;
     }
 
@@ -3531,18 +3783,21 @@ function parseEnglishChineseColumnsMarkdown(file, show) {
       if (originalRaw === current.sourceTitle) return;
     }
     if (isEnglishSourceStageDirection(originalRaw)) return;
+    sourceLineIndex += 1;
 
-    const speakerCell = extractSpeaker(originalRaw);
+    const speakerCell = extractSpeaker(originalRaw, contentShow);
+    if (isEmbeddedSourceRoleOnlyLine(speakerCell, zhRaw, contentShow)
+      || isTranslationRoleOnly(zhRaw, contentShow)) return;
     if (!speakerCell.text) {
       pendingSpeaker = speakerCell.speaker || pendingSpeaker;
       return;
     }
     const speaker = speakerCell.speaker || pendingSpeaker;
     const original = cleanLineCell(contentShow, speakerCell.text, "original");
-    const zh = cleanLineCell(contentShow, stripTranslationSpeaker(zhRaw, speaker), "zh");
+    const zh = cleanLineCell(contentShow, stripTranslationSpeaker(zhRaw, speaker, contentShow), "zh");
     if (!original || !zh) return;
 
-    const lineIndex = current.lines.length + 1;
+    const lineIndex = sourceLineIndex;
     const lineId = `${contentShow.slug}-${String(current.order).padStart(2, "0")}-${String(lineIndex).padStart(3, "0")}`;
     const textOverride = LINE_TEXT_OVERRIDES[lineId] || {};
     current.lines.push({
@@ -3594,6 +3849,7 @@ function parseEnglishChineseSingleColumnMarkdown(file, show) {
         throw new Error(`${show.slug} track ${current.order} has no Chinese translation for: ${originalRaw}`);
       }
       lineIndex += 1;
+      if (isTranslationRoleOnly(zhSource, contentShow)) continue;
       const lineId = `${contentShow.slug}-${String(current.order).padStart(2, "0")}-${String(lineIndex).padStart(3, "0")}`;
       const textOverride = LINE_TEXT_OVERRIDES[lineId] || {};
       const original = cleanLineCell(contentShow, originalRaw, "original");
@@ -3656,7 +3912,7 @@ function parseEnglishChineseSingleColumnMarkdown(file, show) {
   return finalizeParsedSongs(contentShow, show, songs);
 }
 
-function stripGermanTripleTranslationSpeaker(value, sourceSpeaker, field) {
+function stripGermanTripleTranslationSpeaker(value, sourceSpeaker, field, show) {
   const clean = cleanCell(value);
   if (!sourceSpeaker) return clean;
   const bracketed = clean.match(/^\s*(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)\s*[:：]\s*(.+)$/u);
@@ -3664,10 +3920,183 @@ function stripGermanTripleTranslationSpeaker(value, sourceSpeaker, field) {
   const labelled = clean.match(/^([^:：]{1,24})[:：]\s*(.+)$/u);
   if (!labelled) return clean;
   const label = labelled[1].trim();
-  const parsed = extractTranslationSpeaker(clean);
+  const parsed = extractTranslationSpeaker(clean, show);
   const chineseRole = /(?:先生|女士|小姐|夫人|伯爵|公爵|男爵|王子|公主|国王|女王|妈妈|爸爸|合唱|众)$/u.test(label);
   if (parsed.speaker || (field === "zh" && chineseRole)) return labelled[2].trim();
   return clean;
+}
+
+function parseLoosePairedEnglishMarkdown(file, show) {
+  const text = fs.readFileSync(file, "utf8");
+  const rows = text.split(/\r?\n/);
+  const songs = [];
+  let current = null;
+  let lyricRows = [];
+  let inLyricTable = false;
+  let activeSpeaker = "";
+
+  const flushSong = () => {
+    if (!current) return;
+    const trailingPatterns = show.looseTrailingNotePatterns?.[current.order] || [];
+    let sourceRows = lyricRows.filter((row) => !trailingPatterns.some((pattern) => pattern.test(row.text)));
+    const leadingRowsToSkip = Number(show.looseSkipLeadingRows?.[current.order] || 0);
+    sourceRows = sourceRows.slice(leadingRowsToSkip);
+
+    const instrumentalRow = sourceRows.find((row) => isInstrumentalMarkerText(row.text));
+    if (instrumentalRow) {
+      current.lines.push({
+        id: `${show.slug}-${String(current.order).padStart(2, "0")}-001`,
+        lineIndex: 1,
+        speaker: "",
+        original: instrumentalRow.text,
+        ipa: "",
+        zh: instrumentalRow.text,
+        en: "",
+        note: "",
+      });
+    } else {
+      const filteredRows = [];
+      sourceRows.forEach((row) => {
+        const speaker = looseStandaloneSpeaker(row.text, show);
+        if (speaker) {
+          activeSpeaker = speaker;
+          return;
+        }
+        filteredRows.push(row);
+      });
+
+      if ((show.looseSingleLanguageSongOrders || []).includes(current.order)) {
+        filteredRows.forEach((row) => {
+          const original = cleanLineCell(show, row.text, "original");
+          if (!original) return;
+          const lineIndex = current.lines.length + 1;
+          const lineId = `${show.slug}-${String(current.order).padStart(2, "0")}-${String(lineIndex).padStart(3, "0")}`;
+          current.lines.push({
+            id: lineId,
+            lineIndex,
+            speaker: activeSpeaker,
+            original,
+            ipa: existingLineIpa(show, lineId, original) || ipaFor(original, show.voice),
+            zh: "",
+            en: "",
+            note: "",
+          });
+        });
+      } else {
+        const mergeLeadingRows = (show.looseMergeLeadingSourceRows || []).includes(current.order);
+        if (mergeLeadingRows && filteredRows.length >= 3
+          && !/\p{Script=Han}/u.test(filteredRows[0].text)
+          && !/\p{Script=Han}/u.test(filteredRows[1].text)
+          && /\p{Script=Han}/u.test(filteredRows[2].text)) {
+          filteredRows.splice(0, 2, {
+            ...filteredRows[0],
+            text: `${filteredRows[0].text} ${filteredRows[1].text}`,
+          });
+        }
+        if (filteredRows.length % 2 !== 0) {
+          throw new Error(`${show.slug} track ${current.order} has an odd loose paired lyric row count (${filteredRows.length})`);
+        }
+        for (let index = 0; index < filteredRows.length; index += 2) {
+          const originalRaw = cleanCell(filteredRows[index].text);
+          const translationRaw = cleanCell(filteredRows[index + 1].text);
+          if (!originalRaw || !translationRaw) continue;
+          const speakerCell = extractSpeaker(originalRaw, show);
+          if (isEmbeddedSourceRoleOnlyLine(speakerCell, translationRaw, show)) continue;
+          const translationSpeaker = speakerCell.speaker
+            ? { speaker: "", text: "" }
+            : extractTranslationSpeaker(translationRaw, show);
+          const speaker = speakerCell.speaker || translationSpeaker.speaker || activeSpeaker;
+          const original = cleanLineCell(show, speakerCell.text, "original");
+          const zh = cleanLineCell(show, translationSpeaker.speaker
+            ? translationSpeaker.text
+            : stripTranslationSpeaker(translationRaw, speaker, show), "zh");
+          if (!original || !zh) continue;
+          const lineIndex = current.lines.length + 1;
+          const lineId = `${show.slug}-${String(current.order).padStart(2, "0")}-${String(lineIndex).padStart(3, "0")}`;
+          current.lines.push({
+            id: lineId,
+            lineIndex,
+            speaker,
+            original,
+            ipa: existingLineIpa(show, lineId, original) || ipaFor(original, show.voice),
+            zh,
+            en: "",
+            note: "",
+          });
+        }
+      }
+    }
+    current.sourceTitle = cleanConfiguredSongTitle(show, current.sourceTitle || current.title);
+    current.title = current.sourceTitle;
+    activeSpeaker = "";
+  };
+
+  rows.forEach((raw) => {
+    const heading = raw.match(/^##\s+(\d+)\.\s+(.+?)\s*$/);
+    if (heading) {
+      flushSong();
+      const headingTitle = cleanCell(heading[2]);
+      current = {
+        order: Number(heading[1]),
+        id: slugify(`${heading[1]}-${headingTitle}`),
+        sourceTitle: headingTitle,
+        title: headingTitle,
+        titleZh: "",
+        lines: [],
+      };
+      songs.push(current);
+      lyricRows = [];
+      inLyricTable = false;
+      activeSpeaker = "";
+      return;
+    }
+    if (!current) return;
+
+    const sourceTitle = raw.match(/^[-–—]\s*原歌名：(.+?)\s*$/u);
+    if (sourceTitle) {
+      current.sourceTitle = cleanCell(sourceTitle[1]);
+      return;
+    }
+    const translatedTitle = raw.match(/^[-–—]\s*中文歌名：(.+?)\s*$/u);
+    if (translatedTitle) {
+      const titleZh = cleanCell(translatedTitle[1]);
+      current.titleZh = titleZh === "未提供" ? "" : titleZh;
+      return;
+    }
+    const pageInclusion = raw.match(/^[-–—]\s*网页收录：(.+?)\s*$/u);
+    if (pageInclusion) {
+      current.excludeFromPage = /^(?:否|不|no|false)/iu.test(pageInclusion[1].trim());
+      return;
+    }
+    if (/^\|\s*歌词\s*\|$/u.test(raw)) {
+      inLyricTable = true;
+      return;
+    }
+    if (!inLyricTable || /^\|\s*---\s*\|$/u.test(raw)) return;
+    const lyricCell = raw.match(/^\|\s?(.*?)\s?\|\s*$/u);
+    if (lyricCell) {
+      lyricRows.push({
+        text: cleanCell(lyricCell[1].replace(/\\\|/g, "|")),
+        sourceLineIndex: lyricRows.length + 1,
+      });
+    }
+  });
+  flushSong();
+
+  return finalizeParsedSongs(show, show, songs);
+}
+
+function looseStandaloneSpeaker(value, show) {
+  const clean = cleanCell(value);
+  const staged = clean.match(/^\((.*)\s*[-–—]\s*(?:spoken|sung)\)$/iu);
+  if (staged) return staged[1].trim().replace(/\s+/gu, " ");
+  const bracketed = clean.match(/^\((.*)\)$/u);
+  if (!bracketed) return "";
+  const candidate = bracketed[1].trim().replace(/\s+/gu, " ");
+  const configured = show.looseSpeakerMarkers || [];
+  return configured.some((label) => label.replace(/\s+/gu, " ").toLocaleLowerCase() === candidate.toLocaleLowerCase())
+    ? candidate
+    : "";
 }
 
 function parsePairedEnglishMarkdown(file, show) {
@@ -3689,17 +4118,18 @@ function parsePairedEnglishMarkdown(file, show) {
       const translationRaw = cleanCell(lyricRows[index + 1]);
       if (!originalRaw || !translationRaw) continue;
       if (/^(?:[-—_.…]+|instrumental)$/iu.test(originalRaw)) continue;
-      const speakerCell = extractSpeaker(originalRaw);
+      if (isTranslationRoleOnly(translationRaw, show)) continue;
+      const speakerCell = extractSpeaker(originalRaw, show);
       if (!speakerCell.text) {
         pendingSpeaker = speakerCell.speaker || pendingSpeaker;
         continue;
       }
       const translationSpeaker = speakerCell.speaker
         ? { speaker: "", text: "" }
-        : extractTranslationSpeaker(translationRaw);
+        : extractTranslationSpeaker(translationRaw, show);
       const speaker = speakerCell.speaker || translationSpeaker.speaker || pendingSpeaker;
       const original = cleanLineCell(show, speakerCell.text, "original");
-      const zh = cleanLineCell(show, translationSpeaker.speaker ? translationSpeaker.text : stripTranslationSpeaker(translationRaw, speaker), "zh");
+      const zh = cleanLineCell(show, translationSpeaker.speaker ? translationSpeaker.text : stripTranslationSpeaker(translationRaw, speaker, show), "zh");
       if (!original || !zh) continue;
       const lineIndex = index / 2 + 1;
       const lineId = `${show.slug}-${String(current.order).padStart(2, "0")}-${String(lineIndex).padStart(3, "0")}`;
@@ -3828,9 +4258,10 @@ function finalizeParsedSongs(contentShow, show, songs) {
         ...displaySong,
         titleZh: stripSongTitleVersionSuffix(translatedTitle),
         sourceOrder: song.order,
-        displayOrder: index + 1,
+        displayOrder: show.displayOrderOverrides?.[song.order] || index + 1,
       };
-    });
+    })
+    .sort((left, right) => left.displayOrder - right.displayOrder);
 
   return normalizeSongsForShow(contentShow, renderedSongs);
 }
@@ -3929,7 +4360,10 @@ function isSafeReviewedLineMerge(members) {
   if (vocalizationOnly) return true;
   if (members.length > MAX_REVIEWED_LINE_MERGE_ROWS) return false;
   const wordCount = original.match(/[\p{L}\p{N}]+(?:[’'’-][\p{L}\p{N}]+)*/gu)?.length || 0;
-  if (!wordCount || wordCount > MAX_REVIEWED_LINE_MERGE_WORDS) return false;
+  const wordLimit = REVIEWED_LONG_LINE_MERGE_START_IDS.has(members[0]?.id)
+    ? MAX_REVIEWED_LINE_MERGE_WORDS + 1
+    : MAX_REVIEWED_LINE_MERGE_WORDS;
+  if (!wordCount || wordCount > wordLimit) return false;
   return !/[.!?…]+[”’'"』」）)\]]*\s+[“‘'"（(【\[]*[\p{Lu}]/u.test(original);
 }
 
@@ -4030,7 +4464,7 @@ function normalizeGeneratedSongLines(show, lines, allowLongLineSplit = true) {
         id: count === 1 ? line.id : `${line.id}-${String.fromCharCode(97 + index)}`,
         original: normalizedOriginal,
         ipa: count === 1
-          ? existingLineIpa(show, line.id, normalizedOriginal) || line.ipa || ipaFor(normalizedOriginal, show.voice)
+          ? existingLineIpa(show, line.id, normalizedOriginal, line.ipa) || line.ipa || ipaFor(normalizedOriginal, show.voice)
           : ipaFor(normalizedOriginal, show.voice),
         en: normalizeGeneratedLineText(show, english[index] || line.en, "en"),
         zh: normalizeGeneratedLineText(show, chinese[index] || line.zh, "zh"),
@@ -4364,6 +4798,95 @@ const KNOWN_CHINESE_TRANSLATION_ROLES = new Set([
   "小王子", "飞行员", "大人们", "玫瑰花们", "狐狸", "蛇", "仙人掌们", "合", "回声",
   "地理学家", "国王", "酒鬼", "玫瑰", "商人", "扳道工", "卖药丸的商人", "药丸商人",
 ]);
+const SHOW_CHINESE_TRANSLATION_SPEAKERS = {
+  "chicago": new Set(["双方，语音"]),
+  "cyrano-de-bergerac": new Set(["全体"]),
+  "elisabeth-das-musical": new Set([
+    "一粒沙", "死者", "索菲", "弗兰茨", "马科斯", "鲁道夫", "索菲&路德维卡", "马克斯", "弗朗茨·约瑟夫", "其他死者", "青年鲁道夫", "幼年鲁道夫",
+    "弗朗茨·约瑟夫&鲁道夫&马克斯&索菲&路德维卡", "所有死者", "死神", "皇太后", "皇帝", "皇太后索菲",
+    "路德维卡", "海伦娜", "路德维卡公爵夫人", "伊丽莎白叔父", "伊丽莎白的叔父", "叔父和舅父们", "一对夫妇",
+    "其他亲戚", "其他的亲戚", "路德维卡的侄女", "路德维卡的妹夫", "一个远亲", "一个亲戚", "刚才那对夫妇",
+    "舅父们", "那对夫妇", "家庭教师", "格林纳伯爵", "格拉夫·格林讷", "犯人母亲", "施瓦岑贝柯侯爵",
+    "马科斯公爵", "马科斯&索菲", "史蒂凡·卡罗伊伯爵", "埃勒梅尔·巴卡尼伯爵", "鲁契尼", "教授", "学生",
+    "艺术家", "记者", "流浪艺人", "流浪艺人2", "诗人", "鲁&诗人", "客人1", "客人2", "教授&学生",
+    "流浪艺人&诗人", "学生&教授", "宫女", "宫女们", "女人们", "男人们", "众人", "所有人", "病人们",
+    "病院相关管理人员", "女疯子", "女疯子&伊丽莎白", "伯爵夫人", "伯爵夫人&宫女", "伯爵", "侯爵", "医生",
+    "医生（死神）", "美发师", "红衣大主教劳施尔", "肯佩恩男爵", "劳施尔", "法官", "死亡", "伊丽莎白",
+    "伊丽莎白姑母", "伊丽莎白的姑母", "久洛·安德拉希伯爵", "格林讷伯爵", "男爵", "学生2", "随从", "路德维拉公爵夫人", "伊丽莎白&马科斯", "一粒沙&死神&弗兰茨", "索菲&宫女",
+  ]),
+  "dear-evan-hansen": new Set(["杰瑞德", "丹与谢伊"]),
+  "don-juan": new Set(["唐卡洛斯", "唐·卡洛斯", "埃尔维拉和拉斐尔"]),
+  "dracula-das-musical": new Set([
+    "露西&米娜", "露西 & 米娜", "昆西&杰克&阿瑟", "昆西 & 杰克 & 阿瑟", "德古拉&米娜", "德古拉 & 米娜",
+    "德古拉&米娜&乔纳森", "德古拉 & 米娜 & 乔纳森", "德古拉（米娅）",
+  ]),
+  "la-legende-du-roi-arthur": new Set(["Cam ＆Flo", "Cam＆Flo", "Zaho ＆发辫", "Zaho＆发辫", "Cam ＆Zaho", "Cam＆Zaho"]),
+  "legally-blonde": new Set(["女士", "卡拉汉"]),
+  "love-never-dies": new Set([
+    "爵", "桶", "一起", "舞台工作者1", "舞台工作者2", "拉乌尔", "拉乌尔/魅影", "魅影", "舞台工作者",
+    "姬莉夫人", "姬莉夫人/拉乌尔/魅影", "梅格",
+  ]),
+  "matilda": new Set(["特朗奇布尔女士", "孩子，念白"]),
+  "mozart-das-musical": new Set([
+    "利奥波德", "科洛雷多", "钦岑多夫伯爵夫人", "阿尔科伯爵", "南内尔", "康斯坦丝", "侍从官", "康斯坦茨",
+    "阿尔科", "众人", "安娜", "男爵夫人", "索菲/约瑟芬", "采齐莉娅", "康斯坦茨＆沃尔夫冈", "萨列里",
+    "阿洛伊西娅", "利奥波德 ＆ 沃尔夫冈", "卡尔·约瑟夫·阿尔克伯爵", "娜奈尔", "安东尼奥·萨列里", "客人们",
+    "沃德斯塔腾男爵夫人", "迈斯莫博士", "采齐莉娅/约瑟芬", "采齐莉娅/阿洛伊西娅/约瑟芬", "索菲",
+  ]),
+  "phantom-of-the-opera": new Set([
+    "卡洛塔", "女声", "爵", "桶", "一起", "舞台工作者1", "舞台工作者2", "拉乌尔", "拉乌尔/魅影", "魅影",
+    "舞台工作者", "姬莉夫人", "姬莉夫人/拉乌尔/魅影", "梅格",
+  ]),
+  "rent": new Set(["马", "乔安妮", "马克", "马克和和声", "罗杰和咪咪", "除了本尼之外的所有人"]),
+  "rebecca-das-musical": new Set(["“我”", "马克西姆 （对 \"我\"）", "马克西姆 (对 \"我\")"]),
+  "starmania": new Set([
+    "玛丽", "玛丽·珍", "顾客们", "女播报员", "女仆", "约翰尼", "萨迪亚", "助理", "斯黛拉", "泽若", "泽", "助", "斯",
+    "仆", "摄影师", "女播音员", "罗杰", "克丽丝达", "父", "母", "强尼", "马拉大师的教徒们",
+  ]),
+  "sunset-boulevard": new Set([
+    "全部", "曼弗雷德", "阿蒂", "女孩", "玛丽", "男孩", "全体", "推销员", "谢尔德雷克", "两者", "乔安娜", "第 1 组",
+    "第 2 组", "第一个财务人", "萨米", "两人", "演员", "第一个财务人员", "第一财务员", "第二个财务人", "第二财务员",
+    "迈伦", "乔，画外音", "乔发言", "凯瑟琳", "分析者", "医生", "占星家", "售货员", "四人", "年轻人", "所有",
+    "按摩师 1", "按摩师 2", "推销员 3", "推销员 4", "推销员 5", "推销员 6", "推销员 7", "销售员", "销售员 1", "销售员 2",
+    "美容师 1", "美容师 2", "美容师 3", "美容师2", "记者", "酒保", "秘书", "琼斯", "我会说", "第二个财务人员",
+  ]),
+  "suffs": new Set(["爱丽丝", "Ruza/Doris/Alice"]),
+  "tanz-der-vampire": new Set([
+    "小阿，沙拉", "玛格达，瑞贝卡，沙葛", "库科（对莎拉）", "沙葛（职业假笑）", "教授（开心）",
+    "凡·库若洛克对阿尔弗雷德喊道",
+  ]),
+  "tick-tick-boom": new Set(["乔乔&迈克尔", "迈克尔&苏珊"]),
+  "wicked": new Set(["警卫", "所有人"]),
+};
+const NDDP_SOURCE_SPEAKERS = new Set([
+  "quasimodo", "frollo", "phoebus", "phœbus", "pheobus", "esmeralda", "esméralda",
+  "gringoire", "clopin", "fleur-de-lys", "ensemble", "esmeralda&fleur-de-lys",
+  "esméralda&fleur-de-lys", "frollo et gringoire", "frollo et la foule",
+]);
+const NDDP_TRANSLATION_SPEAKERS = new Map([
+  ["卡西莫多", "Quasimodo"],
+  ["孚罗洛", "Frollo"],
+  ["弗罗洛", "Frollo"],
+  ["菲比斯", "Phoebus"],
+  ["葛林果", "Gringoire"],
+  ["百合", "Fleur-de-Lys"],
+  ["克洛潘", "Clopin"],
+  ["爱斯美拉达", "Esméralda"],
+  ["艾斯美拉达", "Esméralda"],
+  ["艾斯梅拉达", "Esméralda"],
+  ["艾丝美拉达", "Esméralda"],
+  ["诗人", "Gringoire"],
+  ["主教", "Frollo"],
+  ["合", "Ensemble"],
+  ["孚罗洛和众人", "Frollo / la foule"],
+  ["弗罗洛和葛林果", "Frollo / Gringoire"],
+]);
+const NDDP_ENGLISH_TRANSLATION_SPEAKERS = new Map([
+  ["frollo and gringoire", "Frollo / Gringoire"],
+  ["frollo and the crowd", "Frollo / la foule"],
+  ["frollo and crowd", "Frollo / la foule"],
+  ["together", "Ensemble"],
+]);
 const KNOWN_SOURCE_ROLE_LABELS = new Set([
   "chor (wolfgang)",
   "chœur",
@@ -4371,8 +4894,82 @@ const KNOWN_SOURCE_ROLE_LABELS = new Set([
   "don carlos",
   "wolfgang (chor)",
 ]);
+const SHOW_STANDALONE_SOURCE_ROLE_LABELS = {
+  "chicago": new Set(["velma and matron"]),
+  "dear-evan-hansen": new Set(["dan + shay"]),
+  "don-juan": new Set(["elvira & raphaël"]),
+  "dracula-das-musical": new Set([
+    "lucy & mina",
+    "dracula & mina",
+    "dracula & mina & jonathan",
+    "quincy, jack und arthur",
+    "dracula (mina)",
+  ]),
+  "legally-blonde": new Set(["lady", "calahan"]),
+  "les-miserables": new Set([
+    "1st convict",
+    "2nd convict",
+    "3rd convict",
+    "4th convict",
+    "5th convict",
+    "army officer",
+    "army officer (offstage)",
+    "all",
+    "babet",
+    "bamatabois",
+    "beggars at the feast",
+    "bishop",
+    "brujon",
+    "claquesous",
+    "combeferre",
+    "chorus",
+    "constable 1",
+    "constable 2",
+    "cosette",
+    "courfeyrac",
+    "enjolras",
+    "enjoras",
+    "eponine",
+    "eponine (to herself)",
+    "employer",
+    "fantine",
+    "feuilly",
+    "gavroche",
+    "grantaire",
+    "javert",
+    "jean prouvaire",
+    "joly",
+    "laborer",
+    "lesgles",
+    "m. & mme. thenardier",
+    "marius",
+    "marius & eponine",
+    "mme. thenardier",
+    "montparnasse",
+    "prouvaire",
+    "sentry",
+    "students",
+    "students 1",
+    "students 2",
+    "thenardier",
+    "thenardier & drinkers",
+    "valjean",
+    "valjean & fantine",
+  ]),
+  "starmania": new Set(["la femme de chambre"]),
+  "suffs": new Set([
+    "wilson/doctor white & major sylvester",
+    "alice & nwp suffs",
+  ]),
+  "tanz-der-vampire": new Set([
+    "von krolocks stimme (zu alfred)",
+    "abronsius (*freu*)",
+  ]),
+  "sunset-boulevard": new Set(["joan of arc"]),
+};
 const KNOWN_LYRIC_COLON_LABELS = new Set([
   "die große redoute",
+  "das wunder mozart",
 ]);
 
 const SPEAKER_IPA_PREFIXES = {
@@ -4383,13 +4980,17 @@ const SPEAKER_IPA_PREFIXES = {
     gringoire: "ɡʁɛ̃ɡwaʁ",
     phoebus: "febys",
     clopin: "klɔpɛ̃",
+    "frollo / gringoire": "fʁɔlo e ɡʁɛ̃ɡwaʁ",
+    "frollo / la foule": "fʁɔlo e la ful",
+    "esmeralda / fleur-de-lys": "ɛsmeʁalda e flœʁdəlis",
+    "fleur-de-lys": "flœʁdəlis",
   },
 };
 
-function isStandaloneBracketedSpeakerRow(original, row) {
+function isStandaloneBracketedSpeakerRow(original, row, show) {
   const label = cleanCell(original).match(/^\s*(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)\s*$/u)?.slice(1).find(Boolean)?.trim() || "";
-  if (!label || /[!?！？]/u.test(label) || (!SPEAKER_HINT.test(label) && !isKnownSourceRole(label))) return false;
-  if (isKnownSourceRole(label)) return true;
+  if (!label || /[!?！？]/u.test(label) || (!SPEAKER_HINT.test(label) && !isKnownSourceRole(label, show))) return false;
+  if (isKnownSourceRole(label, show)) return true;
   const parallelTranslations = [row["中文翻译（校订）"], row["English Translation"]]
     .filter((value) => cleanCell(value));
   return parallelTranslations.length > 0
@@ -4405,26 +5006,120 @@ function normalizeSourceRoleLabel(value) {
     .toLocaleLowerCase();
 }
 
-function isKnownSourceRole(value) {
-  return KNOWN_SOURCE_ROLE_LABELS.has(normalizeSourceRoleLabel(value));
+function normalizeNddpSpeakerLabel(value) {
+  return normalizeSourceRoleLabel(value)
+    .replace(/^\s*[（(]\s*/u, "")
+    .replace(/\s*[）)]\s*$/u, "")
+    .replace(/\s*&\s*/gu, "&")
+    .replace(/\s+/gu, " ")
+    .trim();
 }
 
-function extractSpeaker(value) {
+function isNddpSpeakerLabel(value) {
+  return NDDP_SOURCE_SPEAKERS.has(normalizeNddpSpeakerLabel(value));
+}
+
+function normalizeSpeakerForShow(show, value) {
+  const clean = cleanCell(value);
+  if (show?.slug !== "notre-dame-de-paris" || !clean) return clean;
+  const normalized = normalizeNddpSpeakerLabel(clean);
+  const canonical = new Map([
+    ["quasimodo", "Quasimodo"],
+    ["frollo", "Frollo"],
+    ["phoebus", "Phoebus"],
+    ["phœbus", "Phoebus"],
+    ["pheobus", "Phoebus"],
+    ["esmeralda", "Esméralda"],
+    ["esméralda", "Esméralda"],
+    ["gringoire", "Gringoire"],
+    ["clopin", "Clopin"],
+    ["fleur-de-lys", "Fleur-de-Lys"],
+    ["ensemble", "Ensemble"],
+    ["esmeralda&fleur-de-lys", "Esméralda / Fleur-de-Lys"],
+    ["esméralda&fleur-de-lys", "Esméralda / Fleur-de-Lys"],
+    ["frollo et gringoire", "Frollo / Gringoire"],
+    ["frollo et la foule", "Frollo / la foule"],
+  ]).get(normalized);
+  return canonical || clean;
+}
+
+function normalizeNddpTranslationSpeaker(value, language, show) {
+  if (show?.slug !== "notre-dame-de-paris") return "";
+  const normalized = cleanCell(value).toLocaleLowerCase();
+  if (language === "zh") return NDDP_TRANSLATION_SPEAKERS.get(cleanCell(value)) || "";
+  if (language === "en") return NDDP_ENGLISH_TRANSLATION_SPEAKERS.get(normalized) || "";
+  return "";
+}
+
+function isKnownSourceRole(value, show) {
+  const normalized = normalizeSourceRoleLabel(value);
+  return KNOWN_SOURCE_ROLE_LABELS.has(normalized)
+    || SHOW_STANDALONE_SOURCE_ROLE_LABELS[show?.slug]?.has(normalized);
+}
+
+function normalizeChineseTranslationRoleLabel(value) {
+  return cleanCell(value)
+    .replace(/^[.。·、]\s*(?=[\p{Script=Han}])/u, "")
+    .replace(/\s*&\s*/gu, "&")
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
+function isKnownChineseTranslationRole(value, show) {
+  const label = normalizeChineseTranslationRoleLabel(value);
+  if (!label) return false;
+  if (KNOWN_CHINESE_TRANSLATION_ROLES.has(label)) return true;
+  const configured = SHOW_CHINESE_TRANSLATION_SPEAKERS[show?.slug];
+  return configured ? [...configured].some((role) => normalizeChineseTranslationRoleLabel(role) === label) : false;
+}
+
+function isTranslationRoleOnly(value, show) {
+  const clean = cleanCell(value);
+  const direct = clean.match(/^([^:：]{1,48})[:：]\s*$/u);
+  const bracketed = clean.match(/^\s*(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)\s*[:：]\s*$/u);
+  const wrapped = clean.match(/^\s*[（(]\s*([^()（）:：]{1,48})[:：]\s*[）)]\s*$/u);
+  const label = direct?.[1] || bracketed?.[1] || bracketed?.[2] || wrapped?.[1] || "";
+  return Boolean(label) && isKnownChineseTranslationRole(label, show);
+}
+
+function isEmbeddedSourceRoleOnlyLine(speakerCell, translation, show) {
+  const nestedRole = cleanCell(speakerCell.text).match(/^([^:：]{1,48})[:：]\s*$/u)?.[1] || "";
+  return Boolean(nestedRole)
+    && isKnownSourceRole(nestedRole, show)
+    && isTranslationRoleOnly(translation, show);
+}
+
+function cleanInlineTranslationSpeakers(value, show) {
+  const clean = cleanCell(value);
+  if (show?.slug !== "suffs") return clean;
+  return clean.replace(/\b(?:Inez|Alice)\s*[:：]\s*/gu, "");
+}
+
+function extractSpeaker(value, show) {
   const clean = cleanCell(value);
   if (clean === "_Die") return { speaker: "", text: "" };
+  const tildeRole = clean.match(/^~([^~]{1,48})~$/u);
+  if (tildeRole) return { speaker: normalizeSpeakerForShow(show, tildeRole[1]), text: "" };
+  const nddpParenthetical = clean.match(/^\s*[（(]\s*([^()（）]{1,48}?)\s*[）)]\s*(.*)$/u);
+  if (nddpParenthetical && show?.slug === "notre-dame-de-paris" && isNddpSpeakerLabel(nddpParenthetical[1])) {
+    return {
+      speaker: normalizeSpeakerForShow(show, nddpParenthetical[1]),
+      text: nddpParenthetical[2].trim(),
+    };
+  }
   const inlineRoles = [...clean.matchAll(/(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)/gu)]
     .map((match) => (match[1] || match[2] || "").trim())
     .filter(Boolean);
   if (inlineRoles.length > 1 && inlineRoles.every((role) => SPEAKER_HINT.test(role))) {
     return {
-      speaker: [...new Set(inlineRoles)].join(" / "),
+      speaker: normalizeSpeakerForShow(show, [...new Set(inlineRoles)].join(" / ")),
       text: clean.replace(/(?:\[[^\]]{1,48}\]|【[^】]{1,48}】)\s*/gu, " ").replace(/\s+/gu, " ").trim(),
     };
   }
   const bracketed = clean.match(/^\s*(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)\s*[:：]?\s*(.*)$/u);
   if (bracketed) {
     return {
-      speaker: (bracketed[1] || bracketed[2] || "").replace(/[:：]\s*$/u, "").trim(),
+      speaker: normalizeSpeakerForShow(show, (bracketed[1] || bracketed[2] || "").replace(/[:：]\s*$/u, "").trim()),
       text: (bracketed[3] || "").trim(),
     };
   }
@@ -4447,13 +5142,14 @@ function extractSpeaker(value) {
   const titleCase = label.split(/\s+/u).every((word) => /^[A-Z][\p{L}'’.-]*$/u.test(word));
   const slashSeparatedTitleCase = label.split("/").length > 1
     && label.split("/").every((role) => role.trim().split(/\s+/u).every((word) => /^[A-Z][\p{L}'’.-]*$/u.test(word)));
-  if (!upper && !titleCase && !slashSeparatedTitleCase && !SPEAKER_HINT.test(label) && !isKnownSourceRole(label)) {
+  if (!upper && !titleCase && !slashSeparatedTitleCase && !SPEAKER_HINT.test(label) && !isKnownSourceRole(label, show)
+    && !(show?.slug === "notre-dame-de-paris" && isNddpSpeakerLabel(label))) {
     return { speaker: "", text: clean };
   }
-  return { speaker: label, text: labelled[2].trim() };
+  return { speaker: normalizeSpeakerForShow(show, label), text: labelled[2].trim() };
 }
 
-function extractGermanTripleSpeaker(value) {
+function extractGermanTripleSpeaker(value, show) {
   const clean = cleanCell(value);
   const bracketed = clean.match(/^\s*(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)\s*[:：]\s*(.+)$/u);
   if (bracketed) {
@@ -4466,7 +5162,7 @@ function extractGermanTripleSpeaker(value) {
   const labelled = clean.match(/^([^:：]{1,48})[:：]\s*(.*)$/u);
   if (!labelled || !labelled[2].trim()) return { speaker: "", text: clean };
   const label = labelled[1].trim();
-  if (/[!?！？,，;]/u.test(label)) return { speaker: "", text: clean };
+  if (/[!?！？,，;]/u.test(label) && !isKnownSourceRole(label, show)) return { speaker: "", text: clean };
 
   const words = label.split(/\s+/u);
   const upper = label === label.toLocaleUpperCase() && /[A-ZÄÖÜẞ]/u.test(label);
@@ -4476,7 +5172,7 @@ function extractGermanTripleSpeaker(value) {
       const roleWords = role.trim().split(/\s+/u);
       return roleWords.length <= 3 && roleWords.every((word) => /^(?:[A-ZÄÖÜẞ][\p{L}'’.-]*|der|die|das|de|del|den|des|von|van|und)$/u.test(word));
     });
-  if (!upper && !titleCase && !slashSeparated && !SPEAKER_HINT.test(label)) {
+  if (!upper && !titleCase && !slashSeparated && !SPEAKER_HINT.test(label) && !isKnownSourceRole(label, show)) {
     return { speaker: "", text: clean };
   }
   return { speaker: label, text: labelled[2].trim() };
@@ -4493,22 +5189,53 @@ function extractNoteSpeaker(value) {
   return match ? match[1].trim() : "";
 }
 
-function extractTranslationSpeaker(value) {
+function extractTranslationSpeaker(value, show = null) {
   const clean = cleanCell(value);
-  const match = clean.match(/^([^:：]{1,24})[:：]\s*(.*)$/u);
+  const source = show?.slug === "notre-dame-de-paris" ? stripOuterBrackets(clean) : clean;
+  const bracketedLabel = source.match(/^\s*(?:\[([^\]]{1,48})\]|【([^】]{1,48})】)\s*[:：]\s*(.*?)\s*$/u);
+  if (bracketedLabel && isKnownChineseTranslationRole(bracketedLabel[1] || bracketedLabel[2], show)) {
+    return {
+      speaker: normalizeChineseTranslationRoleLabel(bracketedLabel[1] || bracketedLabel[2]),
+      text: cleanInlineTranslationSpeakers(bracketedLabel[3], show),
+    };
+  }
+  const wrappedLabel = source.match(/^\s*[（(]\s*([^()（）:：]{1,48})[:：]\s*(.*?)\s*[）)]\s*$/u);
+  if (wrappedLabel && isKnownChineseTranslationRole(wrappedLabel[1], show)) {
+    return {
+      speaker: normalizeChineseTranslationRoleLabel(wrappedLabel[1]),
+      text: cleanInlineTranslationSpeakers(wrappedLabel[2], show),
+    };
+  }
+  const parenthetical = source.match(/^\s*[（(]\s*([^()（）]{1,48}?)\s*[）)]\s*(.*)$/u);
+  const nddpParentheticalSpeaker = show?.slug === "notre-dame-de-paris"
+    ? normalizeNddpTranslationSpeaker(parenthetical?.[1] || "", "zh", show)
+      || normalizeNddpTranslationSpeaker(parenthetical?.[1] || "", "en", show)
+    : "";
+  if (parenthetical && nddpParentheticalSpeaker) {
+    return {
+      speaker: nddpParentheticalSpeaker,
+      text: cleanInlineTranslationSpeakers(parenthetical[2], show),
+    };
+  }
+  const match = source.match(/^([^:：]{1,24})[:：]\s*(.*)$/u);
   if (!match) return { speaker: "", text: clean };
   if (!match[2].trim()) return { speaker: "", text: clean };
   const speaker = match[1].trim();
-  const knownChineseRole = KNOWN_CHINESE_TRANSLATION_ROLES.has(speaker);
+  const normalizedNddpSpeaker = normalizeNddpTranslationSpeaker(speaker, "zh", show)
+    || normalizeNddpTranslationSpeaker(speaker, "en", show);
+  const knownChineseRole = isKnownChineseTranslationRole(speaker, show) || Boolean(normalizedNddpSpeaker);
   const upper = speaker === speaker.toLocaleUpperCase() && /[A-Z]/u.test(speaker);
   const titleCase = speaker.split(/\s+/u).every((word) => /^[A-Z][\p{L}'’.-]*$/u.test(word));
   if (!knownChineseRole && !upper && !titleCase && !SPEAKER_HINT.test(speaker)) {
     return { speaker: "", text: clean };
   }
-  return { speaker, text: match[2].trim() };
+  return {
+    speaker: normalizedNddpSpeaker || normalizeChineseTranslationRoleLabel(speaker),
+    text: cleanInlineTranslationSpeakers(match[2], show),
+  };
 }
 
-function stripTranslationSpeaker(value, sourceSpeaker) {
+function stripTranslationSpeaker(value, sourceSpeaker, show = null) {
   const clean = cleanCell(value);
   if (!sourceSpeaker) return clean;
   if (sourceSpeaker.includes(" / ")) {
@@ -4520,7 +5247,7 @@ function stripTranslationSpeaker(value, sourceSpeaker) {
   const bracketed = clean.match(/^\s*(?:\[([^\]]{1,500})\]|【([^】]{1,500})】)\s*$/u);
   if (bracketed) {
     const text = (bracketed[1] || bracketed[2] || "").trim();
-    const parsed = extractTranslationSpeaker(text);
+    const parsed = extractTranslationSpeaker(text, show);
     // An aligned bracketed translation can contain the whole lyric, not only a
     // role label. Preserve that text unless the source speaker confirms a
     // leading translation label to remove.
@@ -4528,7 +5255,7 @@ function stripTranslationSpeaker(value, sourceSpeaker) {
     const labelled = text.match(/^[^:：]{1,24}[:：]\s*(.+)$/u);
     return labelled ? labelled[1].trim() : text;
   }
-  const parsed = extractTranslationSpeaker(clean);
+  const parsed = extractTranslationSpeaker(clean, show);
   return parsed.speaker ? parsed.text : clean;
 }
 
@@ -4563,7 +5290,6 @@ function cleanLineCell(show, value, field) {
       [/champs de blés pillés/gu, "champs de blé pillés"],
       [/nos priers/gu, "nos prières"],
       [/d'un main de fer/gu, "d'une main de fer"],
-      [/quand on la serre/gu, "quand on la sert"],
       [/\bA mains nues\b/gu, "À mains nues"],
       [/\bdevont\b/gu, "devons"],
       [/l'injustice qu'en finit pas/gu, "l'injustice qui n'en finit pas"],
@@ -5131,10 +5857,12 @@ function renderIndex(show) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
     <link rel="preload" href="songs-initial.js" as="script" />
+    <script src="../shared/display-settings-preload.js?v=${SHARED_UI_ASSET_VERSION}" data-musical-page="${escapeHtml(show.slug)}" data-musical-light-profile="${escapeHtml(deriveLightProfile(show).join("|"))}"></script>
     <title>${escapeHtml(show.title)}｜${escapeHtml(show.titleZh)}歌词学习</title>
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="../shared/lyrics-page-tools.css" />
+    <link rel="stylesheet" href="style.css?v=${SHARED_UI_ASSET_VERSION}" />
+    <link rel="stylesheet" href="../shared/lyrics-page-tools.css?v=${SHARED_UI_ASSET_VERSION}" />
     <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
+    <link rel="stylesheet" href="../shared/display-settings.css?v=${SHARED_UI_ASSET_VERSION}" />
   </head>
   <body>
     <canvas id="effectCanvas" aria-hidden="true"></canvas>
@@ -5161,9 +5889,8 @@ function renderIndex(show) {
             </div>
             <p id="songSubtitle" class="song-subtitle"></p>
             <div class="toolbar" role="group" aria-label="显示设置">
-              <button class="toggle-btn is-active" type="button" data-toggle="showZh" aria-pressed="true">中文</button>
-              <button class="toggle-btn is-active" type="button" data-toggle="showIpa" aria-pressed="true">音标</button>
-${show.showEnglishToggle === false ? "" : '              <button class="toggle-btn is-active" type="button" data-toggle="showEn" aria-pressed="true">英文</button>\n'}
+              <button class="toggle-btn is-active" type="button" data-toggle="showZh" aria-pressed="true">中译</button>
+${show.showEnglishToggle === false ? "" : '              <button class="toggle-btn is-active" type="button" data-toggle="showEn" aria-pressed="true">英译</button>\n'}              <button class="toggle-btn is-active" type="button" data-toggle="showIpa" aria-pressed="true">音标</button>
               <button class="toggle-btn feedback-btn" id="feedbackButton" type="button">反馈</button>
               <div class="toolbar-playback-tools" aria-label="本曲播放控制">
                 <button class="song-play-button" id="songPlayButton" type="button" aria-label="连续播放本曲" aria-pressed="false" title="连续播放本曲">
@@ -5197,6 +5924,7 @@ ${show.showEnglishToggle === false ? "" : '              <button class="toggle-b
         titleZh: show.titleZh,
         slug: show.slug,
         language: show.language,
+        audioVoice: show.audioVoice || null,
         showEnglishToggle: show.showEnglishToggle !== false,
         independentWordIpa: show.independentWordIpa === true,
         ...(show.fullSongsFile ? { fullSongsFile: show.fullSongsFile } : {}),
@@ -5210,7 +5938,15 @@ ${renderCriticalScript("../shared/audio-playback.js")}
 ${renderCriticalScript("../shared/playback-rate.js")}
 ${renderCriticalScript("../shared/lyrics-search.js")}
 ${renderCriticalScript("../shared/lyrics-page-tools.js")}
-    <script src="../shared/cursors/${escapeHtml(show.slug)}.js?v=${CURSOR_ASSET_VERSION}"></script>
+    <script src="../shared/display-settings.js"></script>
+    <script>
+      if (
+        window.MusicalDisplaySettings?.customCursorEnabled() !== false
+        && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        document.write('<script src="../shared/cursors/${escapeHtml(show.slug)}.js?v=${CURSOR_ASSET_VERSION}"><\\/script>');
+      }
+    </script>
 ${renderCriticalScript("script.js")}
     <script src="../shared/feedback-widget.js"></script>
     <script>
@@ -5729,6 +6465,22 @@ h2 {
   object-position: var(--visual-position);
   filter: var(--visual-filter);
 }
+
+${show.slug === "legally-blonde" ? `
+.show-visual {
+  padding: 18px 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 50% 15%, color-mix(in srgb, var(--highlight) 18%, transparent), transparent 68%),
+    linear-gradient(145deg, color-mix(in srgb, var(--panel), var(--highlight) 18%), var(--panel));
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--shadow) 86%, transparent);
+}
+
+.show-visual-image {
+  filter: drop-shadow(0 10px 16px rgba(36, 7, 26, 0.38));
+}
+` : ""}
 
 .show-visual-symbol::before,
 .show-visual-symbol::after {
@@ -6774,12 +7526,15 @@ function getLineAudioPath(song, line) {
 }
 
 function getWordAudioPath(key) {
-  return withAudioVersion(\`audio/words/\${encodeURIComponent(key)}.mp3\`, wordEntries[key]?.speak || key);
+  // Delivery files already contain encodeURIComponent(key) in their literal name.
+  // Encode the percent signs once more so static HTTP servers do not decode them
+  // before resolving the repository path.
+  return withAudioVersion(\`audio/words/\${encodeURIComponent(encodeURIComponent(key))}.mp3\`, wordEntries[key]?.speak || key);
 }
 
 function withAudioVersion(path, speechText) {
   let hash = 2166136261;
-  for (const character of String(speechText || "")) {
+  for (const character of String(config.audioVoice || "system") + "|" + String(speechText || "")) {
     hash ^= character.codePointAt(0);
     hash = Math.imul(hash, 16777619);
   }
@@ -7050,9 +7805,9 @@ function initThemedCursor() {
       });
       return;
     }
-    const ringKinds = new Set(["roseWindowGlow", "loveRipples", "sunHalo", "moonHalo"]);
+    const ringKinds = new Set(["roseWindowGlow", "loveRipples", "sunHalo", "moonHalo", "subtleRing", "softGreenRipple", "softOceanWave"]);
     if (ringKinds.has(click)) {
-      const count = click === "roseWindowGlow" ? 2 : 3;
+      const count = click === "roseWindowGlow" ? 2 : click === "subtleRing" || click === "softGreenRipple" || click === "softOceanWave" ? 1 : 3;
       for (let index = 0; index < count; index += 1) {
         bursts.push({ x, y, vx: 0, vy: 0, life: 1, radius: 8 + index * 8, angle: 0, delay: index * 3, kind: click, color: index % 2 ? colors.primary : colors.secondary });
       }
@@ -7179,11 +7934,11 @@ function drawParticles(ctx, particles, bursts, colors) {
       b.delay -= 1;
       continue;
     }
-    b.life -= b.kind === "letterfall" ? 0.025 : /Glow|Ripples|Halo/.test(b.kind) ? 0.045 : 0.065;
+    b.life -= b.kind === "letterfall" ? 0.025 : /Glow|Ripples|Halo|subtleRing|softGreenRipple|softOceanWave/.test(b.kind) ? 0.045 : 0.065;
     b.x += b.vx;
     b.y += b.vy;
     b.vy += b.kind === "letterfall" ? 0.018 : b.kind === "tricolorConfetti" || b.kind === "inkDrops" ? 0.05 : 0.006;
-    b.radius += /Glow|Ripples|Halo/.test(b.kind) ? 0.75 : 0.35;
+    b.radius += /Glow|Ripples|Halo|subtleRing|softGreenRipple|softOceanWave/.test(b.kind) ? 0.75 : 0.35;
     if (b.life <= 0) {
       bursts.splice(index, 1);
       continue;
@@ -7200,12 +7955,28 @@ function drawParticles(ctx, particles, bursts, colors) {
       ctx.shadowColor = b.color;
       ctx.shadowBlur = 8;
       ctx.fillText(b.text, 0, 0);
-    } else if (["roseWindowGlow", "loveRipples", "sunHalo", "moonHalo"].includes(b.kind)) {
+    } else if (["roseWindowGlow", "loveRipples", "sunHalo", "moonHalo", "subtleRing", "softGreenRipple", "softOceanWave"].includes(b.kind)) {
+      const softRipple = b.kind === "subtleRing" || b.kind === "softGreenRipple" || b.kind === "softOceanWave";
+      const ringColor = b.kind === "subtleRing" || b.kind === "softGreenRipple" ? colors.primary : b.kind === "softOceanWave" ? "#2d9fb6" : b.color;
       ctx.globalCompositeOperation = "screen";
-      ctx.shadowColor = b.color;
-      ctx.shadowBlur = b.kind === "sunHalo" ? 18 : 10;
+      ctx.shadowColor = softRipple ? ringColor : b.color;
+      ctx.shadowBlur = softRipple ? 4 : b.kind === "sunHalo" ? 18 : 10;
+      ctx.strokeStyle = ringColor;
+      if (b.kind === "softGreenRipple") {
+        const haze = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.radius * 1.1);
+        haze.addColorStop(0, "rgba(141,198,63,0.14)");
+        haze.addColorStop(0.5, "rgba(141,198,63,0.06)");
+        haze.addColorStop(1, "rgba(141,198,63,0)");
+        ctx.globalAlpha = b.life * 0.58;
+        ctx.fillStyle = haze;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius * 1.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalCompositeOperation = "source-over";
+      }
+      if (softRipple) ctx.globalAlpha = b.life * 0.62;
       ctx.beginPath();
-      ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, b.radius * (softRipple ? 0.8 : 1), 0, Math.PI * 2);
       ctx.stroke();
       if (b.kind === "roseWindowGlow") {
         for (let ray = 0; ray < 12; ray += 1) {
@@ -7499,7 +8270,7 @@ function getCursorMarker(slug) {
     "moliere-le-spectacle-musical": "preRenderPureQuill",
     "moulin-rouge": "preRenderMoulinWindmill",
     "elisabeth-das-musical": "preRenderClassicTiara",
-    "tanz-der-vampire": "preRenderVampireFangs",
+    "tanz-der-vampire": "preRenderVampireBat",
     "ludwig-ii-sehnsucht-nach-dem-paradies": "preRenderLudwigCastle",
     "dracula-das-musical": "preRenderDraculaBat",
     "rebecca-das-musical": "preRenderRebeccaLogoR",
@@ -7511,17 +8282,20 @@ function getCursorMarker(slug) {
     "love-never-dies": "preRenderWindingKey",
     "les-souliers-rouges": "preRenderPosterMoon",
     "la-legende-du-roi-arthur": "preRenderExcalibur",
-    chicago: "preRenderBowlerHat",
+    chicago: "preRenderChicagoNewspaper",
     "dear-evan-hansen": "preRenderCastNote",
     "six-the-musical": "preRenderNeonCrown",
     suffs: "preRenderVoteButton",
     "sunset-boulevard": "preRenderFilmReel",
-    "come-from-away": "preRenderComeFromAwayPlane",
+    "come-from-away": "preRenderComeFromAwayGlobe",
     rent: "preRenderRentGraffiti",
     "tick-tick-boom": "preRenderTickClock",
     wicked: "preRenderWickedHat",
     hadestown: "preRenderHadestownFlower",
+    "sound-of-music-the": "preRenderSoundOfMusicNote",
+    matilda: "preRenderMatildaPencil",
     "les-dix-commandements": "preRenderStoneTablets",
+    "legally-blonde": "preRenderLegallyBlondeBalance",
   }[slug];
 }
 
@@ -7554,16 +8328,16 @@ function getReferenceCursorConfig(show) {
       hotspot: [0.5, 0.5],
     },
     "tanz-der-vampire": {
-      motif: "vampireFangs",
-      trail: "bloodMist",
-      burst: "vampireBite",
+      motif: "vampireBat",
+      trail: "none",
+      burst: "subtleRing",
       motion: "still",
       accent: "#b51e3d",
       size: 58,
-      follow: 0.48,
-      emitDistance: 16,
+      follow: 0.58,
+      emitDistance: 1000000000,
       clickOn: "down",
-      burstParticles: 5,
+      burstParticles: 0,
       hotspot: [0.5, 0.5],
     },
     "ludwig-ii-sehnsucht-nach-dem-paradies": {
@@ -7621,14 +8395,14 @@ function getReferenceCursorConfig(show) {
     "epic-the-musical": {
       motif: "odysseyTrident",
       trail: "seaStarlight",
-      burst: "oceanWave",
+      burst: "softOceanWave",
       motion: "still",
       accent: "#2d9fb6",
       size: 62,
       follow: 0.46,
       emitDistance: 18,
       clickOn: "down",
-      burstParticles: 5,
+      burstParticles: 2,
       hotspot: [0.5, 0.5],
     },
     starmania: {
@@ -7650,7 +8424,7 @@ function getReferenceCursorConfig(show) {
       burst: "goldenRippleNotes",
       motion: "still",
       accent: "#ffd700",
-      size: 54,
+      size: 58,
       follow: 0.6,
       emitDistance: 8,
       clickOn: "down",
@@ -7710,16 +8484,16 @@ function getReferenceCursorConfig(show) {
       hotspot: [0, 0],
     },
     chicago: {
-      motif: "bowlerHat",
-      trail: "goldSparkleRosePetal",
-      burst: "spectacular",
-      motion: "tilt",
+      motif: "chicagoNewspaper",
+      trail: "none",
+      burst: "headlineDrop",
+      motion: "still",
       accent: "#c51f2b",
       size: 58,
-      follow: 0.48,
-      emitDistance: 20,
+      follow: 0.58,
+      emitDistance: 1000000000,
       clickOn: "up",
-      burstParticles: 6,
+      burstParticles: 0,
       hotspot: [0.5, 0.5],
     },
     "dear-evan-hansen": {
@@ -7752,28 +8526,28 @@ function getReferenceCursorConfig(show) {
     },
     suffs: {
       motif: "voteButton",
-      trail: "magicDust",
-      burst: "crispShockwave",
+      trail: "none",
+      burst: "subtleRing",
       motion: "still",
       accent: "#e3ba25",
       size: 58,
       follow: 0.46,
       emitDistance: 16,
       clickOn: "up",
-      burstParticles: 4,
+      burstParticles: 0,
       hotspot: [0.5, 0.5],
     },
     "sunset-boulevard": {
       motif: "filmReel",
-      trail: "goldSparkleRosePetal",
-      burst: "lunarBloom",
+      trail: "none",
+      burst: "none",
       motion: "turn",
       accent: "#d78024",
       size: 60,
-      follow: 0.42,
-      emitDistance: 19,
-      clickOn: "down",
-      burstParticles: 3,
+      follow: 0.58,
+      emitDistance: 1000000000,
+      clickOn: "none",
+      burstParticles: 0,
       hotspot: [0.5, 0.5],
     },
     "les-miserables-1980": {
@@ -7804,15 +8578,15 @@ function getReferenceCursorConfig(show) {
     },
     "jesus-christ-superstar-1996-london": {
       motif: "passionCrossHalo",
-      trail: "thornEmbers",
-      burst: "cruciformHalo",
+      trail: "none",
+      burst: "subtleRing",
       motion: "still",
       accent: "#d6b46a",
       size: 56,
       follow: 0.5,
       emitDistance: 18,
       clickOn: "down",
-      burstParticles: 4,
+      burstParticles: 0,
       hotspot: [0.5, 0.5],
     },
     "le-petit-prince-2cd": {
@@ -7829,16 +8603,16 @@ function getReferenceCursorConfig(show) {
       hotspot: [0.5, 0.5],
     },
     "come-from-away": {
-      motif: "comeFromAwayPlane",
-      trail: "airRoute",
-      burst: "flightPath",
+      motif: "comeFromAwayGlobe",
+      trail: "none",
+      burst: "none",
       motion: "still",
       accent: "#2d9fb6",
-      size: 62,
+      size: 50,
       follow: 0.46,
-      emitDistance: 18,
-      clickOn: "down",
-      burstParticles: 5,
+      emitDistance: 1000000000,
+      clickOn: "none",
+      burstParticles: 0,
       hotspot: [0.5, 0.5],
     },
     rent: {
@@ -7869,29 +8643,55 @@ function getReferenceCursorConfig(show) {
     },
     wicked: {
       motif: "wickedHat",
-      trail: "magicDust",
-      burst: "crispShockwave",
+      trail: "none",
+      burst: "softGreenRipple",
       motion: "still",
       accent: "#8dc63f",
-      size: 58,
-      follow: 0.45,
-      emitDistance: 18,
+      size: 56,
+      follow: 0.58,
+      emitDistance: 1000000000,
       clickOn: "up",
-      burstParticles: 4,
+      burstParticles: 0,
       hotspot: [0.5, 0.5],
     },
     hadestown: {
       motif: "hadestownFlower",
       trail: "thornEmbers",
-      burst: "crispShockwave",
+      burst: "none",
       motion: "still",
       accent: "#b33a2c",
       size: 62,
       follow: 0.46,
       emitDistance: 18,
-      clickOn: "down",
-      burstParticles: 5,
+      clickOn: "none",
+      burstParticles: 0,
       hotspot: [0.5, 0.5],
+    },
+    "sound-of-music-the": {
+      motif: "soundOfMusicNote",
+      trail: "none",
+      burst: "softDiamondGlow",
+      motion: "still",
+      accent: "#4fb6d7",
+      size: 60,
+      follow: 1,
+      emitDistance: 1000000000,
+      clickOn: "down",
+      burstParticles: 0,
+      hotspot: [0.5, 0.5],
+    },
+    matilda: {
+      motif: "matildaPencil",
+      trail: "none",
+      burst: "subtleRing",
+      motion: "still",
+      accent: "#df72a6",
+      size: 56,
+      follow: 0.54,
+      emitDistance: 1000000000,
+      clickOn: "down",
+      burstParticles: 0,
+      hotspot: [0.29, 0.72],
     },
     "les-dix-commandements": {
       motif: "stoneTablets",
@@ -7904,6 +8704,19 @@ function getReferenceCursorConfig(show) {
       emitDistance: 18,
       clickOn: "down",
       burstParticles: 4,
+      hotspot: [0.5, 0.5],
+    },
+    "legally-blonde": {
+      motif: "legallyBlondeBalance",
+      trail: "none",
+      burst: "subtleRing",
+      motion: "still",
+      accent: "#d72d78",
+      size: 48,
+      follow: 0.52,
+      emitDistance: 1000000000,
+      clickOn: "down",
+      burstParticles: 0,
       hotspot: [0.5, 0.5],
     },
   };
@@ -7919,10 +8732,10 @@ function getReferenceCursorConfig(show) {
 function renderReferenceCursor(show) {
   const marker = getCursorMarker(show.slug);
   const config = getReferenceCursorConfig(show);
-  return `window.referenceCursorActive = true;
-
-(() => {
+  return `(() => {
+  if (document.documentElement.dataset.musicalCursor === "native") return;
   if (window.matchMedia("(pointer: coarse)").matches) return;
+  window.referenceCursorActive = true;
   const canvas = document.getElementById("effectCanvas");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
@@ -7935,6 +8748,7 @@ function renderReferenceCursor(show) {
   let lastEmitTime = 0;
   let pressed = false;
   let windmillRotation = 0;
+  let motifRotation = 0;
   let chandelierLight = 0;
   const pointerScale = 1;
 
@@ -7975,67 +8789,39 @@ function renderReferenceCursor(show) {
     cacheCtx.lineJoin = "round";
     cacheCtx.lineWidth = 2.2;
 
-    if (config.motif === "comeFromAwayPlane") {
-      cacheCtx.save();
-      cacheCtx.rotate(-0.06);
-      cacheCtx.fillStyle = "#fff4d6";
-      cacheCtx.strokeStyle = "#2d9fb6";
-      cacheCtx.lineWidth = 1.8;
-      cacheCtx.shadowColor = "rgba(45,159,182,0.75)";
-      cacheCtx.shadowBlur = 6;
-      // A compact, recognizable aircraft: nose, swept wings, tail plane,
-      // engines and cabin windows keep the silhouette crisp at pointer size.
+    if (config.motif === "comeFromAwayGlobe") {
+      const lightTheme = document.documentElement.dataset.musicalTheme === "light";
+      const lightAccent = getComputedStyle(document.documentElement)
+        .getPropertyValue("--musical-light-accent")
+        .trim() || "#174a80";
+      const lightMotif = getComputedStyle(document.documentElement)
+        .getPropertyValue("--musical-light-motif")
+        .trim() || "#b48c12";
+      const globePrimary = lightTheme ? lightAccent : config.primary;
+      const globeSecondary = lightTheme ? lightMotif : config.secondary;
+      cacheCtx.fillStyle = lightTheme ? "rgba(248,251,252,0.97)" : "rgba(7,23,28,0.84)";
+      cacheCtx.strokeStyle = globePrimary;
+      cacheCtx.lineWidth = lightTheme ? 2.1 : 1.8;
+      cacheCtx.shadowColor = lightTheme ? "rgba(23,74,128,0.28)" : "rgba(45,159,182,0.55)";
+      cacheCtx.shadowBlur = lightTheme ? 4 : 5;
       cacheCtx.beginPath();
-      cacheCtx.moveTo(-34, -2);
-      cacheCtx.quadraticCurveTo(-18, -5, -2, -4);
-      cacheCtx.lineTo(22, -14);
-      cacheCtx.lineTo(27, -13);
-      cacheCtx.lineTo(11, -2);
-      cacheCtx.lineTo(35, 3);
-      cacheCtx.lineTo(33, 8);
-      cacheCtx.lineTo(8, 3);
-      cacheCtx.lineTo(-2, 18);
-      cacheCtx.lineTo(-8, 18);
-      cacheCtx.lineTo(-3, 3);
-      cacheCtx.lineTo(-34, 3);
-      cacheCtx.closePath();
+      cacheCtx.arc(0, 0, 20, 0, Math.PI * 2);
       cacheCtx.fill();
       cacheCtx.stroke();
       cacheCtx.shadowBlur = 0;
-      cacheCtx.strokeStyle = "#e3bd58";
-      cacheCtx.lineWidth = 1.25;
+      cacheCtx.strokeStyle = globeSecondary;
+      cacheCtx.lineWidth = lightTheme ? 1.35 : 1.15;
       cacheCtx.beginPath();
-      cacheCtx.moveTo(-27, -1);
-      cacheCtx.lineTo(8, -1);
+      cacheCtx.ellipse(0, 0, 8, 20, 0, 0, Math.PI * 2);
+      cacheCtx.ellipse(0, 0, 15, 20, 0, 0, Math.PI * 2);
+      cacheCtx.ellipse(0, 0, 20, 7, 0, 0, Math.PI * 2);
+      cacheCtx.ellipse(0, 0, 20, 13, 0, 0, Math.PI * 2);
       cacheCtx.stroke();
-      cacheCtx.fillStyle = "#2d9fb6";
-      [-15, -8, -1, 6].forEach((x) => {
-        cacheCtx.beginPath();
-        cacheCtx.arc(x, -1.2, 1.25, 0, Math.PI * 2);
-        cacheCtx.fill();
-      });
-      cacheCtx.fillStyle = "#e3bd58";
+      cacheCtx.strokeStyle = globePrimary;
+      cacheCtx.lineWidth = lightTheme ? 1.55 : 1.35;
       cacheCtx.beginPath();
-      cacheCtx.arc(17, 3.8, 2.3, 0, Math.PI * 2);
-      cacheCtx.fill();
-      cacheCtx.strokeStyle = "#e3bd58";
-      cacheCtx.lineWidth = 1.1;
-      cacheCtx.beginPath();
-      cacheCtx.arc(20, 23, 9, 0, Math.PI * 2);
-      cacheCtx.moveTo(11, 23);
-      cacheCtx.lineTo(29, 23);
-      cacheCtx.moveTo(20, 14);
-      cacheCtx.bezierCurveTo(16, 18, 16, 28, 20, 32);
-      cacheCtx.moveTo(20, 14);
-      cacheCtx.bezierCurveTo(24, 18, 24, 28, 20, 32);
+      cacheCtx.arc(0, 0, 20, 0, Math.PI * 2);
       cacheCtx.stroke();
-      cacheCtx.fillStyle = "#e3bd58";
-      [[8, 37], [31, 13], [34, 31]].forEach(([x, y]) => {
-        cacheCtx.beginPath();
-        cacheCtx.arc(x, y, 1.15, 0, Math.PI * 2);
-        cacheCtx.fill();
-      });
-      cacheCtx.restore();
     } else if (config.motif === "rentGraffiti") {
       cacheCtx.save();
       cacheCtx.rotate(-0.04);
@@ -8125,52 +8911,47 @@ function renderReferenceCursor(show) {
       cacheCtx.restore();
     } else if (config.motif === "wickedHat") {
       cacheCtx.save();
-      cacheCtx.fillStyle = "#8dc63f";
-      cacheCtx.shadowColor = "rgba(141,198,63,0.72)";
-      cacheCtx.shadowBlur = 8;
+      cacheCtx.rotate(-0.04);
+      const brim = cacheCtx.createLinearGradient(-24, 4, 22, 15);
+      brim.addColorStop(0, "#050706");
+      brim.addColorStop(0.48, "#182316");
+      brim.addColorStop(1, "#050706");
+      cacheCtx.fillStyle = brim;
+      cacheCtx.strokeStyle = "rgba(184,222,130,0.82)";
+      cacheCtx.lineWidth = 0.92;
+      cacheCtx.shadowColor = "rgba(0,0,0,0.52)";
+      cacheCtx.shadowBlur = 2;
       cacheCtx.beginPath();
-      cacheCtx.arc(0, 17, 12, 0, Math.PI * 2);
-      cacheCtx.fill();
-      cacheCtx.fillStyle = "#080b08";
-      cacheCtx.strokeStyle = "#f4f0df";
-      cacheCtx.lineWidth = 1.2;
-      cacheCtx.shadowColor = "rgba(0,0,0,0.85)";
-      cacheCtx.shadowBlur = 4;
-      cacheCtx.beginPath();
-      cacheCtx.moveTo(-21, 7);
-      cacheCtx.quadraticCurveTo(-3, 1, 21, 7);
-      cacheCtx.lineTo(16, 12);
-      cacheCtx.quadraticCurveTo(0, 8, -16, 12);
+      cacheCtx.moveTo(-27, 9);
+      cacheCtx.quadraticCurveTo(-4, 2, 27, 9);
+      cacheCtx.quadraticCurveTo(16, 16, -18, 15);
       cacheCtx.closePath();
       cacheCtx.fill();
+      cacheCtx.shadowBlur = 0;
       cacheCtx.stroke();
+      const crown = cacheCtx.createLinearGradient(-13, -32, 14, 8);
+      crown.addColorStop(0, "#273422");
+      crown.addColorStop(0.38, "#070a08");
+      crown.addColorStop(0.82, "#111810");
+      crown.addColorStop(1, "#030403");
+      cacheCtx.fillStyle = crown;
       cacheCtx.beginPath();
-      cacheCtx.moveTo(-12, 7);
-      cacheCtx.lineTo(3, -32);
-      cacheCtx.lineTo(13, 7);
+      cacheCtx.moveTo(-13, 8);
+      cacheCtx.bezierCurveTo(-10, -6, -4, -17, 1, -31);
+      cacheCtx.quadraticCurveTo(8, -38, 15, -31);
+      cacheCtx.quadraticCurveTo(8, -26, 9, -19);
+      cacheCtx.bezierCurveTo(11, -8, 13, 0, 14, 8);
       cacheCtx.closePath();
+      cacheCtx.shadowColor = "rgba(0,0,0,0.52)";
+      cacheCtx.shadowBlur = 2;
       cacheCtx.fill();
+      cacheCtx.shadowBlur = 0;
       cacheCtx.stroke();
       cacheCtx.strokeStyle = "#8dc63f";
-      cacheCtx.lineWidth = 2.2;
+      cacheCtx.lineWidth = 1.5;
       cacheCtx.beginPath();
-      cacheCtx.moveTo(-8, 3);
-      cacheCtx.quadraticCurveTo(1, 0, 10, 3);
-      cacheCtx.stroke();
-      cacheCtx.strokeStyle = "#e3c65c";
-      cacheCtx.lineWidth = 1.3;
-      cacheCtx.strokeRect(-7, 3, 14, 4);
-      cacheCtx.fillStyle = "#d4af37";
-      cacheCtx.beginPath();
-      cacheCtx.arc(0, 5, 1.3, 0, Math.PI * 2);
-      cacheCtx.fill();
-      cacheCtx.strokeStyle = "rgba(141,198,63,0.85)";
-      cacheCtx.lineWidth = 1.1;
-      cacheCtx.beginPath();
-      cacheCtx.moveTo(17, -7);
-      cacheCtx.lineTo(22, -12);
-      cacheCtx.moveTo(20, -9);
-      cacheCtx.lineTo(25, -9);
+      cacheCtx.moveTo(-11, 3);
+      cacheCtx.quadraticCurveTo(1, 0, 12, 3);
       cacheCtx.stroke();
       cacheCtx.restore();
     } else if (config.motif === "hadestownFlower") {
@@ -8298,40 +9079,62 @@ function renderReferenceCursor(show) {
       cacheCtx.arc(0, 0, 4.2, 0, Math.PI * 2);
       cacheCtx.fillStyle = "#e6b85e";
       cacheCtx.fill();
-    } else if (config.motif === "vampireFangs") {
-      cacheCtx.translate(0, 1);
-      cacheCtx.shadowColor = "rgba(181,30,61,0.72)";
-      cacheCtx.shadowBlur = 6;
-      cacheCtx.fillStyle = "#210810";
+    } else if (config.motif === "vampireBat") {
+      cacheCtx.save();
+      cacheCtx.translate(0, 2);
+      const batFill = cacheCtx.createLinearGradient(0, -20, 0, 19);
+      batFill.addColorStop(0, "#4b1020");
+      batFill.addColorStop(0.45, "#21080f");
+      batFill.addColorStop(1, "#080305");
+      cacheCtx.fillStyle = batFill;
+      cacheCtx.strokeStyle = "#d8b56d";
+      cacheCtx.lineWidth = 1.15;
+      cacheCtx.shadowColor = "rgba(181,30,61,0.5)";
+      cacheCtx.shadowBlur = 5;
       cacheCtx.beginPath();
-      cacheCtx.moveTo(-27, -8);
-      cacheCtx.quadraticCurveTo(-12, -19, 0, -8);
-      cacheCtx.quadraticCurveTo(12, -19, 27, -8);
-      cacheCtx.quadraticCurveTo(10, -1, 0, -7);
-      cacheCtx.quadraticCurveTo(-10, -1, -27, -8);
+      cacheCtx.moveTo(0, -8);
+      cacheCtx.bezierCurveTo(-8, -16, -19, -22, -30, -16);
+      cacheCtx.quadraticCurveTo(-28, -5, -22, 2);
+      cacheCtx.quadraticCurveTo(-17, -3, -13, 7);
+      cacheCtx.quadraticCurveTo(-8, 1, -4, 10);
+      cacheCtx.lineTo(0, 18);
+      cacheCtx.lineTo(4, 10);
+      cacheCtx.quadraticCurveTo(8, 1, 13, 7);
+      cacheCtx.quadraticCurveTo(17, -3, 22, 2);
+      cacheCtx.quadraticCurveTo(28, -5, 30, -16);
+      cacheCtx.bezierCurveTo(19, -22, 8, -16, 0, -8);
       cacheCtx.closePath();
       cacheCtx.fill();
-      cacheCtx.shadowBlur = 2;
-      cacheCtx.fillStyle = "#fff5dc";
-      cacheCtx.strokeStyle = "#d9c49e";
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.fillStyle = "#3a0c18";
+      cacheCtx.strokeStyle = "#d8b56d";
       cacheCtx.lineWidth = 0.9;
-      [[-13, -7, -3, 23], [13, -7, 3, 23]].forEach((fang) => {
-        cacheCtx.beginPath();
-        cacheCtx.moveTo(fang[0] - 5, fang[1]);
-        cacheCtx.quadraticCurveTo(fang[0], fang[1] + 3, fang[0] + 5, fang[1]);
-        cacheCtx.lineTo(fang[2], fang[3]);
-        cacheCtx.closePath();
-        cacheCtx.fill();
-        cacheCtx.stroke();
-      });
-      cacheCtx.shadowColor = "#b51e3d";
-      cacheCtx.shadowBlur = 5;
-      cacheCtx.fillStyle = "#b51e3d";
       cacheCtx.beginPath();
-      cacheCtx.moveTo(0, 17);
-      cacheCtx.bezierCurveTo(-2, 21, -3, 24, 0, 28);
-      cacheCtx.bezierCurveTo(3, 24, 2, 21, 0, 17);
+      cacheCtx.ellipse(0, 3, 4.8, 15, 0, 0, Math.PI * 2);
       cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-5, -11);
+      cacheCtx.lineTo(-8, -22);
+      cacheCtx.lineTo(-1, -15);
+      cacheCtx.closePath();
+      cacheCtx.moveTo(5, -11);
+      cacheCtx.lineTo(8, -22);
+      cacheCtx.lineTo(1, -15);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, -9, 6.5, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#d8b56d";
+      cacheCtx.beginPath();
+      cacheCtx.arc(-2.3, -9, 0.9, 0, Math.PI * 2);
+      cacheCtx.arc(2.3, -9, 0.9, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.restore();
     } else if (config.motif === "ludwigCastle") {
       cacheCtx.translate(0, 2);
       cacheCtx.shadowColor = "rgba(138,164,200,0.65)";
@@ -8605,6 +9408,58 @@ function renderReferenceCursor(show) {
       cacheCtx.shadowColor = "#ff00ff";
       cacheCtx.shadowBlur = 8;
       cacheCtx.fill();
+    } else if (config.motif === "soundOfMusicNote") {
+      cacheCtx.save();
+      const lightTheme = document.documentElement.dataset.musicalTheme === "light";
+      const halo = cacheCtx.createRadialGradient(0, 2, 2, 0, 2, 31);
+      halo.addColorStop(0, lightTheme ? "rgba(79,182,215,0.2)" : "rgba(132,218,240,0.28)");
+      halo.addColorStop(0.45, lightTheme ? "rgba(79,182,215,0.08)" : "rgba(79,182,215,0.12)");
+      halo.addColorStop(1, "rgba(79,182,215,0)");
+      cacheCtx.fillStyle = halo;
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 2, 31, 0, Math.PI * 2);
+      cacheCtx.fill();
+
+      cacheCtx.translate(1, 1);
+      cacheCtx.rotate(-0.08);
+      const noteFill = cacheCtx.createLinearGradient(-16, -24, 18, 25);
+      noteFill.addColorStop(0, lightTheme ? "#dff8ff" : "#e8fbff");
+      noteFill.addColorStop(0.28, lightTheme ? "#6ec9e6" : "#9ce6f5");
+      noteFill.addColorStop(0.72, lightTheme ? "#2d8fb6" : "#4fb6d7");
+      noteFill.addColorStop(1, lightTheme ? "#145b83" : "#237da8");
+      cacheCtx.fillStyle = noteFill;
+      cacheCtx.shadowColor = lightTheme ? "rgba(17,89,128,0.36)" : "rgba(79,182,215,0.54)";
+      cacheCtx.shadowBlur = 6;
+
+      cacheCtx.beginPath();
+      cacheCtx.ellipse(-7, 19, 10.5, 6.5, -0.18, 0, Math.PI * 2);
+      cacheCtx.fill();
+
+      cacheCtx.beginPath();
+      cacheCtx.roundRect(0, -20, 6.5, 40, 3.2);
+      cacheCtx.fill();
+
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(3, -20);
+      cacheCtx.bezierCurveTo(14, -19, 22, -14, 22, -5);
+      cacheCtx.bezierCurveTo(22, -1, 19, 1, 16, 1);
+      cacheCtx.bezierCurveTo(18, -5, 15, -9, 6, -10);
+      cacheCtx.lineTo(6, -16);
+      cacheCtx.bezierCurveTo(13, -15, 18, -12, 20, -9);
+      cacheCtx.bezierCurveTo(18, -14, 12, -16, 3, -14);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.strokeStyle = lightTheme ? "rgba(238,252,255,0.78)" : "rgba(224,250,255,0.7)";
+      cacheCtx.lineWidth = 1.1;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(2.5, -16);
+      cacheCtx.lineTo(2.5, 9);
+      cacheCtx.moveTo(-13, 18);
+      cacheCtx.quadraticCurveTo(-7, 13, 1, 17);
+      cacheCtx.stroke();
+      cacheCtx.restore();
     } else if (config.motif === "inspirationPoint") {
       const glow = cacheCtx.createRadialGradient(0, 0, 0, 0, 0, 34);
       glow.addColorStop(0, "rgba(255,255,255,1)");
@@ -8936,6 +9791,32 @@ function renderReferenceCursor(show) {
       cacheCtx.bezierCurveTo(-17, 14, -7, 34, 6, 24);
       cacheCtx.bezierCurveTo(16, 16, 22, 28, 31, 20);
       cacheCtx.stroke();
+    } else if (config.motif === "matildaPencil") {
+      cacheCtx.save();
+      cacheCtx.rotate(Math.PI);
+      cacheCtx.rotate(Math.PI / 4);
+      cacheCtx.fillStyle = "#df72a6";
+      cacheCtx.strokeStyle = "#f8d8e8";
+      cacheCtx.lineWidth = 1.35;
+      cacheCtx.shadowColor = "rgba(223,114,166,0.65)";
+      cacheCtx.shadowBlur = 7;
+      cacheCtx.beginPath();
+      cacheCtx.roundRect(-5, -18, 10, 42, 2);
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.fillStyle = "#e8c56a";
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-5, -18);
+      cacheCtx.lineTo(5, -18);
+      cacheCtx.lineTo(0, -29);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#f9e4ef";
+      cacheCtx.fillRect(-5, 24, 10, 7);
+      cacheCtx.strokeRect(-5, 24, 10, 7);
+      cacheCtx.restore();
     } else if (config.motif === "greatestShow") {
       const glow = cacheCtx.createRadialGradient(0, 0, 4, 0, 0, 33);
       glow.addColorStop(0, "rgba(255,245,207,0.9)");
@@ -9009,6 +9890,47 @@ function renderReferenceCursor(show) {
       cacheCtx.beginPath();
       cacheCtx.arc(-2, -2, 15.5, -2.8, -0.45);
       cacheCtx.stroke();
+
+      // Red ballet shoe and satin ribbons keep the moonlit poster tied to the show.
+      cacheCtx.save();
+      cacheCtx.translate(7, 13);
+      cacheCtx.rotate(-0.22);
+      cacheCtx.scale(1.35, 1.35);
+      cacheCtx.fillStyle = "#c51f3b";
+      cacheCtx.strokeStyle = "#f7d8dd";
+      cacheCtx.lineWidth = 1;
+      cacheCtx.shadowColor = "rgba(154,20,46,0.8)";
+      cacheCtx.shadowBlur = 3;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-9, 2);
+      cacheCtx.quadraticCurveTo(-3, -4, 5, -3);
+      cacheCtx.quadraticCurveTo(13, -2, 18, 2);
+      cacheCtx.quadraticCurveTo(15, 7, 7, 8);
+      cacheCtx.lineTo(-5, 7);
+      cacheCtx.quadraticCurveTo(-10, 6, -9, 2);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.strokeStyle = "#f0a5b4";
+      cacheCtx.lineWidth = 1.35;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-1, -2);
+      cacheCtx.lineTo(-6, -10);
+      cacheCtx.moveTo(2, -2);
+      cacheCtx.lineTo(10, -9);
+      cacheCtx.moveTo(-6, -10);
+      cacheCtx.quadraticCurveTo(-1, -8, 3, -10);
+      cacheCtx.moveTo(10, -9);
+      cacheCtx.quadraticCurveTo(7, -5, 4, -2);
+      cacheCtx.stroke();
+      cacheCtx.strokeStyle = "rgba(255,247,242,0.72)";
+      cacheCtx.lineWidth = 0.75;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-6, 5);
+      cacheCtx.quadraticCurveTo(5, 8, 15, 3);
+      cacheCtx.stroke();
+      cacheCtx.restore();
     } else if (config.motif === "excalibur") {
       cacheCtx.translate(-48, -48);
       const blade = cacheCtx.createLinearGradient(0, 0, 35, 35);
@@ -9076,25 +9998,65 @@ function renderReferenceCursor(show) {
       cacheCtx.arc(45, 45, 1.7, 0, Math.PI * 2);
       cacheCtx.fillStyle = "#547f8d";
       cacheCtx.fill();
-    } else if (config.motif === "bowlerHat") {
-      cacheCtx.translate(0, 5);
-      cacheCtx.fillStyle = "#0d0a0b";
-      cacheCtx.strokeStyle = "#f3d39a";
-      cacheCtx.lineWidth = 1.6;
+    } else if (config.motif === "chicagoNewspaper") {
+      cacheCtx.save();
+      cacheCtx.rotate(-0.09);
+      const newsprint = cacheCtx.createLinearGradient(-27, -25, 27, 25);
+      newsprint.addColorStop(0, "#fff9e9");
+      newsprint.addColorStop(0.55, "#e9dfc9");
+      newsprint.addColorStop(1, "#c9bda6");
+      cacheCtx.fillStyle = newsprint;
+      cacheCtx.strokeStyle = "#2b2021";
+      cacheCtx.lineWidth = 1.2;
+      cacheCtx.shadowColor = "rgba(0,0,0,0.58)";
+      cacheCtx.shadowBlur = 4;
       cacheCtx.beginPath();
-      cacheCtx.moveTo(-18, 8);
-      cacheCtx.bezierCurveTo(-17, -14, -9, -24, 0, -24);
-      cacheCtx.bezierCurveTo(9, -24, 17, -14, 18, 8);
+      cacheCtx.moveTo(-27, -24);
+      cacheCtx.lineTo(27, -24);
+      cacheCtx.lineTo(27, 18);
+      cacheCtx.lineTo(20, 25);
+      cacheCtx.lineTo(-27, 25);
       cacheCtx.closePath();
       cacheCtx.fill();
       cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.fillStyle = "#241a1b";
+      cacheCtx.fillRect(-23, -21, 46, 11);
+      cacheCtx.fillStyle = "#f8efd9";
+      cacheCtx.font = "700 8px Georgia, serif";
+      cacheCtx.textAlign = "center";
+      cacheCtx.fillText("EXTRA!", 0, -13);
       cacheCtx.fillStyle = "#c51f2b";
-      cacheCtx.fillRect(-17, 1, 34, 6);
+      cacheCtx.fillRect(-23, -8, 46, 2.4);
+      cacheCtx.fillStyle = "#3a2d2b";
+      cacheCtx.fillRect(-22, -2, 35, 3.2);
+      cacheCtx.fillRect(-22, 3, 29, 2.2);
+      cacheCtx.fillStyle = "#75685b";
+      cacheCtx.fillRect(-22, 9, 15, 11);
+      cacheCtx.strokeStyle = "#766b5d";
+      cacheCtx.lineWidth = 1;
+      [[-3, 10, 21], [-3, 14, 19], [-3, 18, 20], [-22, 23, 38]].forEach(([x, y, width]) => {
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(x, y);
+        cacheCtx.lineTo(x + width, y);
+        cacheCtx.stroke();
+      });
+      cacheCtx.strokeStyle = "rgba(76,63,55,0.5)";
+      cacheCtx.lineWidth = 0.8;
       cacheCtx.beginPath();
-      cacheCtx.ellipse(0, 11, 28, 7, 0, 0, Math.PI * 2);
-      cacheCtx.fillStyle = "#0d0a0b";
-      cacheCtx.fill();
+      cacheCtx.moveTo(1, -5);
+      cacheCtx.lineTo(1, 23);
       cacheCtx.stroke();
+      cacheCtx.fillStyle = "#b6aa94";
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(20, 25);
+      cacheCtx.lineTo(20, 18);
+      cacheCtx.lineTo(27, 18);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.strokeStyle = "#6f6255";
+      cacheCtx.stroke();
+      cacheCtx.restore();
     } else if (config.motif === "castNote") {
       cacheCtx.rotate(Number.isFinite(config.rotation) ? config.rotation : -0.13);
       cacheCtx.fillStyle = "#ecf5f6";
@@ -9155,28 +10117,50 @@ function renderReferenceCursor(show) {
       cacheCtx.textAlign = "center";
       cacheCtx.fillText("VOTES", 0, 4);
     } else if (config.motif === "filmReel") {
+      const reel = cacheCtx.createRadialGradient(-7, -9, 2, -2, -2, 31);
+      reel.addColorStop(0, "#6e5437");
+      reel.addColorStop(0.32, "#292017");
+      reel.addColorStop(0.78, "#100d0a");
+      reel.addColorStop(1, "#040302");
       cacheCtx.strokeStyle = "#f1d7a2";
-      cacheCtx.fillStyle = "#17110b";
-      cacheCtx.lineWidth = 2;
+      cacheCtx.fillStyle = reel;
+      cacheCtx.lineWidth = 1.7;
       cacheCtx.shadowColor = "rgba(215,128,36,0.58)";
       cacheCtx.shadowBlur = 8;
       cacheCtx.beginPath();
-      cacheCtx.arc(0, 0, 28, 0, Math.PI * 2);
+      cacheCtx.arc(-2, -2, 28, 0, Math.PI * 2);
       cacheCtx.fill();
       cacheCtx.stroke();
       cacheCtx.shadowBlur = 0;
+      cacheCtx.strokeStyle = "rgba(215,128,36,0.72)";
+      cacheCtx.lineWidth = 0.8;
+      cacheCtx.beginPath();
+      cacheCtx.arc(-2, -2, 23.5, 0, Math.PI * 2);
+      cacheCtx.stroke();
       for (let index = 0; index < 5; index += 1) {
         const angle = index * Math.PI * 2 / 5 - Math.PI / 2;
+        const x = -2 + Math.cos(angle) * 14;
+        const y = -2 + Math.sin(angle) * 14;
+        const hole = cacheCtx.createRadialGradient(x - 1.5, y - 1.5, 0, x, y, 6.2);
+        hole.addColorStop(0, "#f0c47a");
+        hole.addColorStop(0.3, "#8e5625");
+        hole.addColorStop(1, "#160e09");
         cacheCtx.beginPath();
-        cacheCtx.arc(Math.cos(angle) * 14, Math.sin(angle) * 14, 5, 0, Math.PI * 2);
-        cacheCtx.fillStyle = "#d78024";
+        cacheCtx.arc(x, y, 5.6, 0, Math.PI * 2);
+        cacheCtx.fillStyle = hole;
         cacheCtx.fill();
+        cacheCtx.strokeStyle = "rgba(241,215,162,0.62)";
+        cacheCtx.lineWidth = 0.65;
+        cacheCtx.stroke();
       }
+      cacheCtx.fillStyle = "#f1d7a2";
       cacheCtx.beginPath();
-      cacheCtx.moveTo(22, 18);
-      cacheCtx.quadraticCurveTo(34, 29, 28, 39);
-      cacheCtx.strokeStyle = "#f1d7a2";
-      cacheCtx.stroke();
+      cacheCtx.arc(-2, -2, 3.4, 0, Math.PI * 2);
+      cacheCtx.fill();
+      cacheCtx.fillStyle = "#8f511c";
+      cacheCtx.beginPath();
+      cacheCtx.arc(-2, -2, 1.5, 0, Math.PI * 2);
+      cacheCtx.fill();
     } else if (config.motif === "revolutionFlag") {
       cacheCtx.translate(-8, 7);
       cacheCtx.strokeStyle = "rgba(230,196,114,0.95)";
@@ -9240,10 +10224,96 @@ function renderReferenceCursor(show) {
         cacheCtx.lineTo(x - 2.5, 4);
         cacheCtx.stroke();
       });
+    } else if (config.motif === "legallyBlondeBalance") {
+      const lightTheme = document.documentElement.dataset.musicalTheme === "light";
+      const primary = lightTheme
+        ? getComputedStyle(document.documentElement).getPropertyValue("--musical-light-accent").trim() || config.primary
+        : config.primary;
+      const secondary = lightTheme
+        ? getComputedStyle(document.documentElement).getPropertyValue("--musical-light-motif").trim() || config.secondary
+        : config.secondary;
+      const metal = lightTheme ? "#fffafd" : "#fff3f8";
+      cacheCtx.shadowColor = lightTheme ? "rgba(159,31,88,0.28)" : "rgba(215,45,120,0.52)";
+      cacheCtx.shadowBlur = lightTheme ? 4 : 6;
+      cacheCtx.strokeStyle = primary;
+      cacheCtx.fillStyle = metal;
+      cacheCtx.lineWidth = 2.1;
+      cacheCtx.lineCap = "round";
+      cacheCtx.lineJoin = "round";
+
+      // A clear classical balance: finial, fulcrum, beam, chains, bowls and base.
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, -29);
+      cacheCtx.lineTo(-6, -20);
+      cacheCtx.lineTo(6, -20);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, -20);
+      cacheCtx.lineTo(0, 19);
+      cacheCtx.moveTo(-28, -16);
+      cacheCtx.lineTo(28, -16);
+      cacheCtx.stroke();
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, -16, 2.8, 0, Math.PI * 2);
+      cacheCtx.fillStyle = secondary;
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+
+      const bowlFill = cacheCtx.createLinearGradient(0, -2, 0, 14);
+      bowlFill.addColorStop(0, secondary);
+      bowlFill.addColorStop(1, primary);
+      cacheCtx.strokeStyle = primary;
+      cacheCtx.fillStyle = bowlFill;
+      cacheCtx.lineWidth = 1.45;
+      [-21, 21].forEach((x) => {
+        const direction = x < 0 ? 1 : -1;
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(x, -16);
+        cacheCtx.lineTo(x, -6);
+        cacheCtx.lineTo(x + direction * 9, 2);
+        cacheCtx.moveTo(x, -6);
+        cacheCtx.lineTo(x - direction * 9, 2);
+        cacheCtx.stroke();
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(x - 11, 2);
+        cacheCtx.quadraticCurveTo(x, 17, x + 11, 2);
+        cacheCtx.quadraticCurveTo(x, 7, x - 11, 2);
+        cacheCtx.fill();
+        cacheCtx.stroke();
+        cacheCtx.strokeStyle = metal;
+        cacheCtx.lineWidth = 0.8;
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(x - 8, 5);
+        cacheCtx.quadraticCurveTo(x, 12, x + 8, 5);
+        cacheCtx.stroke();
+        cacheCtx.strokeStyle = primary;
+        cacheCtx.lineWidth = 1.45;
+      });
+
+      cacheCtx.fillStyle = primary;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, 18);
+      cacheCtx.lineTo(-9, 29);
+      cacheCtx.lineTo(9, 29);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.fillStyle = metal;
+      cacheCtx.fillRect(-15, 29, 30, 2.2);
+      cacheCtx.strokeStyle = primary;
+      cacheCtx.strokeRect(-15, 29, 30, 2.2);
     }
     cacheCtx.restore();
   }
   ${marker}();
+  if (config.motif === "comeFromAwayGlobe" || config.motif === "legallyBlondeBalance") {
+    new MutationObserver(() => ${marker}()).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-musical-theme"],
+    });
+  }
 
   function preRenderWindmillBlades() {
     if (config.motif !== "windmill") return;
@@ -9364,14 +10434,6 @@ function renderReferenceCursor(show) {
         this.vy *= burst ? 0.9 : 0.35;
         this.radius = 0.7 + Math.random() * 1.05;
         this.color = index % 3 === 0 ? "#9ecbe8" : index % 2 ? "#f4d976" : "#ffffff";
-      }
-      if (config.trail === "bloodMist") {
-        this.vx *= burst ? 0.85 : 0.24;
-        this.vy = burst ? this.vy * 0.85 + 0.25 : 0.12 + Math.random() * 0.32;
-        this.radius = 0.85 + Math.random() * 1.35;
-        this.alpha = burst ? 0.88 : 0.52 + Math.random() * 0.22;
-        this.fade = burst ? 0.027 : 0.018 + Math.random() * 0.008;
-        this.color = index % 3 === 0 ? "#fff0d3" : index % 2 ? "#b51e3d" : "#7c122b";
       }
       if (config.trail === "ludwigStarlight") {
         this.vx *= burst ? 0.9 : 0.3;
@@ -9505,16 +10567,6 @@ function renderReferenceCursor(show) {
           ctx.lineTo(0, ray * 0.82);
           ctx.stroke();
         }
-      } else if (config.trail === "bloodMist") {
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
-        ctx.beginPath();
-        ctx.ellipse(0, -this.radius * 0.55, this.radius * 0.75, this.radius * 1.15, 0, 0, Math.PI * 2);
-        ctx.moveTo(0, this.radius * 1.7);
-        ctx.lineTo(-this.radius * 0.7, this.radius * 0.45);
-        ctx.lineTo(this.radius * 0.7, this.radius * 0.45);
-        ctx.closePath();
-        ctx.fill();
       } else if (config.trail === "ludwigStarlight") {
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
@@ -9642,7 +10694,7 @@ function renderReferenceCursor(show) {
       this.x = x;
       this.y = y;
       this.age = 0;
-      this.maxAge = 28;
+      this.maxAge = config.burst === "softOceanWave" || config.burst === "softGreenRipple" ? 24 : 28;
     }
     update() {
       this.age += 1;
@@ -9650,14 +10702,54 @@ function renderReferenceCursor(show) {
     draw() {
       const progress = this.age / this.maxAge;
       const radius = 8 + progress * 40;
-      const alpha = Math.max(0, 1 - progress);
+      const alpha = Math.max(0, 1 - progress)
+        * (config.burst === "softOceanWave" || config.burst === "softGreenRipple" ? 0.7 : 1);
       ctx.save();
       ctx.translate(this.x, this.y);
       ctx.globalAlpha = alpha;
       ctx.strokeStyle = config.primary;
       ctx.fillStyle = config.secondary;
       ctx.lineWidth = 1.5;
-      if (config.burst === "spectacular") {
+      if (config.burst === "headlineDrop") {
+        ctx.shadowColor = "rgba(197,31,43,0.35)";
+        ctx.shadowBlur = 2;
+        ctx.font = "700 9px Georgia, serif";
+        ctx.textAlign = "center";
+        ["N", "E", "W", "S"].forEach((letter, index) => {
+          const spread = (index - 1.5) * 7;
+          const drift = (index % 2 ? 1 : -1) * progress * 1.5;
+          ctx.fillStyle = index === 1 ? "#c51f2b" : "#f1d7a2";
+          ctx.fillText(letter, spread + drift, 24 + progress * (16 + index * 1.2));
+        });
+      } else if (config.burst === "subtleRing") {
+        ctx.globalAlpha *= 0.5;
+        ctx.strokeStyle = config.primary;
+        ctx.lineWidth = Math.max(0.65, 1.35 - progress * 0.7);
+        ctx.beginPath();
+        ctx.arc(0, 0, 5 + progress * 11, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (config.burst === "softGreenRipple") {
+        const hazeRadius = 10 + progress * 18;
+        const haze = ctx.createRadialGradient(0, 0, 0, 0, 0, hazeRadius);
+        haze.addColorStop(0, "rgba(141,198,63,0.16)");
+        haze.addColorStop(0.45, "rgba(141,198,63,0.08)");
+        haze.addColorStop(1, "rgba(141,198,63,0)");
+        ctx.globalCompositeOperation = "screen";
+        ctx.globalAlpha *= 0.72;
+        ctx.fillStyle = haze;
+        ctx.beginPath();
+        ctx.arc(0, 0, hazeRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalCompositeOperation = "source-over";
+        ctx.globalAlpha *= 0.62;
+        ctx.strokeStyle = "#9fd26a";
+        ctx.shadowColor = "rgba(141,198,63,0.4)";
+        ctx.shadowBlur = 4;
+        ctx.lineWidth = Math.max(0.55, 1.05 - progress * 0.5);
+        ctx.beginPath();
+        ctx.arc(0, 0, 5 + progress * 18, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (config.burst === "spectacular") {
         ctx.fillStyle = "#ffd700";
         ctx.shadowColor = "#ff2a2a";
         ctx.shadowBlur = 8;
@@ -9770,20 +10862,22 @@ function renderReferenceCursor(show) {
           ctx.lineTo(ray[0], ray[1]);
           ctx.stroke();
         });
-      } else if (config.burst === "oceanWave") {
+      } else if (config.burst === "oceanWave" || config.burst === "softOceanWave") {
+        const softOceanWave = config.burst === "softOceanWave";
         ctx.strokeStyle = "#2d9fb6";
         ctx.shadowColor = "#97d7dc";
-        ctx.shadowBlur = 7;
-        ctx.lineWidth = 1.6;
+        ctx.shadowBlur = softOceanWave ? 3 : 7;
+        ctx.lineWidth = softOceanWave ? 1.05 : 1.6;
+        if (softOceanWave) ctx.globalAlpha *= 0.68;
         ctx.beginPath();
-        ctx.arc(0, 7, radius * 0.74, Math.PI * 1.08, Math.PI * 1.92);
+        ctx.arc(0, 7, radius * (softOceanWave ? 0.58 : 0.74), Math.PI * 1.08, Math.PI * 1.92);
         ctx.stroke();
         ctx.strokeStyle = "#f0d58b";
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(0, 4, radius * 0.48, Math.PI * 1.1, Math.PI * 1.9);
+        ctx.arc(0, 4, radius * (softOceanWave ? 0.38 : 0.48), Math.PI * 1.1, Math.PI * 1.9);
         ctx.stroke();
-        ctx.globalAlpha *= 0.82;
+        ctx.globalAlpha *= softOceanWave ? 0.56 : 0.82;
         ctx.beginPath();
         ctx.moveTo(0, -radius * 0.72);
         ctx.lineTo(0, radius * 0.42);
@@ -10061,7 +11155,7 @@ function renderReferenceCursor(show) {
       : distance >= (config.emitDistance || 12);
     if (shouldEmit) {
       const movementAngle = Math.atan2(event.clientY - lastEmit.y, event.clientX - lastEmit.x);
-      if (config.trail !== "fiveLineStaff") {
+      if (config.trail && config.trail !== "none" && config.trail !== "fiveLineStaff") {
         particles.push(new TrailParticle(event.clientX, event.clientY, false, particles.length, movementAngle));
       }
       canvas.dataset.cursorTrailEmissions = String(Number(canvas.dataset.cursorTrailEmissions) + 1);
@@ -10080,7 +11174,7 @@ function renderReferenceCursor(show) {
       mouse.targetX = x;
       mouse.targetY = y;
     }
-    bursts.push(new ClickBurst(x, y));
+    if (config.burst !== "none") bursts.push(new ClickBurst(x, y));
     if (config.motif === "grandChandelier") chandelierLight = 1;
     canvas.dataset.cursorClickBursts = String(Number(canvas.dataset.cursorClickBursts) + 1);
     for (let index = 0; index < config.burstParticles; index += 1) {
@@ -10131,6 +11225,8 @@ function renderReferenceCursor(show) {
         ctx.rotate(windmillRotation);
         ctx.drawImage(bladeCache, -size * 0.5, -size * 0.5, size, size);
       } else {
+        motifRotation += 0.004;
+        if (config.motif === "filmReel") ctx.rotate(motifRotation);
         drawChandelierLightPulse(size, false);
         ctx.drawImage(
           cache,
@@ -10165,6 +11261,7 @@ const root = path.resolve(__dirname, "..");
 const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const scriptJs = fs.readFileSync(path.join(root, "script.js"), "utf8");
 const styleCss = fs.readFileSync(path.join(root, "style.css"), "utf8");
+const displaySettingsCss = fs.readFileSync(path.join(root, "..", "shared", "display-settings.css"), "utf8");
 const songsJs = fs.readFileSync(path.join(root, ${JSON.stringify(show.fullSongsFile || "songs.js")}), "utf8");
 const criticalSongsJs = fs.readFileSync(path.join(root, "songs.js"), "utf8");
 const songsInitialJs = fs.readFileSync(path.join(root, "songs-initial.js"), "utf8");
@@ -10186,6 +11283,8 @@ test("page uses the show-specific cursor profile", () => {
     assert.match(cursorJs, new RegExp(\`"motif":"\${cursorProfile.motif}"\`));
     assert.match(cursorJs, new RegExp(\`"trail":"\${cursorProfile.trail}"\`));
     assert.match(cursorJs, new RegExp(\`"burst":"\${cursorProfile.burst}"\`));
+    if (cursorProfile.clickOn) assert.match(cursorJs, new RegExp(\`"clickOn":"\${cursorProfile.clickOn}"\`));
+    if (Number.isInteger(cursorProfile.burstParticles)) assert.match(cursorJs, new RegExp(\`"burstParticles":\${cursorProfile.burstParticles}\`));
   } else {
     assert.match(cursorJs, new RegExp(cursorMarker));
   }
@@ -10213,17 +11312,19 @@ test("favorites are not present", () => {
   });
 });
 
-test("Chinese, IPA, and optional English toggles exist", () => {
-  assert.match(indexHtml, /data-toggle="showZh"/);
+test("translation toggles use reviewed labels and stay grouped before IPA", () => {
+  assert.match(indexHtml, /data-toggle="showZh"[^>]*>中译<\\/button>/);
   assert.match(indexHtml, /data-toggle="showIpa"/);
   assert.match(indexHtml, /id="feedbackButton"[^>]*>反馈<\\/button>/);
+  assert.ok(indexHtml.indexOf('data-toggle="showZh"') < indexHtml.indexOf('data-toggle="showIpa"'));
   assert.ok(indexHtml.indexOf('data-toggle="showIpa"') < indexHtml.indexOf('id="feedbackButton"'));
   if (${JSON.stringify(show.showEnglishToggle === false)}) {
     assert.doesNotMatch(indexHtml, /data-toggle="showEn"/);
-    assert.doesNotMatch(indexHtml, /data-toggle="showIpa"[^>]*>音标<\\/button>\\n[ \\t]+\\n[ \\t]+<button[^>]*id="feedbackButton"/);
   } else {
-    assert.match(indexHtml, /data-toggle="showEn"/);
-    assert.ok(indexHtml.indexOf('data-toggle="showEn"') < indexHtml.indexOf('id="feedbackButton"'));
+    assert.match(indexHtml, /data-toggle="showEn"[^>]*>英译<\\/button>/);
+    assert.match(indexHtml, /data-toggle="showZh"[^>]*>中译<\\/button>\\s*<button[^>]*data-toggle="showEn"[^>]*>英译<\\/button>/);
+    assert.ok(indexHtml.indexOf('data-toggle="showZh"') < indexHtml.indexOf('data-toggle="showEn"'));
+    assert.ok(indexHtml.indexOf('data-toggle="showEn"') < indexHtml.indexOf('data-toggle="showIpa"'));
   }
   assert.match(scriptJs, /showIpa:\\s*true/);
   assert.match(scriptJs, /phonetic\\.hidden\\s*=\\s*!state\\.settings\\.showIpa/);
@@ -10281,7 +11382,7 @@ test("song header uses an unframed show logo and soft switching", () => {
   assert.match(indexHtml, /class="home-button" href="\\.\\.\\/index\\.html" aria-label="返回音乐剧展示架"/);
   assert.match(indexHtml, /class="show-visual"/);
   assert.doesNotMatch(indexHtml, /show-visual-inner/);
-  assert.match(indexHtml, /class="show-visual-image" src="assets\\/show(?:-title)?-logo\\.(?:png|svg|webp|jpg)"/);
+  assert.match(indexHtml, /class="show-visual-image" src="assets\\/show(?:-title)?-logo(?:-[^./]+)?\\.(?:png|svg|webp|jpg)"/);
   assert.match(styleCss, /\\.hero/);
   assert.match(styleCss, /\\.show-visual/);
   assert.match(scriptJs, /function renderCurrentSongWithTransition/);
@@ -10331,8 +11432,104 @@ test("page includes a themed canvas cursor effect", () => {
   assert.match(cursorJs, /window\\.referenceCursorActive = true/);
   assert.match(cursorJs, new RegExp(cursorMarker));
   assert.match(cursorJs, /Math\\.min\\(window\\.devicePixelRatio \\|\\| 1, 1\\.5\\)/);
-  assert.match(cursorJs, /particles\\.length > 72/);
-  assert.match(cursorJs, /document\\.hidden/);
+  if (${JSON.stringify(show.slug)} === "notre-dame-de-paris") {
+    assert.match(cursorJs, /window\\.addEventListener\\("pointermove", updatePointer/);
+    assert.match(cursorJs, /window\\.addEventListener\\("pointerdown", handlePointerDown/);
+    assert.match(cursorJs, /window\\.addEventListener\\("pointerup", handlePointerUp/);
+    assert.match(cursorJs, /const pressedScale = 0\\.88/);
+    assert.match(cursorJs, /createLinearGradient/);
+    assert.match(cursorJs, /requestAnimationFrame\\(drawCursor\\)/);
+    assert.doesNotMatch(cursorJs, /CathedralHaloTrail|SoftWindowGlow|particles|ctx\\.filter|autoRotation|targetX/);
+  } else {
+    assert.match(cursorJs, /particles\\.length > 72/);
+    assert.match(cursorJs, /document\\.hidden/);
+  }
+});
+
+test("shared page-style trigger matches the generated hero action buttons", () => {
+  assert.match(indexHtml, /lyrics-page-tools\\.css\\?v=20260830-derived-light-profiles-4/);
+  assert.match(indexHtml, /display-settings\\.css\\?v=20260830-derived-light-profiles-4/);
+  assert.match(displaySettingsCss, /\\.musical-display-trigger\\s*\\{[\\s\\S]*?color:\\s*var\\(--highlight/);
+  assert.match(displaySettingsCss, /\\.musical-display-trigger\\s*\\{[\\s\\S]*?background:\\s*var\\(--panel/);
+  assert.match(displaySettingsCss, /\\.musical-display-trigger\\s*\\{[\\s\\S]*?box-shadow:\\s*none/);
+  assert.match(displaySettingsCss, /html\\[data-musical-theme="light"\\]\\[data-musical-page\\] :is\\([\\s\\S]*?\\.musical-display-trigger/);
+});
+
+test("generated hero action buttons share the dark-theme button treatment", () => {
+  assert.match(indexHtml, /class="home-button"/);
+  const pageToolsCss = fs.readFileSync(path.join(root, "..", "shared", "lyrics-page-tools.css"), "utf8");
+  assert.match(pageToolsCss, /\\.lyrics-tools-hero-actions \\.home-button\\s*\\{[\\s\\S]*?width:\\s*44px/);
+  assert.match(pageToolsCss, /\\.lyrics-tools-hero-actions \\.home-button\\s*\\{[\\s\\S]*?background:\\s*var\\(--panel/);
+  assert.match(pageToolsCss, /\\.lyrics-tools-hero-actions \\.home-button\\s*\\{[\\s\\S]*?box-shadow:\\s*none/);
+});
+
+test("Matilda My House keeps complete phrases together and preserves the backing vocal", () => {
+  if (${JSON.stringify(show.slug)} !== "matilda") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const song = sandbox.window.songs.find((item) => item.sourceOrder === 15);
+  assert.equal(song?.lines.at(-2)?.original, "It isn't much but it is enough for me");
+  assert.equal(song?.lines.at(-2)?.zh, "虽然不多，但对我来说已足够");
+  assert.equal(song?.lines.at(-1)?.original, "It isn't much but it is enough for me");
+  assert.equal(song?.lines.at(-1)?.zh, "虽然不多，但对我来说已足够");
+  assert.equal(song?.lines.find((line) => line.id === "matilda-15-014")?.zh, "借着这盏灯，我可以阅读；而我也获得了自由");
+  assert.equal(song?.lines.find((line) => line.id === "matilda-15-032")?.original, "It isn't much");
+  assert.match(song?.lines.find((line) => line.original.includes("Don’t cry"))?.original || "", /Don’t cry/u);
+});
+
+test("Matilda uses a 45-degree upward-slanting downward-pointing pencil cursor", () => {
+  if (${JSON.stringify(show.slug)} !== "matilda") return;
+  assert.ok(cursorJs.includes('"hotspot":[0.29,0.72]'));
+  assert.match(cursorJs, /config\\.motif === "matildaPencil"/);
+  assert.match(cursorJs, /cacheCtx\\.rotate\\(Math\\.PI\\);/);
+  assert.ok(cursorJs.includes("cacheCtx.rotate(Math.PI / 4);"));
+});
+
+test("Sound of Music uses a polished blue vector music-note cursor", () => {
+  if (${JSON.stringify(show.slug)} !== "sound-of-music-the") return;
+  assert.match(cursorJs, /"motif":"soundOfMusicNote"/);
+  assert.match(cursorJs, /"trail":"none"/);
+  assert.match(cursorJs, /"burst":"softDiamondGlow"/);
+  assert.match(cursorJs, /"follow":1/);
+  assert.match(cursorJs, /createLinearGradient/);
+  assert.match(cursorJs, /"accent":"#4fb6d7"/);
+  assert.match(cursorJs, /cacheCtx\\.ellipse\\(-7, 19, 10\\.5, 6\\.5/);
+  assert.doesNotMatch(cursorJs, /Apple Color Emoji|fillText\\("🎵"/);
+});
+
+test("Preludium keeps the reviewed Latin-to-Chinese line pairs", () => {
+  if (${JSON.stringify(show.slug)} !== "sound-of-music-the") return;
+  const sourceText = fs.readFileSync(path.join(root, "..", "..", "lyrics", ${JSON.stringify(show.source)}), "utf8");
+  assert.match(sourceText, /\\| Dixit dominus domino meo \\|\\s*\\n\\| 上主对我的主说 \\|/u);
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const preludium = sandbox.window.songs.find((song) => song.sourceOrder === 1);
+  assert.equal(preludium?.lines.length, 22);
+  assert.deepEqual(Array.from(preludium?.lines.slice(0, 4) || [], (line) => line.zh), [
+    "上主对我的主说",
+    "你坐在我的右边",
+    "等我使你的仇敌",
+    "成为你脚下的凳脚",
+  ]);
+  assert.equal(preludium?.lines.filter((line) => !line.zh).length, 0);
+  assert.ok(preludium?.lines.every((line) => !line.speaker));
+});
+
+test("Come From Away keeps the reviewed count-in and globe cursor", () => {
+  if (${JSON.stringify(show.slug)} !== "come-from-away") return;
+  const lyricSandbox = { window: {} };
+  vm.runInNewContext(songsJs, lyricSandbox);
+  const finale = lyricSandbox.window.songs.find((song) => song.sourceOrder === 22);
+  const opening = finale?.lines?.[0];
+  const toledo = finale?.lines?.find((line) => line.id === "come-from-away-22-004");
+  assert.equal(opening?.original, "One, two, a-one, two, three, four");
+  assert.equal(opening?.zh, "1，2，预备—1，2，3，4");
+  assert.equal(toledo?.original.includes("Toldeo"), false);
+  assert.match(cursorJs, /"motif":"comeFromAwayGlobe"/);
+  assert.match(cursorJs, /"size":50/);
+  assert.match(cursorJs, /musical-light-accent/);
+  assert.match(cursorJs, /MutationObserver/);
+  assert.doesNotMatch(cursorJs, /comeFromAwayPlane/);
 });
 
 test("songs and word data are populated", () => {
@@ -10345,6 +11542,28 @@ test("songs and word data are populated", () => {
   const versionLabel = /(?:[（(\\[［]\\s*(?:live|现场)|[-–—]\\s*live)/iu;
   assert.ok(sandbox.window.songs.every((song) => !versionLabel.test(song.title) && !versionLabel.test(song.titleZh)));
   assert.ok(Object.keys(sandbox.window.wordEntries).length > 0);
+});
+
+test("Les Misérables keeps the English additions in concert order", () => {
+  if (${JSON.stringify(show.slug)} !== "les-miserables") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const songs = sandbox.window.songs;
+  assert.equal(songs.length, 39);
+  assert.deepEqual(Array.from(songs, (song) => song.displayOrder), Array.from({ length: 39 }, (_value, index) => index + 1));
+  const doYouHear = songs.find((song) => song.sourceOrder === 38);
+  const epilogue = songs.find((song) => song.sourceOrder === 39);
+  const encore = songs.find((song) => song.sourceOrder === 40);
+  assert.equal(doYouHear?.title, "Do You Hear the People Sing?");
+  assert.equal(doYouHear?.displayOrder, 18);
+  assert.equal(doYouHear?.lines.length, 36);
+  assert.equal(epilogue?.title, "Epilogue (Finale)");
+  assert.equal(epilogue?.displayOrder, 38);
+  assert.equal(epilogue?.lines.length, 86);
+  assert.equal(encore?.title, "Encore: One Day More");
+  assert.equal(encore?.displayOrder, 39);
+  assert.equal(encore?.lines.length, 72);
+  assert.ok([doYouHear, epilogue, encore].every((song) => song?.lines.every((line) => line.original && line.zh && line.ipa)));
 });
 
 test("The Greatest Show compresses the opening vocalization and shows its repeat count", () => {
@@ -10374,7 +11593,7 @@ test("Epic keeps all 40 songs and removes non-lyric stage directions", () => {
   assert.match(cursorJs, /preRenderOdysseyTrident/);
   assert.match(cursorJs, /config\.motif === "odysseyTrident"/);
   assert.match(cursorJs, /config\.trail === "seaStarlight"/);
-  assert.match(cursorJs, /config\.burst === "oceanWave"/);
+  assert.match(cursorJs, /config\.burst === "softOceanWave"/);
 });
 
 test("Dear Evan Hansen keeps slash-delimited line IPA and its upper-left note hotspot", () => {
@@ -10423,6 +11642,15 @@ test("Starmania opening keeps the reviewed Chinese translation", () => {
   assert.equal(opening.titleZh, "垄断城出大事了");
   assert.equal(opening.lines.find((line) => line.lineIndex === 3).zh, "垄断城");
   assert.equal(opening.lines.find((line) => line.lineIndex === 29).zh, "当太阳落下");
+});
+
+test("Moulin Rouge keeps source IPA corrections when lyric text is unchanged", () => {
+  if (${JSON.stringify(show.slug)} !== "moulin-rouge") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const encore = sandbox.window.songs.find((song) => song.sourceOrder === 19);
+  assert.equal(encore.lines[0].ipa, "/vulevu kuʃe avɛk mwa sə swar/");
+  assert.equal(encore.lines[1].ipa, "/vulevu kuʃe avɛk mwa/");
 });
 
 test("Phantom and Love Never Dies stay in separate source ranges", () => {
@@ -10654,6 +11882,7 @@ test("sentence and word audio prefer cached local MP3 files", () => {
   assert.match(scriptJs, /MusicalAudio\\.getCachedAudio\\(src\\)/);
   assert.match(scriptJs, /MusicalAudio\\.preloadLocalAudio/);
   assert.match(scriptJs, /function withAudioVersion\\(path, speechText\\)/);
+  assert.match(scriptJs, /String\\(config\\.audioVoice \\|\\| "system"\\)/);
   assert.match(scriptJs, /withAudioVersion\\([^\\n]+line\\.original\\)/);
   assert.match(scriptJs, /\\.mp3/);
   assert.match(scriptJs, /audio\\/lines/);
@@ -10716,9 +11945,12 @@ if (require.main === module) main();
 
 module.exports = {
   SHOWS,
+  deriveLightProfile,
+  renderIndex,
   cleanConfiguredSongTitle,
   isInstrumentalMarkerText,
   isInstrumentalPlaceholderLine,
+  parseLoosePairedEnglishMarkdown,
   parsePairedEnglishMarkdown,
   parseEnglishChineseColumnsMarkdown,
   parseEnglishChineseSingleColumnMarkdown,
