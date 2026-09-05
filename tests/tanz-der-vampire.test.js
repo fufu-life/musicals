@@ -36,3 +36,28 @@ test("Tanz der Vampire uses the canonical theatrical order without alternate-rec
     Array.from(fullSongs, (song) => [song.id, song.order, song.displayOrder]),
   );
 });
+
+test("Tanz der Vampire translations are publication-safe and speaker labels are normalized", () => {
+  const fullSongs = loadSongs("tanz-der-vampire/songs-full.js", "songs");
+  const allLines = fullSongs.flatMap((song) => song.lines);
+  const forbiddenTranslation = /[粑粑~～！!]|……|\.\.\.|[（）()]|[“”"‘’]|[+＋]/u;
+  const forbiddenSpeakers = new Set([
+    "A",
+    "H",
+    "P",
+    "P (Professor)",
+    "Von Krolocks Stimme (zu Alfred)",
+  ]);
+
+  assert.equal(allLines.length, 1608);
+  assert.equal(allLines.filter((line) => forbiddenTranslation.test(line.zh)).length, 0);
+  assert.equal(allLines.filter((line) => forbiddenSpeakers.has(line.speaker)).length, 0);
+
+  const ballroom = fullSongs.find((song) => song.order === 29);
+  assert.equal(ballroom.lines[0].id, "tanz-der-vampire-29-002");
+  assert.equal(ballroom.lines[0].speaker, "克罗洛克");
+  assert.equal(
+    ballroom.lines.some((line) => /^(?:VON KROLOCK|VAMPIRE|SARAH|ALFRED|PROFESSOR)$/u.test(line.original)),
+    false,
+  );
+});
