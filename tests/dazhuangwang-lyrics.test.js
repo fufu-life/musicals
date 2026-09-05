@@ -1,10 +1,15 @@
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 const vm = require("node:vm");
 
 const ROOT = path.resolve(__dirname, "..");
+
+function sha256(file) {
+  return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+}
 
 function loadSongs(file, key = "dazhuangwangSongs") {
   const context = { window: {} };
@@ -115,6 +120,26 @@ test("feedback Jyutping corrections are reflected in the page runtime", () => {
       ["dzw-02-036", "joek6 hai6 jiu3 kaau3 ngo5 bou2 ming6 maai6 dong3 ze3 dou1 mei6 gwo3 fo2"],
     ],
   );
+});
+
+test("three tone-only feedback corrections have rebuilt direct-Jyutping audio", () => {
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(ROOT, "..", "musicals-local-archive", "大状王", "audio-sinji-manifest.json"), "utf8"),
+  );
+  const expected = {
+    "dzw-02-025": { bytes: 132098, oldSha256: "98d2551b42ac160849533dfc21a6510bc40cbf79e2a361fb59cc49668822b9e8", engine: "espeak-ng:yue-Latn-jyutping", audio: "audio/02-菩提达摩/dzw-02-025.mp3" },
+    "dzw-02-036": { bytes: 173762, oldSha256: "0e7e43e0d50c9e46e137026ce9427b057fc01e923fb4245998c08bc047b095ad", engine: "espeak-ng:yue-Latn-jyutping", audio: "audio/02-菩提达摩/dzw-02-036.mp3" },
+    "dzw-11-010": { bytes: 150066, oldSha256: "51ffcc79943bfe41b165173846c1f9204c658f2dee17fc85ea7cb154f430aff3", engine: "espeak-ng:yue-Latn-jyutping", audio: "audio/11-莫对我心软/dzw-11-010.mp3" },
+  };
+
+  Object.entries(expected).forEach(([id, item]) => {
+    const entry = manifest.find((candidate) => candidate.id === id);
+    assert.equal(entry?.engine, item.engine, id);
+    assert.equal(entry?.signal.bytes, item.bytes, id);
+    const audio = path.join(ROOT, "dazhuangwang", item.audio);
+    assert.ok(fs.statSync(audio).size > 0, id);
+    assert.notEqual(sha256(audio), item.oldSha256, id);
+  });
 });
 
 test("镜中缘 is recorded as a separate slash-free cut song with aligned Jyutping", () => {
