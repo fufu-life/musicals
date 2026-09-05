@@ -2045,6 +2045,20 @@ const SHOW_WORD_OVERRIDES = {
   "tick-tick-boom": {
     "clean-up": ["清理打者；四棒打者", "cleanup batter", "clean-up", "/ˈkliːnʌp/"],
   },
+  "elisabeth-das-musical": {
+    elisabeth: ["伊丽莎白（人名）", "Elisabeth", "Elisabeth"],
+    franz: ["弗朗茨（人名）", "Franz", "Franz"],
+    helene: ["海伦（人名）", "Helene", "Helene"],
+    rudolf: ["鲁道夫（人名）", "Rudolf", "Rudolf"],
+    sophie: ["索菲（人名）", "Sophie", "Sophie"],
+  },
+  "mozart-das-musical": {
+    constanze: ["康斯坦茨（人名）", "Constanze", "Constanze"],
+    franz: ["弗朗茨（人名）", "Franz", "Franz"],
+    mozart: ["莫扎特（人名）", "Mozart", "Mozart"],
+    wien: ["维也纳", "Vienna", "Wien"],
+    wolfgang: ["沃尔夫冈（人名）", "Wolfgang", "Wolfgang"],
+  },
 };
 
 const SHOW_LYRIC_CORRECTIONS = {
@@ -2464,7 +2478,20 @@ const COMMON_FRENCH = {
 const COMMON_GERMAN = {
   aber: ["但是", "but", "aber"],
   alle: ["所有人；全部", "all / everyone", "alle"],
+  allein: ["独自；单独", "alone", "allein"],
+  alleine: ["独自；单独", "alone", "alleine"],
+  allem: ["一切；所有事物", "everything / all", "allem"],
+  allen: ["所有；全部", "all / every", "allen"],
+  aller: ["所有；一切", "all / every", "aller"],
+  allerbesten: ["最好的；顶好的", "very best", "allerbesten"],
+  allerdings: ["不过；然而", "however", "allerdings"],
+  alles: ["一切；所有事物", "everything / all", "alles"],
   als: ["作为；当……时；比", "as / when / than", "als"],
+  also: ["所以；那么", "so / therefore", "also"],
+  alt: ["老的；旧的", "old", "alt"],
+  alte: ["老的；老人", "old / old person", "alte"],
+  am: ["在……时；在……上", "at the / on the", "am"],
+  an: ["在……旁；向着；在……上", "at / toward / on", "an"],
   auch: ["也；还", "also / too", "auch"],
   auf: ["在……上；向上", "on / upon", "auf"],
   aus: ["从……出来；来自", "out of / from", "aus"],
@@ -2472,6 +2499,7 @@ const COMMON_GERMAN = {
   bin: ["是", "am", "bin"],
   bist: ["是", "are", "bist"],
   da: ["那里；因为", "there / since", "da"],
+  dann: ["然后；那么", "then", "dann"],
   das: ["这；那个；定冠词", "that / the", "das"],
   dass: ["……这一事实；引导从句", "that", "dass"],
   dein: ["你的", "your", "dein"],
@@ -2492,33 +2520,89 @@ const COMMON_GERMAN = {
   einer: ["一个；某人", "one / someone", "einer"],
   er: ["他", "he", "er"],
   es: ["它；这", "it", "es"],
+  einfach: ["简单的；只是；直接的", "simple / just", "einfach"],
+  eignen: ["自己的；本身的（变格形式）", "own", "eig'nen"],
+  fällt: ["落下；跌落", "falls", "fällt"],
+  fort: ["远离；离开", "away / forth", "fort"],
   für: ["为了；给", "for", "für"],
+  frei: ["自由的；免费的；空闲的", "free", "frei"],
+  fürst: ["亲王；诸侯", "prince / sovereign", "Fürst"],
+  geben: ["给；提供", "give / provide", "geben"],
+  gibt: ["给；有；存在", "gives / there is", "gibt"],
+  geht: ["走；进展", "goes / is going", "geht"],
+  geh: ["走；去（省音）", "go", "geh"],
+  gehn: ["走；去（省音）", "go", "geh'n"],
+  gehör: ["听觉；听力", "hearing", "Gehör"],
+  haelt: ["拿着；保持（hält）", "holds / keeps", "hält"],
+  hält: ["拿着；保持", "holds / keeps", "hält"],
+  graf: ["伯爵", "count", "Graf"],
+  habe: ["有；拥有", "have", "habe"],
   haben: ["有；拥有", "to have", "haben"],
   hat: ["有", "has", "hat"],
+  hab: ["有；拥有（口语）", "have", "hab"],
+  hast: ["有；拥有", "have", "hast"],
+  heißt: ["叫作；意味着", "is called / means", "heißt"],
+  herr: ["先生；阁下；君主", "Mr. / Lord", "Herr"],
   ich: ["我", "I", "ich"],
+  ihm: ["他（第三格）", "him / to him", "ihm"],
+  ihn: ["他（第四格）", "him", "ihn"],
   ihr: ["她；她的；你们", "her / you", "ihr"],
+  ihrem: ["她的；他们的（与格形式）", "her / their (dative)", "ihrem"],
   im: ["在……里面", "in the", "im"],
   in: ["在……里；进入", "in / into", "in"],
+  ins: ["进入……；到……里（in das）", "into the", "ins"],
   ist: ["是", "is", "ist"],
+  immer: ["总是；一直", "always", "immer"],
+  jetzt: ["现在", "now", "jetzt"],
+  kann: ["可以；能", "can", "kann"],
+  kannst: ["可以；能", "can", "kannst"],
   kein: ["没有；不是任何", "no / not any", "kein"],
   keine: ["没有；不是任何", "no / not any", "keine"],
+  können: ["可以；能够", "can", "können"],
+  komm: ["来；过来（命令式）", "come", "komm"],
+  lass: ["让；放开（命令式）", "let / leave", "lass"],
+  leben: ["生活；活着", "life / live", "leben"],
+  lieben: ["爱；喜欢", "love", "lieben"],
+  liebt: ["爱；喜欢（第三人称单数）", "loves", "liebt"],
+  los: ["走开；出发；松开", "away / off / go", "los"],
   man: ["人们；有人", "one / people", "man"],
+  mehr: ["更多；再", "more", "mehr"],
   mein: ["我的", "my", "mein"],
   meine: ["我的", "my", "meine"],
   mich: ["我", "me", "mich"],
+  mir: ["我；给我", "me / to me", "mir"],
+  mal: ["一次；一下（语气词）", "once / just", "mal"],
+  macht: ["做；使；权力", "make / power", "macht"],
+  meinen: ["认为；想；我的（变格形式）", "think / mean; my", "meinen"],
+  meinem: ["我的（与格/中性形式）", "my (dative/neuter)", "meinem"],
   mit: ["和；带着；用", "with", "mit"],
   muss: ["必须", "must", "muss"],
   nicht: ["不；没有", "not", "nicht"],
   nichts: ["什么也没有", "nothing", "nichts"],
+  nach: ["在……之后；向；去往", "after / to", "nach"],
+  nie: ["从不；从来没有", "never", "nie"],
   noch: ["还；仍然；再", "still / yet", "noch"],
   nur: ["只；仅仅", "only", "nur"],
+  niemals: ["从不；绝不", "never", "niemals"],
+  nun: ["现在；那么", "now / then", "nun"],
   oder: ["或者", "or", "oder"],
   ohne: ["没有；不带", "without", "ohne"],
+  recht: ["正确的；权利；相当", "right / fairly", "recht"],
   schon: ["已经；确实", "already / indeed", "schon"],
   sein: ["是；他的", "to be / his", "sein"],
+  seine: ["他的；她的；它的（变格形式）", "his / her / its", "seine"],
+  seinen: ["他的；自己的（变格形式）", "his / one's own", "seinen"],
+  sich: ["自己；彼此（反身代词）", "oneself / each other", "sich"],
   sie: ["她；他们；您", "she / they / you", "sie"],
   sind: ["是", "are", "sind"],
+  schloss: ["城堡；宫殿", "castle / palace", "Schloss"],
   so: ["这样；如此", "so / like this", "so"],
+  zeit: ["时间；时代", "time / era", "Zeit"],
+  will: ["想要；愿意", "want", "will"],
+  wollen: ["想要；愿意", "want", "wollen"],
+  wollte: ["想要；想", "wanted", "wollte"],
+  wollten: ["想要；想", "wanted", "wollten"],
+  wieder: ["再次；回来", "again / back", "wieder"],
   über: ["在……上方；关于", "over / about", "über"],
   um: ["围绕；为了", "around / in order to", "um"],
   und: ["和；并且", "and", "und"],
@@ -2535,6 +2619,63 @@ const COMMON_GERMAN = {
   wir: ["我们", "we", "wir"],
   wird: ["将会；变成", "will / becomes", "wird"],
   wo: ["哪里", "where", "wo"],
+  all: ["全部；所有", "all", "all"],
+  again: ["再次", "again", "again"],
+  bald: ["很快；不久", "soon", "bald"],
+  bleibt: ["留下；仍然是", "stays / remains", "bleibt"],
+  etwas: ["一些；某事", "some / something", "etwas"],
+  euch: ["你们；给你们", "you", "euch"],
+  gar: ["完全；根本", "at all", "gar"],
+  ganz: ["整个；完全", "whole / completely", "ganz"],
+  gehört: ["属于；听到", "belongs / hears", "gehört"],
+  gott: ["上帝；神", "God", "Gott"],
+  gut: ["好的；不错", "good / well", "gut"],
+  hier: ["这里", "here", "hier"],
+  jeder: ["每个；每一", "each / every", "jeder"],
+  ja: ["是的", "yes", "ja"],
+  kind: ["孩子", "child", "Kind"],
+  kommt: ["来；到来", "comes", "kommt"],
+  lässt: ["让；允许", "lets / allows", "lässt"],
+  liebe: ["爱；爱情", "love", "Liebe"],
+  licht: ["光；光明", "light", "Licht"],
+  mann: ["男人；人", "man", "Mann"],
+  möchte: ["想要；愿意", "would like", "möchte"],
+  mutter: ["母亲；妈妈", "mother", "Mutter"],
+  musik: ["音乐", "music", "Musik"],
+  nacht: ["夜晚；黑夜", "night", "Nacht"],
+  nein: ["不；不是", "no", "nein"],
+  passt: ["适合；相符", "fits / suits", "passt"],
+  sehr: ["非常", "very", "sehr"],
+  schatten: ["影子；阴影", "shadow", "Schatten"],
+  schlecht: ["坏的；糟糕的", "bad", "schlecht"],
+  soll: ["应该；将要", "should", "soll"],
+  sohn: ["儿子", "son", "Sohn"],
+  viel: ["很多；许多", "much / many", "viel"],
+  vater: ["父亲；爸爸", "father", "Vater"],
+  wäre: ["会是；本来是", "would be", "wäre"],
+  werden: ["变成；将会", "become / will", "werden"],
+  werde: ["将会；变成", "will become", "werde"],
+  willst: ["想要；愿意", "want", "willst"],
+  wirst: ["将会；会变成", "will become", "wirst"],
+  welt: ["世界", "world", "Welt"],
+  darf: ["可以；获准", "may / is allowed to", "darf"],
+  ihnen: ["他们；她们；您（与格）", "them / you", "ihnen"],
+  letzte: ["最后的；最近的", "last / final", "letzte"],
+  letzten: ["最后的；最近的", "last / final", "letzten"],
+  niemand: ["没有人", "nobody", "niemand"],
+  sei: ["是；成为（虚拟式/命令式）", "be", "sei"],
+  selbst: ["自己；亲自", "self / oneself", "selbst"],
+  steht: ["站立；位于", "stands / is located", "steht"],
+  stern: ["星；星辰", "star", "Stern"],
+  sternen: ["星星；星辰（变格形式）", "stars", "Sternen"],
+  tag: ["日；天", "day", "Tag"],
+  tu: ["做（第一人称/命令式）", "do", "tu"],
+  tod: ["死亡；死神", "death / Death", "Tod"],
+  waer: ["会是；本来是（wäre 的无变音符写法）", "would be", "wäre"],
+  weg: ["离开；不在；路", "away / gone / way", "weg"],
+  weiß: ["知道；白色", "know / white", "weiß"],
+  warum: ["为什么", "why", "warum"],
+  wenig: ["少量；很少的", "little / few", "wenig"],
   zu: ["向；到；太；去做", "to / too", "zu"],
   zum: ["向这个；为了", "to the / for", "zum"],
   zur: ["向这个；为了", "to the / for", "zur"],
@@ -2955,8 +3096,13 @@ function main() {
   const indexOnly = process.argv.includes("--index-only");
   const scriptsOnly = process.argv.includes("--scripts-only");
   const initialDataOnly = process.argv.includes("--initial-data-only");
+  const wordDataOnly = process.argv.includes("--word-data-only");
+  const existingSongsOnly = process.argv.includes("--existing-songs-only");
   if ((dryRun && writeRequested) || (preflightOnly && (dryRun || writeRequested))) {
     throw new Error("Use exactly one of --dry-run, --preflight, or --write");
+  }
+  if (existingSongsOnly && !wordDataOnly) {
+    throw new Error("--existing-songs-only is limited to --word-data-only or --preflight");
   }
   if (!dryRun && !preflightOnly && !writeRequested) {
     throw new Error(
@@ -3014,8 +3160,10 @@ function main() {
       summary.push({ slug: show.slug, styles: "built" });
       return;
     }
-    const sourcePath = path.join(LYRICS_ROOT, show.source);
-    const songs = parseMarkdown(sourcePath, show);
+    const outDir = path.join(ROOT, show.slug);
+    const songs = existingSongsOnly
+      ? loadWindowArray(path.join(outDir, show.fullSongsFile || "songs.js"), "songs")
+      : parseMarkdown(path.join(LYRICS_ROOT, show.source), show);
     assertLyricsReadyForGeneration(songs, show, { requireComplete: !dryRun });
     if (dryRun) {
       const lines = songs.flatMap((song) => song.lines);
@@ -3035,9 +3183,8 @@ function main() {
       });
       return;
     }
-    if (writeRequested) assertNoUnreviewedContentChanges(songs, show, { allowContentChanges });
-    assertReviewedSourceLines(songs, show);
-    const outDir = path.join(ROOT, show.slug);
+    if (writeRequested && !existingSongsOnly) assertNoUnreviewedContentChanges(songs, show, { allowContentChanges });
+    if (!existingSongsOnly) assertReviewedSourceLines(songs, show);
     if (textOnly && writeRequested) {
       assertSourceWordCardsReady(songs, show, loadExistingWordEntries(outDir));
       fs.mkdirSync(outDir, { recursive: true });
@@ -3068,6 +3215,18 @@ function main() {
     };
     const wordEntries = buildWordEntries(glossaryShow, songs, rougeGlossary, freedictGlossary, englishGlossary, previousWordEntries);
     assertSourceWordCardsReady(songs, show, wordEntries);
+    if (wordDataOnly && writeRequested) {
+      fs.mkdirSync(outDir, { recursive: true });
+      writeFile(outDir, "word-data.js", `window.wordEntries=${JSON.stringify(wordEntries)};\n`);
+      summary.push({
+        slug: show.slug,
+        songs: songs.length,
+        lines: songs.reduce((total, song) => total + song.lines.length, 0),
+        words: Object.keys(wordEntries).length,
+        wordData: "built",
+      });
+      return;
+    }
     if (preflightOnly) {
       summary.push({
         slug: show.slug,
@@ -3239,7 +3398,10 @@ function loadExistingWordEntries(outDir) {
 }
 
 function loadLegacyWordEntries(show) {
-  if (!show.legacyOutputSlug) return {};
+  // A generated page is a cache, not a second source of truth. When the
+  // legacy slug points at the current page, loading it twice only preserves
+  // stale cards and makes invalidation impossible.
+  if (!show.legacyOutputSlug || show.legacyOutputSlug === show.slug) return {};
   try {
     return loadWindowObject(
       path.join(LEGACY_OUTPUT_ROOT, show.legacyOutputSlug, "word-data.js"),
@@ -5381,6 +5543,16 @@ function addEntry(entries, token, show, common, rougeGlossary, freedictGlossary,
     return;
   }
 
+  if (commonEntry) {
+    entries[key] = {
+      ipa: commonEntry[3] || ipaFor(speak, show.voice),
+      meaning: commonEntry[0],
+      en: commonEntry[1],
+      speak: commonEntry[2] || speak,
+    };
+    return;
+  }
+
   if (autoEntry?.zh && autoEntry?.en) {
     entries[key] = {
       ipa: ipaFor(speak, show.voice),
@@ -5391,6 +5563,8 @@ function addEntry(entries, token, show, common, rougeGlossary, freedictGlossary,
     return;
   }
 
+  // Generated word-data is only a fallback cache. Curated dictionaries must
+  // be able to invalidate an old card such as a previous, wrong "als" entry.
   if (
     priorEntry
     && !priorEntry.needsReview
@@ -5402,16 +5576,6 @@ function addEntry(entries, token, show, common, rougeGlossary, freedictGlossary,
       ...priorEntry,
       ipa: priorEntry.ipa || ipaFor(priorEntry.speak || speak, show.voice),
       en: priorEntry.en || priorEntry.speak || speak,
-    };
-    return;
-  }
-
-  if (commonEntry) {
-    entries[key] = {
-      ipa: commonEntry[3] || ipaFor(speak, show.voice),
-      meaning: commonEntry[0],
-      en: commonEntry[1],
-      speak: commonEntry[2] || speak,
     };
     return;
   }
