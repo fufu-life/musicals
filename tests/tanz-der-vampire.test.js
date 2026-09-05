@@ -52,6 +52,14 @@ test("Tanz der Vampire translations are publication-safe and speaker labels are 
   assert.equal(allLines.length, 1608);
   assert.equal(allLines.filter((line) => forbiddenTranslation.test(line.zh)).length, 0);
   assert.equal(allLines.filter((line) => forbiddenSpeakers.has(line.speaker)).length, 0);
+  assert.equal(
+    allLines.find((line) => line.id === "tanz-der-vampire-03-020").zh,
+    "使短小的变粗大 让丑陋的变美好",
+  );
+  assert.equal(
+    allLines.find((line) => line.id === "tanz-der-vampire-29-032").zh,
+    "正如我所预言的一般 一位客人如期而至 盛装以待 她献身于黑暗",
+  );
 
   const ballroom = fullSongs.find((song) => song.order === 29);
   assert.equal(ballroom.lines[0].id, "tanz-der-vampire-29-002");

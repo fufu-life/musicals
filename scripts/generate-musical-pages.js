@@ -4497,7 +4497,9 @@ function mergeReviewedLineWraps(lines, show) {
     const joinedEnglish = members.map((member) => member.en).filter(Boolean).join(" ")
       .replace(/\s+([,.;!?…])/gu, "$1")
       .trim();
-    const joinedChinese = members.map((member) => member.zh).filter(Boolean).join("").trim();
+    const joinedChinese = members.map((member) => member.zh).filter(Boolean)
+      .join(show.slug === "tanz-der-vampire" ? " " : "")
+      .trim();
     merged.push({
       ...line,
       original,
