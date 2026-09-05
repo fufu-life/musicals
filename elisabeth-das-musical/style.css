@@ -489,6 +489,8 @@ h2 {
   filter: var(--visual-filter);
 }
 
+
+
 .show-visual-symbol::before,
 .show-visual-symbol::after {
   content: "";

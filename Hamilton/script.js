@@ -3,14 +3,6 @@ const CURRENT_SONG_KEY = "hamilton-current-song-id";
 const SIDEBAR_KEY = "hamilton-sidebar-collapsed";
 const PLAYBACK_RATE_KEY = "hamilton-playback-rate";
 const SEARCH_RESULT_LIMIT = 100;
-const LINE_IPA_OVERRIDES = {
-  "ham-02-001": "/ˌsɛvənˈtin-ˌsɛvəti-ˈsɪks nu jɔrk sɪti/",
-  "ham-09-018": "/ˌsɛvənˈtin-ˈeɪti/",
-  "ham-09-019": "/ˌsɛvənˈtin-ˈeɪti/",
-  "ham-20-001": "/ðə bætəl əv jɔrktaʊn ˌsɛvənˈtin-ˌeɪtiˈwʌn/",
-  "ham-24-003": "/ˌsɛvənˈtin-ˌeɪtiˈnaɪn/",
-  "ham-42-001": "/ðə ɪlɛkʃən əv ˌeɪˈtin-ˈhʌndrəd/",
-};
 
 let songs = [];
 let wordLookup = new Map();
@@ -333,7 +325,7 @@ function buildSongsFromRows(rows) {
       : pendingSpeakersBySong.get(key) || [];
     pendingSpeakersBySong.delete(key);
     const analysis = analysisByLine.get(`${order}|${normalizeEnglishKey(english)}`) || { words: [] };
-    const ipa = LINE_IPA_OVERRIDES[lineId] || metadata.ipa;
+    const ipa = metadata.ipa;
     addLineWordEntries(nextWordLookup, english, ipa, analysis.words || []);
     song.lines.push({
       id: lineId,

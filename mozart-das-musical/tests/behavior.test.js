@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, "..");
 const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const scriptJs = fs.readFileSync(path.join(root, "script.js"), "utf8");
 const styleCss = fs.readFileSync(path.join(root, "style.css"), "utf8");
+const displaySettingsCss = fs.readFileSync(path.join(root, "..", "shared", "display-settings.css"), "utf8");
 const songsJs = fs.readFileSync(path.join(root, "songs.js"), "utf8");
 const criticalSongsJs = fs.readFileSync(path.join(root, "songs.js"), "utf8");
 const songsInitialJs = fs.readFileSync(path.join(root, "songs-initial.js"), "utf8");
@@ -15,7 +16,7 @@ const wordDataJs = fs.readFileSync(path.join(root, "word-data.js"), "utf8");
 const audioBuilderJs = fs.readFileSync(path.join(root, "scripts", "build-audio.js"), "utf8");
 const cursorJs = fs.readFileSync(path.join(root, "..", "shared", "cursors", "mozart-das-musical.js"), "utf8");
 const cursorMarker = "preRenderInspirationPoint";
-const cursorProfile = {"motif":"inspirationPoint","trail":"fiveLineStaff","burst":"goldenRippleNotes","motion":"still","accent":"#ffd700","size":54,"follow":0.6,"emitDistance":8,"clickOn":"down","burstParticles":0,"hotspot":[0.5,0.5],"primary":"#d6a52f","secondary":"#f2ead5"};
+const cursorProfile = {"motif":"inspirationPoint","trail":"fiveLineStaff","burst":"goldenRippleNotes","motion":"still","accent":"#ffd700","size":58,"follow":0.6,"emitDistance":8,"clickOn":"down","burstParticles":0,"hotspot":[0.5,0.5],"primary":"#d6a52f","secondary":"#f2ead5"};
 
 test("page uses the shared analytics module", () => {
   assert.match(indexHtml, /writeCriticalScript\("\.\.\/shared\/analytics\.js"\)/);
@@ -25,9 +26,15 @@ test("page uses the shared analytics module", () => {
 });
 
 test("page uses the show-specific cursor profile", () => {
-  assert.match(cursorJs, new RegExp(`"motif":"${cursorProfile.motif}"`));
-  assert.match(cursorJs, new RegExp(`"trail":"${cursorProfile.trail}"`));
-  assert.match(cursorJs, new RegExp(`"burst":"${cursorProfile.burst}"`));
+  if (cursorProfile) {
+    assert.match(cursorJs, new RegExp(`"motif":"${cursorProfile.motif}"`));
+    assert.match(cursorJs, new RegExp(`"trail":"${cursorProfile.trail}"`));
+    assert.match(cursorJs, new RegExp(`"burst":"${cursorProfile.burst}"`));
+    if (cursorProfile.clickOn) assert.match(cursorJs, new RegExp(`"clickOn":"${cursorProfile.clickOn}"`));
+    if (Number.isInteger(cursorProfile.burstParticles)) assert.match(cursorJs, new RegExp(`"burstParticles":${cursorProfile.burstParticles}`));
+  } else {
+    assert.match(cursorJs, new RegExp(cursorMarker));
+  }
 });
 
 test("lyrics do not contain OCR acute apostrophes or glued Latin punctuation", () => {
@@ -52,17 +59,19 @@ test("favorites are not present", () => {
   });
 });
 
-test("Chinese, IPA, and optional English toggles exist", () => {
-  assert.match(indexHtml, /data-toggle="showZh"/);
+test("translation toggles use reviewed labels and stay grouped before IPA", () => {
+  assert.match(indexHtml, /data-toggle="showZh"[^>]*>中译<\/button>/);
   assert.match(indexHtml, /data-toggle="showIpa"/);
   assert.match(indexHtml, /id="feedbackButton"[^>]*>反馈<\/button>/);
+  assert.ok(indexHtml.indexOf('data-toggle="showZh"') < indexHtml.indexOf('data-toggle="showIpa"'));
   assert.ok(indexHtml.indexOf('data-toggle="showIpa"') < indexHtml.indexOf('id="feedbackButton"'));
   if (false) {
     assert.doesNotMatch(indexHtml, /data-toggle="showEn"/);
-    assert.doesNotMatch(indexHtml, /data-toggle="showIpa"[^>]*>音标<\/button>\n[ \t]+\n[ \t]+<button[^>]*id="feedbackButton"/);
   } else {
-    assert.match(indexHtml, /data-toggle="showEn"/);
-    assert.ok(indexHtml.indexOf('data-toggle="showEn"') < indexHtml.indexOf('id="feedbackButton"'));
+    assert.match(indexHtml, /data-toggle="showEn"[^>]*>英译<\/button>/);
+    assert.match(indexHtml, /data-toggle="showZh"[^>]*>中译<\/button>\s*<button[^>]*data-toggle="showEn"[^>]*>英译<\/button>/);
+    assert.ok(indexHtml.indexOf('data-toggle="showZh"') < indexHtml.indexOf('data-toggle="showEn"'));
+    assert.ok(indexHtml.indexOf('data-toggle="showEn"') < indexHtml.indexOf('data-toggle="showIpa"'));
   }
   assert.match(scriptJs, /showIpa:\s*true/);
   assert.match(scriptJs, /phonetic\.hidden\s*=\s*!state\.settings\.showIpa/);
@@ -120,7 +129,7 @@ test("song header uses an unframed show logo and soft switching", () => {
   assert.match(indexHtml, /class="home-button" href="\.\.\/index\.html" aria-label="返回音乐剧展示架"/);
   assert.match(indexHtml, /class="show-visual"/);
   assert.doesNotMatch(indexHtml, /show-visual-inner/);
-  assert.match(indexHtml, /class="show-visual-image" src="assets\/show(?:-title)?-logo\.(?:png|svg|webp|jpg)"/);
+  assert.match(indexHtml, /class="show-visual-image" src="assets\/show(?:-title)?-logo(?:-[^./]+)?\.(?:png|svg|webp|jpg)"/);
   assert.match(styleCss, /\.hero/);
   assert.match(styleCss, /\.show-visual/);
   assert.match(scriptJs, /function renderCurrentSongWithTransition/);
@@ -170,8 +179,104 @@ test("page includes a themed canvas cursor effect", () => {
   assert.match(cursorJs, /window\.referenceCursorActive = true/);
   assert.match(cursorJs, new RegExp(cursorMarker));
   assert.match(cursorJs, /Math\.min\(window\.devicePixelRatio \|\| 1, 1\.5\)/);
-  assert.match(cursorJs, /particles\.length > 72/);
-  assert.match(cursorJs, /document\.hidden/);
+  if ("mozart-das-musical" === "notre-dame-de-paris") {
+    assert.match(cursorJs, /window\.addEventListener\("pointermove", updatePointer/);
+    assert.match(cursorJs, /window\.addEventListener\("pointerdown", handlePointerDown/);
+    assert.match(cursorJs, /window\.addEventListener\("pointerup", handlePointerUp/);
+    assert.match(cursorJs, /const pressedScale = 0\.88/);
+    assert.match(cursorJs, /createLinearGradient/);
+    assert.match(cursorJs, /requestAnimationFrame\(drawCursor\)/);
+    assert.doesNotMatch(cursorJs, /CathedralHaloTrail|SoftWindowGlow|particles|ctx\.filter|autoRotation|targetX/);
+  } else {
+    assert.match(cursorJs, /particles\.length > 72/);
+    assert.match(cursorJs, /document\.hidden/);
+  }
+});
+
+test("shared page-style trigger matches the generated hero action buttons", () => {
+  assert.match(indexHtml, /lyrics-page-tools\.css\?v=20260830-derived-light-profiles-4/);
+  assert.match(indexHtml, /display-settings\.css\?v=20260830-derived-light-profiles-4/);
+  assert.match(displaySettingsCss, /\.musical-display-trigger\s*\{[\s\S]*?color:\s*var\(--highlight/);
+  assert.match(displaySettingsCss, /\.musical-display-trigger\s*\{[\s\S]*?background:\s*var\(--panel/);
+  assert.match(displaySettingsCss, /\.musical-display-trigger\s*\{[\s\S]*?box-shadow:\s*none/);
+  assert.match(displaySettingsCss, /html\[data-musical-theme="light"\]\[data-musical-page\] :is\([\s\S]*?\.musical-display-trigger/);
+});
+
+test("generated hero action buttons share the dark-theme button treatment", () => {
+  assert.match(indexHtml, /class="home-button"/);
+  const pageToolsCss = fs.readFileSync(path.join(root, "..", "shared", "lyrics-page-tools.css"), "utf8");
+  assert.match(pageToolsCss, /\.lyrics-tools-hero-actions \.home-button\s*\{[\s\S]*?width:\s*44px/);
+  assert.match(pageToolsCss, /\.lyrics-tools-hero-actions \.home-button\s*\{[\s\S]*?background:\s*var\(--panel/);
+  assert.match(pageToolsCss, /\.lyrics-tools-hero-actions \.home-button\s*\{[\s\S]*?box-shadow:\s*none/);
+});
+
+test("Matilda My House keeps complete phrases together and preserves the backing vocal", () => {
+  if ("mozart-das-musical" !== "matilda") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const song = sandbox.window.songs.find((item) => item.sourceOrder === 15);
+  assert.equal(song?.lines.at(-2)?.original, "It isn't much but it is enough for me");
+  assert.equal(song?.lines.at(-2)?.zh, "虽然不多，但对我来说已足够");
+  assert.equal(song?.lines.at(-1)?.original, "It isn't much but it is enough for me");
+  assert.equal(song?.lines.at(-1)?.zh, "虽然不多，但对我来说已足够");
+  assert.equal(song?.lines.find((line) => line.id === "matilda-15-014")?.zh, "借着这盏灯，我可以阅读；而我也获得了自由");
+  assert.equal(song?.lines.find((line) => line.id === "matilda-15-032")?.original, "It isn't much");
+  assert.match(song?.lines.find((line) => line.original.includes("Don’t cry"))?.original || "", /Don’t cry/u);
+});
+
+test("Matilda uses a 45-degree upward-slanting downward-pointing pencil cursor", () => {
+  if ("mozart-das-musical" !== "matilda") return;
+  assert.ok(cursorJs.includes('"hotspot":[0.29,0.72]'));
+  assert.match(cursorJs, /config\.motif === "matildaPencil"/);
+  assert.match(cursorJs, /cacheCtx\.rotate\(Math\.PI\);/);
+  assert.ok(cursorJs.includes("cacheCtx.rotate(Math.PI / 4);"));
+});
+
+test("Sound of Music uses a polished blue vector music-note cursor", () => {
+  if ("mozart-das-musical" !== "sound-of-music-the") return;
+  assert.match(cursorJs, /"motif":"soundOfMusicNote"/);
+  assert.match(cursorJs, /"trail":"none"/);
+  assert.match(cursorJs, /"burst":"softDiamondGlow"/);
+  assert.match(cursorJs, /"follow":1/);
+  assert.match(cursorJs, /createLinearGradient/);
+  assert.match(cursorJs, /"accent":"#4fb6d7"/);
+  assert.match(cursorJs, /cacheCtx\.ellipse\(-7, 19, 10\.5, 6\.5/);
+  assert.doesNotMatch(cursorJs, /Apple Color Emoji|fillText\("🎵"/);
+});
+
+test("Preludium keeps the reviewed Latin-to-Chinese line pairs", () => {
+  if ("mozart-das-musical" !== "sound-of-music-the") return;
+  const sourceText = fs.readFileSync(path.join(root, "..", "..", "lyrics", "Mozart!-Das Musical-Gesamtaufnahme (Original Cast Wien) (35123377).md"), "utf8");
+  assert.match(sourceText, /\| Dixit dominus domino meo \|\s*\n\| 上主对我的主说 \|/u);
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const preludium = sandbox.window.songs.find((song) => song.sourceOrder === 1);
+  assert.equal(preludium?.lines.length, 22);
+  assert.deepEqual(Array.from(preludium?.lines.slice(0, 4) || [], (line) => line.zh), [
+    "上主对我的主说",
+    "你坐在我的右边",
+    "等我使你的仇敌",
+    "成为你脚下的凳脚",
+  ]);
+  assert.equal(preludium?.lines.filter((line) => !line.zh).length, 0);
+  assert.ok(preludium?.lines.every((line) => !line.speaker));
+});
+
+test("Come From Away keeps the reviewed count-in and globe cursor", () => {
+  if ("mozart-das-musical" !== "come-from-away") return;
+  const lyricSandbox = { window: {} };
+  vm.runInNewContext(songsJs, lyricSandbox);
+  const finale = lyricSandbox.window.songs.find((song) => song.sourceOrder === 22);
+  const opening = finale?.lines?.[0];
+  const toledo = finale?.lines?.find((line) => line.id === "come-from-away-22-004");
+  assert.equal(opening?.original, "One, two, a-one, two, three, four");
+  assert.equal(opening?.zh, "1，2，预备—1，2，3，4");
+  assert.equal(toledo?.original.includes("Toldeo"), false);
+  assert.match(cursorJs, /"motif":"comeFromAwayGlobe"/);
+  assert.match(cursorJs, /"size":50/);
+  assert.match(cursorJs, /musical-light-accent/);
+  assert.match(cursorJs, /MutationObserver/);
+  assert.doesNotMatch(cursorJs, /comeFromAwayPlane/);
 });
 
 test("songs and word data are populated", () => {
@@ -184,6 +289,49 @@ test("songs and word data are populated", () => {
   const versionLabel = /(?:[（(\[［]\s*(?:live|现场)|[-–—]\s*live)/iu;
   assert.ok(sandbox.window.songs.every((song) => !versionLabel.test(song.title) && !versionLabel.test(song.titleZh)));
   assert.ok(Object.keys(sandbox.window.wordEntries).length > 0);
+});
+
+test("Ich bin, ich bin Musik keeps the reviewed lyric splits and inserted sentence", () => {
+  if ("mozart-das-musical" !== "mozart-das-musical") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const song = sandbox.window.songs.find((item) => item.sourceOrder === 4);
+  const lines = song.lines;
+  assert.deepEqual(Array.from(lines.slice(7, 13), (line) => [line.id, line.original]), [
+    ["mozart-das-musical-04-008-a", "Ich überwinde jede Macht"],
+    ["mozart-das-musical-04-008-b", "selbst wenn es schwer wird: ich gewinn!"],
+    ["mozart-das-musical-04-009a", "Mein Genie will, daß ich unabhängig bin."],
+    ["mozart-das-musical-04-010", "Ich weiß wohin."],
+    ["mozart-das-musical-04-011", "Die Wunder kommen wieder jedenfalls für mich."],
+    ["mozart-das-musical-04-013", "Ich fang erst richtig an."],
+  ]);
+  assert.deepEqual(Array.from(lines.filter((line) => line.id.startsWith("mozart-das-musical-04-018-")), (line) => line.original), [
+    "Ich sag einfach",
+    "wie mir zu mut ist.",
+  ]);
+  assert.equal(lines.find((line) => line.id === "mozart-das-musical-04-009a").zh, "我的天赋要我独立自主。");
+});
+
+test("Les Misérables keeps the English additions in concert order", () => {
+  if ("mozart-das-musical" !== "les-miserables") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const songs = sandbox.window.songs;
+  assert.equal(songs.length, 39);
+  assert.deepEqual(Array.from(songs, (song) => song.displayOrder), Array.from({ length: 39 }, (_value, index) => index + 1));
+  const doYouHear = songs.find((song) => song.sourceOrder === 38);
+  const epilogue = songs.find((song) => song.sourceOrder === 39);
+  const encore = songs.find((song) => song.sourceOrder === 40);
+  assert.equal(doYouHear?.title, "Do You Hear the People Sing?");
+  assert.equal(doYouHear?.displayOrder, 18);
+  assert.equal(doYouHear?.lines.length, 36);
+  assert.equal(epilogue?.title, "Epilogue (Finale)");
+  assert.equal(epilogue?.displayOrder, 38);
+  assert.equal(epilogue?.lines.length, 86);
+  assert.equal(encore?.title, "Encore: One Day More");
+  assert.equal(encore?.displayOrder, 39);
+  assert.equal(encore?.lines.length, 72);
+  assert.ok([doYouHear, epilogue, encore].every((song) => song?.lines.every((line) => line.original && line.zh && line.ipa)));
 });
 
 test("The Greatest Show compresses the opening vocalization and shows its repeat count", () => {
@@ -213,7 +361,7 @@ test("Epic keeps all 40 songs and removes non-lyric stage directions", () => {
   assert.match(cursorJs, /preRenderOdysseyTrident/);
   assert.match(cursorJs, /config.motif === "odysseyTrident"/);
   assert.match(cursorJs, /config.trail === "seaStarlight"/);
-  assert.match(cursorJs, /config.burst === "oceanWave"/);
+  assert.match(cursorJs, /config.burst === "softOceanWave"/);
 });
 
 test("Dear Evan Hansen keeps slash-delimited line IPA and its upper-left note hotspot", () => {
@@ -262,6 +410,15 @@ test("Starmania opening keeps the reviewed Chinese translation", () => {
   assert.equal(opening.titleZh, "垄断城出大事了");
   assert.equal(opening.lines.find((line) => line.lineIndex === 3).zh, "垄断城");
   assert.equal(opening.lines.find((line) => line.lineIndex === 29).zh, "当太阳落下");
+});
+
+test("Moulin Rouge keeps source IPA corrections when lyric text is unchanged", () => {
+  if ("mozart-das-musical" !== "moulin-rouge") return;
+  const sandbox = { window: {} };
+  vm.runInNewContext(songsJs, sandbox);
+  const encore = sandbox.window.songs.find((song) => song.sourceOrder === 19);
+  assert.equal(encore.lines[0].ipa, "/vulevu kuʃe avɛk mwa sə swar/");
+  assert.equal(encore.lines[1].ipa, "/vulevu kuʃe avɛk mwa/");
 });
 
 test("Phantom and Love Never Dies stay in separate source ranges", () => {
@@ -493,6 +650,7 @@ test("sentence and word audio prefer cached local MP3 files", () => {
   assert.match(scriptJs, /MusicalAudio\.getCachedAudio\(src\)/);
   assert.match(scriptJs, /MusicalAudio\.preloadLocalAudio/);
   assert.match(scriptJs, /function withAudioVersion\(path, speechText\)/);
+  assert.match(scriptJs, /String\(config\.audioVoice \|\| "system"\)/);
   assert.match(scriptJs, /withAudioVersion\([^\n]+line\.original\)/);
   assert.match(scriptJs, /\.mp3/);
   assert.match(scriptJs, /audio\/lines/);

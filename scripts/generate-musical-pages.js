@@ -490,7 +490,7 @@ const SHOWS = [
     source: "Suffs (Original Broadway Cast Recording) (198263623)/Suffs (Original Broadway Cast Recording) (198263623).md",
     sourceFormat: "paired-english",
     title: "Suffs",
-    titleZh: "女权先驱",
+    titleZh: "女子当参政",
     language: "en",
     voice: "en-us",
     audioVoice: "Samantha",

@@ -87,7 +87,7 @@ test("show pages load the shared analytics runtime as a critical asset while the
   const libraryHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
   assert.match(libraryHtml, /<script src="shared\/analytics\.js" defer onerror="handleOptionalAssetError\(this\.src\)"><\/script>/);
   assert.match(libraryHtml, /<script src="shows\.js" defer onerror="handleOptionalAssetError\(this\.src\)"><\/script>/);
-  assert.match(libraryHtml, /<script src="library\.js" defer onerror="handleOptionalAssetError\(this\.src\)"><\/script>/);
+  assert.match(libraryHtml, /<script src="library\.js(?:\?[^" ]+)?" defer onerror="handleOptionalAssetError\(this\.src\)"><\/script>/);
   assert.match(libraryHtml, /id="language-yue"/);
   assert.match(analyticsJs, /scope\.addEventListener\?\.\("load", requestScript/);
   assert.match(analyticsJs, /https:\/\/www\.googletagmanager\.com\/gtag\/js\?id=\$\{MEASUREMENT_ID\}/);

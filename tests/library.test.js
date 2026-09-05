@@ -9,12 +9,16 @@ const libraryScript = fs.readFileSync(path.join(root, "library.js"), "utf8");
 const { libraryLanguages, libraryShows } = require("../shows.js");
 
 test("library uses the requested title and introduction", () => {
-  assert.match(indexHtml, /<title>阿浮的音乐剧歌词集<\/title>/);
-  assert.match(indexHtml, /<h1>阿浮的音乐剧歌词集<\/h1>/);
+  assert.match(indexHtml, /<title>浮音——音乐剧歌词网站<\/title>/);
+  assert.match(indexHtml, /<h1>浮音——音乐剧歌词网站<\/h1>/);
   assert.match(
     indexHtml,
     /感谢剧场让我们的轨迹短暂交叠，行走在志同道合的路上，愿我们一直望着<span class="no-break">同一个月亮。<\/span>/,
   );
+});
+
+test("version history records Tanz der Vampire going live", () => {
+  assert.match(libraryScript, /date: "2026-09-05"[\s\S]*title: "《吸血鬼之舞》歌词上线"/);
 });
 
 test("library provides an accessible copyright notice beside the title", () => {
@@ -44,17 +48,18 @@ test("library groups all forty-three shows by language", () => {
 
 test("homepage exposes every deployed show as a direct HTML link before JavaScript", () => {
   const deployed = libraryShows.filter((show) => show.deployed);
-  assert.equal(deployed.length, 16);
+  assert.equal(deployed.length, 17);
   deployed.forEach((show) => {
     assert.match(indexHtml, new RegExp(`href="${show.href.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}"`));
   });
-  assert.match(indexHtml, /<strong id="showCount">16<\/strong>/);
+  assert.match(indexHtml, /<strong id="showCount">17<\/strong>/);
   assert.doesNotMatch(indexHtml, /<strong id="showCount">0<\/strong>/);
 });
 
 test("show names and Cantonese feature labels stay accurate", () => {
   assert.equal(libraryShows.some((show) => show.title === "摇滚莫里哀"), false);
   assert.equal(libraryShows.find((show) => show.id === "moliere-le-spectacle-musical").title, "莫里哀");
+  assert.equal(libraryShows.find((show) => show.id === "suffs").title, "女子当参政");
   assert.deepEqual(libraryShows.find((show) => show.id === "dazhuangwang").meta, [
     "粤语",
     "粤拼",
@@ -109,6 +114,7 @@ test("online library renders only explicitly deployed shows without network prob
       "love-never-dies",
       "elisabeth-das-musical",
       "mozart-das-musical",
+      "tanz-der-vampire",
       "rebecca-das-musical",
       "hadestown",
       "rouge-et-noir",

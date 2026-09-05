@@ -80,6 +80,11 @@
       title: "《巴黎圣母院》歌词上线",
       summary: "法语剧目《巴黎圣母院》（Notre-Dame de Paris）歌词页面上线，提供歌词、翻译、发音提示、词卡和唱段播放。",
     },
+    {
+      date: "2026-09-05",
+      title: "《吸血鬼之舞》歌词上线",
+      summary: "德语剧目《吸血鬼之舞》（Tanz der Vampire）歌词页面上线，提供歌词、翻译、发音提示、词卡和唱段播放。",
+    },
   ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
     trackLibraryEntry() {},
