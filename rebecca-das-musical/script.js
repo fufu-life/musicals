@@ -4,7 +4,10 @@ const SIDEBAR_KEY = "rebecca-das-musical-sidebar-collapsed";
 const PLAYBACK_RATE_KEY = "rebecca-das-musical-playback-rate";
 const TOKEN_RE = /\p{L}+(?:['’]\p{L}+)*(?:-\p{L}+)*/gu;
 
-const songs = window.songsInitial || window.songs || [];
+const sortSongsForDisplay = (items) => typeof window.sortSongsForDisplay === "function"
+  ? window.sortSongsForDisplay(items)
+  : items;
+const songs = sortSongsForDisplay(window.songsInitial || window.songs || []);
 let fullSongsReady = null;
 let wordEntries = {};
 let wordDataReady = null;
@@ -123,7 +126,7 @@ async function loadFullSongs() {
   if (window.pageConfig.fullSongsFile) {
     await loadScript(window.pageConfig.fullSongsFile, "high");
   }
-  const fullSongs = window.songs || [];
+  const fullSongs = sortSongsForDisplay(window.songs || []);
   if (!fullSongs.length) throw new Error("Full song data is empty");
   songs.splice(0, songs.length, ...fullSongs);
   renderSongList();

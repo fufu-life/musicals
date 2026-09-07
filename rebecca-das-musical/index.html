@@ -180,6 +180,7 @@
       })();
     </script>
     <script>writeCriticalScript("songs-initial.js");</script>
+    <script>writeCriticalScript("stage-order.js");</script>
     <script>writeCriticalScript("../shared/analytics.js");</script>
     <script>writeCriticalScript("../shared/audio-playback.js");</script>
     <script>writeCriticalScript("../shared/playback-rate.js");</script>
@@ -202,7 +203,9 @@
         siteName: "蝴蝶梦歌词学习",
         recipient: "fulife@agent.qq.com",
         trigger: "#feedbackButton",
-        songs: (window.songsInitial || window.songs || []).map((song) => ({
+        songs: (typeof window.sortSongsForDisplay === "function"
+          ? window.sortSongsForDisplay(window.songsInitial || window.songs || [])
+          : (window.songsInitial || window.songs || [])).map((song) => ({
           value: song.id,
           label: `${String(song.displayOrder || song.order).padStart(2, "0")}. ${song.title}`,
         })),
