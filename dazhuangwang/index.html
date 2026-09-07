@@ -10843,7 +10843,7 @@ const defaultSettings = {
   showJyutping: true,
 };
 
-const songs = [...(window.dazhuangwangSongsInitial || window.dazhuangwangSongs || [])].sort((a, b) => a.order - b.order);
+const songs = [...(window.dazhuangwangSongsInitial || window.dazhuangwangSongs || [])].sort((a, b) => (a.displayOrder ?? a.order) - (b.displayOrder ?? b.order));
 let fullSongsReady = null;
 const state = {
   settings: { ...defaultSettings, ...loadJson(DZW_SETTINGS_KEY, {}) },
@@ -10969,7 +10969,7 @@ function loadScript(src, fetchPriority = "auto") {
 
 async function loadFullSongs() {
   await loadScript("songs.js", "high");
-  const fullSongs = [...(window.dazhuangwangSongs || [])].sort((a, b) => a.order - b.order);
+  const fullSongs = [...(window.dazhuangwangSongs || [])].sort((a, b) => (a.displayOrder ?? a.order) - (b.displayOrder ?? b.order));
   if (!fullSongs.length) throw new Error("Full Dazhuangwang song data is empty");
   songs.splice(0, songs.length, ...fullSongs);
 }
@@ -11378,7 +11378,7 @@ function renderSongNav() {
 
     const order = document.createElement("span");
     order.className = "nav-order";
-    order.textContent = String(song.order).padStart(2, "0");
+    order.textContent = String(song.displayOrder ?? song.order).padStart(2, "0");
 
     const title = document.createElement("span");
     title.className = "nav-title";
@@ -12280,7 +12280,7 @@ function enterAnalyticsSong(song) {
           trigger: "#feedbackButton",
           songs: (window.dazhuangwangSongsInitial || window.dazhuangwangSongs || []).map((song) => ({
             value: song.id,
-            label: `${song.order}. ${song.title}`,
+          label: `${song.displayOrder ?? song.order}. ${song.title}`,
           })),
           getCurrentSongId: () => (typeof getCurrentSong === "function" ? getCurrentSong()?.id : undefined),
         });
