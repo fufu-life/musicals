@@ -85,6 +85,11 @@
       title: "《吸血鬼之舞》歌词上线",
       summary: "德语剧目《吸血鬼之舞》（Tanz der Vampire）歌词页面上线，提供歌词、翻译、发音提示、词卡和唱段播放。",
     },
+    {
+      date: "2026-09-12",
+      title: "第二批英语音乐剧歌词上线",
+      summary: "《致埃文·汉森》《六位王后》《女子当参政》《玛蒂尔达》《来自远方》《吉屋出租》《倒数时刻》《律政俏佳人》歌词页面上线，提供歌词、翻译、发音提示、词卡和唱段播放。",
+    },
   ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
     trackLibraryEntry() {},

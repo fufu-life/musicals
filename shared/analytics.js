@@ -11,10 +11,14 @@
     "playlist_complete",
   ]);
   const EVENT_FIELDS = {
+    show_entry_click: ["show_id", "show_name"],
+    search_use: ["show_id", "result_count", "song_count", "has_results"],
+    word_lookup: ["show_id", "song_id"],
+    audio_error: ["show_id", "song_id", "audio_type", "line_id", "error_stage"],
     show_view: ["show_id", "show_name", "page_type"],
     song_view: ["show_id", "show_name", "song_id", "song_title", "song_order"],
     song_stay: ["show_id", "song_id", "stay_seconds"],
-    song_read_progress: ["show_id", "song_id", "scroll_percent"],
+    song_scroll_coverage: ["show_id", "song_id", "scroll_percent"],
     audio_click: ["show_id", "song_id", "audio_type", "line_id"],
     audio_start: ["show_id", "song_id", "audio_type", "line_id"],
     audio_complete: ["show_id", "song_id", "audio_type", "line_id"],
@@ -33,6 +37,12 @@
       || hostname === "127.0.0.1"
       || hostname === "::1"
       || hostname === "[::1]";
+  }
+
+  function isProduction(scope = globalScope) {
+    return scope.location?.protocol === "https:"
+      && scope.location?.hostname === "fufu-life.github.io"
+      && String(scope.location?.pathname || "").startsWith("/musicals/");
   }
 
   function cleanText(value, maxLength = 120) {
@@ -64,7 +74,7 @@
   }
 
   function loadGoogleAnalytics(scope = globalScope) {
-    if (isLocalFile(scope)) return false;
+    if (!isProduction(scope)) return false;
     const gtag = ensureGtagQueue(scope);
     if (!configured) {
       configured = true;
@@ -100,7 +110,7 @@
       if (typeof value === "number" && Number.isFinite(value)) {
         payload[field] = value;
       } else if (typeof value === "string") {
-        payload[field] = cleanText(value);
+        payload[field] = field === "show_id" ? normalizeShowId(value) : cleanText(value, 100);
       }
     });
     payload.viewport_type = getViewportType(scope);
@@ -108,7 +118,7 @@
   }
 
   function emit(eventName, params, scope = globalScope) {
-    if (isLocalFile(scope)) return false;
+    if (!isProduction(scope)) return false;
     const payload = filterPayload(eventName, params, scope);
     if (!payload) return false;
     try {
@@ -148,6 +158,7 @@
       audioSequence: 0,
       libraryEntries: new Set(),
       destroyed: false,
+      learningVisible: false,
     };
 
     function baseSongParams(song = state.activeSong) {
@@ -176,15 +187,36 @@
       state.stayTimer = 0;
     }
 
+    function canMeasureLearning() {
+      if (scope.document?.visibilityState === "hidden") return false;
+      const element = getProgressElement();
+      if (element) {
+        if (element.hidden || (element.getClientRects && !element.getClientRects().length)) return false;
+        const rect = element.getBoundingClientRect?.();
+        if (rect && (rect.top >= scope.innerHeight || rect.top + rect.height <= 0)) return false;
+      }
+      const overlays = scope.document?.querySelectorAll?.('dialog[open], [role="dialog"], #wordPopover, .word-popup') || [];
+      return !Array.from(overlays).some(node => !node.hidden && node.getClientRects?.().length
+        && (!scope.getComputedStyle || scope.getComputedStyle(node).visibility !== "hidden"));
+    }
+
+    function refreshLearningState() {
+      const visible = canMeasureLearning();
+      if (visible === state.learningVisible) return;
+      state.learningVisible = visible;
+      if (visible) startStayTimer();
+      else clearStayTimer();
+    }
+
     function startStayTimer() {
       clearStayTimer();
       const song = state.activeSong;
-      if (!song || state.stayedSongs.has(song.id) || scope.document?.visibilityState === "hidden") return;
+      if (!song || state.stayedSongs.has(song.id) || !canMeasureLearning()) return;
       state.stayTimer = scope.setTimeout(() => {
         state.stayTimer = 0;
         if (
           state.destroyed ||
-          scope.document?.visibilityState === "hidden" ||
+          !canMeasureLearning() ||
           state.activeSong?.id !== song.id ||
           state.stayedSongs.has(song.id)
         ) return;
@@ -200,7 +232,7 @@
     function calculateReadProgress() {
       const song = state.activeSong;
       const element = getProgressElement();
-      if (!song || !element || scope.document?.visibilityState === "hidden") return;
+      if (state.destroyed || !song || !element || !canMeasureLearning()) return;
       const rect = element.getBoundingClientRect?.();
       if (!rect) return;
       const height = Math.max(Number(element.scrollHeight) || 0, Number(rect.height) || 0);
@@ -212,7 +244,7 @@
       READ_THRESHOLDS.forEach((threshold) => {
         if (percent < threshold || sent.has(threshold)) return;
         sent.add(threshold);
-        emit("song_read_progress", {
+        emit("song_scroll_coverage", {
           show_id: showId,
           song_id: song.id,
           scroll_percent: threshold,
@@ -222,7 +254,9 @@
     }
 
     function scheduleReadProgress() {
-      if (state.progressFrame || state.destroyed) return;
+      if (state.destroyed) return;
+      refreshLearningState();
+      if (state.progressFrame) return;
       const requestFrame = scope.requestAnimationFrame || ((callback) => scope.setTimeout(callback, 16));
       state.progressFrame = 1;
       requestFrame(() => {
@@ -259,6 +293,9 @@
         clicked: false,
         started: false,
         completed: false,
+        cancelled: false,
+        errors: new Set(),
+        parent: meta.parent || null,
       };
     }
 
@@ -281,17 +318,65 @@
 
     function audioStart(sessionOrMeta = {}) {
       const session = sessionOrMeta.id ? sessionOrMeta : createAudioSession(sessionOrMeta);
-      if (session.started) return session;
+      if (session.started || session.cancelled) return session;
+      if (session.parent) audioStart(session.parent);
       session.started = true;
       emit("audio_start", audioParams(session), scope);
+      if (session.audioType === "playlist") featureUse("playlist_start");
       return session;
     }
 
     function audioComplete(session) {
-      if (!session?.started || session.completed) return false;
+      if (!session?.started || session.completed || session.cancelled) return false;
       session.completed = true;
       emit("audio_complete", audioParams(session), scope);
       return true;
+    }
+
+    const audioBindings = new WeakMap();
+    function audioError(session, stage = "playback") {
+      if (!session || session.cancelled || session.errors.has(stage)) return;
+      session.errors.add(stage);
+      if (stage === "local") session.releaseAudio?.();
+      emit("audio_error", { ...audioParams(session), error_stage: stage }, scope);
+    }
+    function cancelAudio(audio) {
+      const binding = audio && audioBindings.get(audio);
+      if (!binding) return;
+      binding.session.cancelled = true;
+      binding.cleanup();
+    }
+    function bindAudio(audio, session) {
+      if (!session) return;
+      cancelAudio(audio);
+      const cleanup = () => {
+        audio.removeEventListener("ended", ended);
+        audio.removeEventListener("error", failed);
+        audioBindings.delete(audio);
+        session.releaseAudio = null;
+      };
+      const ended = () => { audioComplete(session); cleanup(); };
+      const failed = () => { audioError(session, "local"); cleanup(); };
+      session.releaseAudio = cleanup;
+      audioBindings.set(audio, { session, cleanup });
+      audio.addEventListener("ended", ended);
+      audio.addEventListener("error", failed);
+    }
+    let speechSession = null;
+    function bindSpeech(utterance, session) {
+      speechSession = session;
+      utterance.addEventListener?.("error", () => audioError(session, "speech"));
+    }
+    function cancelSpeech() {
+      if (speechSession) speechSession.cancelled = true;
+      speechSession = null;
+    }
+    function searchUse(result = {}) {
+      return emit("search_use", { show_id: showId, result_count: Number(result.total) || 0,
+        song_count: Number(result.songCount) || 0, has_results: result.total > 0 ? "yes" : "no" }, scope);
+    }
+    function wordLookup() {
+      return emit("word_lookup", { show_id: showId, song_id: state.activeSong?.id || "" }, scope);
     }
 
     function featureUse(featureName) {
@@ -306,7 +391,7 @@
       const targetId = normalizeShowId(show.showId || show.id);
       if (!targetId || state.libraryEntries.has(targetId)) return false;
       state.libraryEntries.add(targetId);
-      return emit("show_view", {
+      return emit("show_entry_click", {
         show_id: targetId,
         show_name: cleanText(show.showName || show.originalTitle || show.title || targetId),
         page_type: "library_click",
@@ -314,21 +399,23 @@
     }
 
     function handleVisibilityChange() {
-      clearStayTimer();
-      if (scope.document?.visibilityState !== "hidden") {
-        startStayTimer();
-        scheduleReadProgress();
-      }
+      refreshLearningState();
+      scheduleReadProgress();
     }
 
     function destroy() {
       state.destroyed = true;
+      learningObserver?.disconnect();
       clearStayTimer();
       scope.removeEventListener?.("scroll", scheduleReadProgress);
       scope.removeEventListener?.("resize", scheduleReadProgress);
       scope.document?.removeEventListener?.("visibilitychange", handleVisibilityChange);
     }
 
+    const learningObserver = scope.MutationObserver && scope.document?.body
+      ? new scope.MutationObserver(refreshLearningState) : null;
+    learningObserver?.observe(scope.document.body, { subtree: true, attributes: true,
+      attributeFilter: ["hidden", "class", "open"] });
     scope.addEventListener?.("scroll", scheduleReadProgress, { passive: true });
     scope.addEventListener?.("resize", scheduleReadProgress, { passive: true });
     scope.document?.addEventListener?.("visibilitychange", handleVisibilityChange);
@@ -344,6 +431,7 @@
       audioStart,
       audioComplete,
       featureUse,
+      bindAudio, cancelAudio, bindSpeech, cancelSpeech, audioError, searchUse, wordLookup, refreshLearningState,
       destroy,
       getViewportType: () => getViewportType(scope),
     };
@@ -369,6 +457,9 @@
   }
 
   const api = {
+    searchUse: (result) => currentTracker?.searchUse(result),
+    isProduction,
+    normalizeShowId,
     MEASUREMENT_ID,
     STAY_SECONDS,
     READ_THRESHOLDS,

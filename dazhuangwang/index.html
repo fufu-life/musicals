@@ -11749,16 +11749,16 @@ function playEmbeddedAudio(src, waitForEnd, { rateControlled = false, analyticsS
   stopCurrentPlayback();
   const audio = window.MusicalAudio.getCachedAudio(src);
   if (!audio) return Promise.reject(new Error("Audio playback unavailable"));
+  analytics.bindAudio(audio, analyticsSession);
   const rate = rateControlled ? pageTools.getRate() : 1;
   audio.defaultPlaybackRate = rate;
   audio.playbackRate = rate;
   audioState.current = audio;
   audioState.rateControlled = rateControlled;
   if (!waitForEnd) {
-    return Promise.resolve(audio.play()).then(() => {
+    return Promise.resolve(audio.play()).catch(error => { analytics.audioError(analyticsSession, "local"); throw error; }).then(() => {
       if (analyticsSession) {
         analytics.audioStart(analyticsSession);
-        audio.addEventListener("ended", () => analytics.audioComplete(analyticsSession), { once: true });
       }
     });
   }
@@ -11779,7 +11779,7 @@ function playEmbeddedAudio(src, waitForEnd, { rateControlled = false, analyticsS
       if (analyticsSession) analytics.audioComplete(analyticsSession);
       finish();
     };
-    const handleError = () => finish(new Error("Audio playback failed"));
+    const handleError = () => { analytics.audioError(analyticsSession, "local"); finish(new Error("Audio playback failed")); };
     const stopAndResolve = () => finish();
     audioState.finish = stopAndResolve;
     audio.addEventListener("ended", handleEnded, { once: true });
@@ -11788,11 +11788,13 @@ function playEmbeddedAudio(src, waitForEnd, { rateControlled = false, analyticsS
       .then(() => {
         if (analyticsSession) analytics.audioStart(analyticsSession);
       })
-      .catch(finish);
+      .catch(error => { analytics.audioError(analyticsSession, "local"); finish(error); });
   });
 }
 
 function stopCurrentPlayback() {
+  analytics.cancelAudio(audioState.current);
+  analytics.cancelSpeech();
   if (audioState.finish) {
     const finish = audioState.finish;
     audioState.finish = null;
@@ -11825,8 +11827,8 @@ function resumeCurrentPlayback() {
   if ("speechSynthesis" in window && window.speechSynthesis.paused) window.speechSynthesis.resume();
 }
 
-async function playDazhuangwangLineToEnd(line) {
-  const analyticsSession = analytics.createAudioSession({ audioType: "line", lineId: line.id });
+async function playDazhuangwangLineToEnd(line, parent) {
+  const analyticsSession = analytics.createAudioSession({ audioType: "line", lineId: line.id, parent });
   if (line.audio) {
     try {
       await playEmbeddedAudio(line.audio, true, { rateControlled: true, analyticsSession });
@@ -11851,21 +11853,19 @@ function toggleCurrentSongPlayback() {
   const sequence = audioController.toggleSequence({
     button: refs.songPlayButton,
     items: playableLines,
-    playItem: (line) => playDazhuangwangLineToEnd(line),
+    playItem: (line) => playDazhuangwangLineToEnd(line, playlistSession),
     gapMs: window.MusicalAudio.SEQUENCE_GAP_MS / pageTools.getRate(),
     onItemStart: (line, index, nextLine) => {
       setSequenceHighlight(line.id, index, playableLines.length);
       if (nextLine?.audio) preloadLineAudio(nextLine.audio);
     },
-    onComplete: () => {
-      if (playlistSession) analytics.audioComplete(playlistSession);
-      analytics.featureUse("playlist_complete");
+    onComplete: ({ failedCount, total }) => {
+      if (failedCount || !total) analytics.audioError(playlistSession, "sequence");
+      else if (analytics.audioComplete(playlistSession)) analytics.featureUse("playlist_complete");
     },
   });
   if (!wasActive && audioController.isSequenceActive()) {
     analytics.audioClick(playlistSession);
-    analytics.audioStart(playlistSession);
-    analytics.featureUse("playlist_start");
   }
   return sequence;
 }
@@ -12134,6 +12134,7 @@ function renderJyutping(value) {
 }
 
 function showWordPopover(word, anchor) {
+  analytics.wordLookup();
   refs.wordPopover.innerHTML = "";
 
   const title = document.createElement("strong");
@@ -12225,6 +12226,7 @@ function speakCantonese(text, { rateControlled = false, analyticsSession = null 
     utterance.voice = voice;
   }
   utterance.rate = 0.82 * (rateControlled ? pageTools.getRate() : 1);
+  analytics.bindSpeech(utterance, analyticsSession);
   utterance.onstart = () => {
     if (analyticsSession) analytics.audioStart(analyticsSession);
   };
@@ -12243,6 +12245,7 @@ function speakCantoneseToEnd(text, { rateControlled = false, analyticsSession = 
   utterance.lang = voice?.lang || "zh-HK";
   if (voice) utterance.voice = voice;
   utterance.rate = 0.82 * (rateControlled ? pageTools.getRate() : 1);
+  analytics.bindSpeech(utterance, analyticsSession);
   utterance.onstart = () => {
     if (analyticsSession) analytics.audioStart(analyticsSession);
   };

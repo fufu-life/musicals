@@ -183,6 +183,7 @@
     function renderSearch(queryValue) {
       const outcome = globalScope.MusicalLyricsSearch.searchIndex(getSearchIndex(), queryValue, { limit: 100 });
       const query = String(queryValue || "").trim();
+      if (query) globalScope.MusicalAnalytics?.searchUse?.(outcome);
       searchActive = true;
       results.hidden = false;
       lyrics.hidden = true;

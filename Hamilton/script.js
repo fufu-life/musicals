@@ -787,6 +787,7 @@ function renderSearchResults(query) {
     });
   }
   const outcome = window.MusicalLyricsSearch.searchIndex(state.searchIndex, query, { limit: SEARCH_RESULT_LIMIT });
+  analytics.searchUse(outcome);
   refs.searchResultsTitle.textContent = `“${query}”的搜索结果`;
   refs.searchResultsList.replaceChildren();
 
@@ -1190,6 +1191,7 @@ function showLoadingPopover(term, anchor) {
 }
 
 function showPopover(word, anchor, { autoplay = false } = {}) {
+  analytics.wordLookup();
   refs.wordPopover.innerHTML = "";
 
   const head = document.createElement("div");
@@ -1258,6 +1260,8 @@ async function playEnglishAudio(src, fallbackText, { rateControlled = false, ana
 }
 
 function stopCurrentPlayback() {
+  analytics.cancelAudio(audioState.current);
+  analytics.cancelSpeech();
   if (audioState.finish) {
     const finish = audioState.finish;
     audioState.finish = null;
@@ -1299,15 +1303,15 @@ function playLocalAudio(src, waitForEnd, { rate = 1, rateControlled = false, ana
   stopCurrentPlayback();
   const audio = window.MusicalAudio.getCachedAudio(src);
   if (!audio) return Promise.reject(new Error("Audio playback unavailable"));
+  analytics.bindAudio(audio, analyticsSession);
   audio.defaultPlaybackRate = rate;
   audio.playbackRate = rate;
   audioState.current = audio;
   audioState.rateControlled = rateControlled;
   if (!waitForEnd) {
-    return Promise.resolve(audio.play()).then(() => {
+    return Promise.resolve(audio.play()).catch(error => { analytics.audioError(analyticsSession, "local"); throw error; }).then(() => {
       if (analyticsSession) {
         analytics.audioStart(analyticsSession);
-        audio.addEventListener("ended", () => analytics.audioComplete(analyticsSession), { once: true });
       }
     });
   }
@@ -1329,7 +1333,7 @@ function playLocalAudio(src, waitForEnd, { rate = 1, rateControlled = false, ana
       if (analyticsSession) analytics.audioComplete(analyticsSession);
       finish();
     };
-    const handleError = () => finish(new Error("Audio playback failed"));
+    const handleError = () => { analytics.audioError(analyticsSession, "local"); finish(new Error("Audio playback failed")); };
     const stopAndResolve = () => finish();
     audioState.finish = stopAndResolve;
     audio.addEventListener("ended", handleEnded, { once: true });
@@ -1338,7 +1342,7 @@ function playLocalAudio(src, waitForEnd, { rate = 1, rateControlled = false, ana
       .then(() => {
         if (analyticsSession) analytics.audioStart(analyticsSession);
       })
-      .catch(finish);
+      .catch(error => { analytics.audioError(analyticsSession, "local"); finish(error); });
   });
 }
 
@@ -1365,6 +1369,7 @@ function speakEnglish(text, waitForEnd, { rate = 1, analyticsSession = null } = 
   utterance.lang = "en-US";
   utterance.rate = Math.min(10, Math.max(0.1, 0.82 * rate));
   utterance.pitch = 1.06;
+  analytics.bindSpeech(utterance, analyticsSession);
   utterance.onstart = () => {
     if (analyticsSession) analytics.audioStart(analyticsSession);
   };
@@ -1395,9 +1400,9 @@ function speakEnglish(text, waitForEnd, { rate = 1, analyticsSession = null } = 
   });
 }
 
-async function playLineToEnd(song, line) {
+async function playLineToEnd(song, line, parent) {
   const rate = getPlaybackRate();
-  const analyticsSession = analytics.createAudioSession({ audioType: "line", lineId: line.id });
+  const analyticsSession = analytics.createAudioSession({ audioType: "line", lineId: line.id, parent });
   try {
     await playLocalAudio(getLineAudioPath(song, line), true, { rate, rateControlled: true, analyticsSession });
   } catch {
@@ -1413,21 +1418,19 @@ function toggleCurrentSongPlayback() {
   const sequence = audioController.toggleSequence({
     button: refs.songPlayButton,
     items: song.lines,
-    playItem: (line) => playLineToEnd(song, line),
+    playItem: (line) => playLineToEnd(song, line, playlistSession),
     gapMs: window.MusicalAudio.SEQUENCE_GAP_MS / getPlaybackRate(),
     onItemStart: (line, index, nextLine) => {
       setSequenceHighlight(line.id, index, song.lines.length);
       if (nextLine) preloadLineAudio(song, nextLine);
     },
-    onComplete: () => {
-      if (playlistSession) analytics.audioComplete(playlistSession);
-      analytics.featureUse("playlist_complete");
+    onComplete: ({ failedCount, total }) => {
+      if (failedCount || !total) analytics.audioError(playlistSession, "sequence");
+      else if (analytics.audioComplete(playlistSession)) analytics.featureUse("playlist_complete");
     },
   });
   if (!wasActive && audioController.isSequenceActive()) {
     analytics.audioClick(playlistSession);
-    analytics.audioStart(playlistSession);
-    analytics.featureUse("playlist_start");
   }
   return sequence;
 }

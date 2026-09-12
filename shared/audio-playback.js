@@ -336,6 +336,7 @@
       options.onSequenceStateChange?.(true);
 
       return (async () => {
+        let failedCount = 0;
         for (let index = 0; index < items.length; index += 1) {
           if (!sequenceActive || token !== sequenceToken) break;
           await waitUntilSequenceResumes(token);
@@ -345,6 +346,7 @@
           try {
             await playItem(item, index);
           } catch (error) {
+            failedCount += 1;
             onItemError?.(error, item, index);
           }
           onItemEnd?.(item, index);
@@ -363,7 +365,7 @@
           options.onSequenceStateChange?.(false);
           options.onSequencePauseChange?.(false);
           options.onItemClear?.();
-          onComplete?.();
+          onComplete?.({ failedCount, total: items.length });
         }
         return true;
       })();

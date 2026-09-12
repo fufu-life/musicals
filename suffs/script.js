@@ -479,6 +479,7 @@ function showWord(token, anchor, { autoplay = false } = {}) {
     anchor.classList.add("is-word-unavailable");
     return;
   }
+  analytics.wordLookup();
   dom.popover.replaceChildren();
 
   const head = document.createElement("div");
@@ -577,6 +578,8 @@ function withAudioVersion(path, speechText) {
 }
 
 function stopCurrentPlayback() {
+  analytics.cancelAudio(state.audio);
+  analytics.cancelSpeech();
   if (state.audioFinish) {
     const finish = state.audioFinish;
     state.audioFinish = null;
@@ -622,16 +625,16 @@ function playLocalAudio(src, waitForEnd, { rateControlled = false, analyticsSess
   stopCurrentPlayback();
   const audio = window.MusicalAudio.getCachedAudio(src);
   if (!audio) return Promise.reject(new Error("Audio playback unavailable"));
+  analytics.bindAudio(audio, analyticsSession);
   const rate = rateControlled ? pageTools.getRate() : 1;
   audio.defaultPlaybackRate = rate;
   audio.playbackRate = rate;
   state.audio = audio;
   state.rateControlled = rateControlled;
   if (!waitForEnd) {
-    return Promise.resolve(audio.play()).then(() => {
+    return Promise.resolve(audio.play()).catch(error => { analytics.audioError(analyticsSession, "local"); throw error; }).then(() => {
       if (analyticsSession) {
         analytics.audioStart(analyticsSession);
-        audio.addEventListener("ended", () => analytics.audioComplete(analyticsSession), { once: true });
       }
     });
   }
@@ -652,7 +655,7 @@ function playLocalAudio(src, waitForEnd, { rateControlled = false, analyticsSess
       if (analyticsSession) analytics.audioComplete(analyticsSession);
       finish();
     };
-    const handleError = () => finish(new Error("Audio playback failed"));
+    const handleError = () => { analytics.audioError(analyticsSession, "local"); finish(new Error("Audio playback failed")); };
     const stopAndResolve = () => finish();
     state.audioFinish = stopAndResolve;
     audio.addEventListener("ended", handleEnded, { once: true });
@@ -661,7 +664,7 @@ function playLocalAudio(src, waitForEnd, { rateControlled = false, analyticsSess
       .then(() => {
         if (analyticsSession) analytics.audioStart(analyticsSession);
       })
-      .catch(finish);
+      .catch(error => { analytics.audioError(analyticsSession, "local"); finish(error); });
   });
 }
 
@@ -673,6 +676,7 @@ function playSpeech(text, waitForEnd, { rateControlled = false, analyticsSession
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = window.MusicalAudio.getSpeechLanguage(config.language);
   utterance.rate = rateControlled ? pageTools.getRate() : 1;
+  analytics.bindSpeech(utterance, analyticsSession);
   utterance.onstart = () => {
     if (analyticsSession) analytics.audioStart(analyticsSession);
   };
@@ -704,8 +708,8 @@ function playSpeech(text, waitForEnd, { rateControlled = false, analyticsSession
   });
 }
 
-async function playLineToEnd(song, line) {
-  const analyticsSession = analytics.createAudioSession({ audioType: "line", lineId: line.id });
+async function playLineToEnd(song, line, parent) {
+  const analyticsSession = analytics.createAudioSession({ audioType: "line", lineId: line.id, parent });
   try {
     await playLocalAudio(getLineAudioPath(song, line), true, { rateControlled: true, analyticsSession });
   } catch {
@@ -721,21 +725,19 @@ function toggleCurrentSongPlayback() {
   const sequence = audioController.toggleSequence({
     button: dom.songPlayButton,
     items: song.lines,
-    playItem: (line) => playLineToEnd(song, line),
+    playItem: (line) => playLineToEnd(song, line, playlistSession),
     gapMs: window.MusicalAudio.SEQUENCE_GAP_MS / pageTools.getRate(),
     onItemStart: (line, index, nextLine) => {
       setSequenceHighlight(line.id, index, song.lines.length);
       if (nextLine) preloadLineAudio(song, nextLine);
     },
-    onComplete: () => {
-      if (playlistSession) analytics.audioComplete(playlistSession);
-      analytics.featureUse("playlist_complete");
+    onComplete: ({ failedCount, total }) => {
+      if (failedCount || !total) analytics.audioError(playlistSession, "sequence");
+      else if (analytics.audioComplete(playlistSession)) analytics.featureUse("playlist_complete");
     },
   });
   if (!wasActive && audioController.isSequenceActive()) {
     analytics.audioClick(playlistSession);
-    analytics.audioStart(playlistSession);
-    analytics.featureUse("playlist_start");
   }
   return sequence;
 }
