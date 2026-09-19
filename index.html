@@ -227,7 +227,7 @@
 
       .library-head {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr);
         gap: 28px;
         align-items: end;
         padding-bottom: 32px;
@@ -246,7 +246,7 @@
       .library-title-row {
         display: flex;
         flex-wrap: wrap;
-        align-items: baseline;
+        align-items: center;
         gap: 10px 14px;
       }
 
@@ -399,7 +399,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
-        margin-top: 22px;
+        margin-top: 0;
       }
 
       .library-nav a,
@@ -435,17 +435,19 @@
       }
 
       .counter {
-        display: grid;
-        justify-items: end;
-        gap: 4px;
-        color: rgba(251, 244, 230, 0.72);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+        color: var(--muted);
         font-family: "Songti SC", "Noto Serif CJK SC", serif;
       }
 
       .counter strong {
         color: var(--ink);
-        font-size: 2.4rem;
-        line-height: 1;
+        font-size: inherit;
+        font-weight: inherit;
+        line-height: inherit;
       }
 
       .display-case {
@@ -868,7 +870,7 @@
           gap: 28px;
         }
 
-        .library-nav {
+        .library-tools {
           margin-top: 18px;
         }
 
@@ -1036,6 +1038,23 @@
           animation: none;
         }
       }
+      .library-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+      .library-search { display: flex; align-items: center; gap: 8px; margin-left: auto; min-width: 0; }
+      .library-search[hidden], .library-search button[hidden], .search-status[hidden] { display: none; }
+      .library-search-field { position: relative; display: flex; width: 200px; min-width: 0; }
+      .library-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
+      .library-search input { width: 100%; height: 44px; min-width: 0; padding: 10px 12px 10px 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; }
+      .library-search input::placeholder { color: var(--muted); }
+      .library-search input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+      .library-search button, .search-empty button { min-height: 44px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; cursor: pointer; }
+      .search-status { color: var(--muted); font-size: .85rem; margin: 8px 0 0; }
+      .search-empty { padding: 40px 20px; text-align: center; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+      @media (max-width: 600px) {
+        .library-nav { flex-basis: 100%; }
+        .library-search { flex: 1 1 150px; margin-left: 0; }
+        .library-search-field { flex: 1; width: 0; }
+        .library-search input { width: 100%; }
+      }
     </style>
     <link rel="stylesheet" href="shared/display-settings.css?v=20260818-dazhuang-popover-2" />
     <link rel="stylesheet" href="shared/version-history.css?v=20260817-timeline-fix" />
@@ -1049,19 +1068,26 @@
           <div class="library-title-row">
             <h1>浮音——音乐剧歌词网站</h1>
             <button class="copyright-notice-trigger" id="copyrightNoticeButton" type="button" aria-label="版权声明" title="版权声明" aria-haspopup="dialog" aria-controls="copyrightNotice"><span aria-hidden="true">©</span></button>
-            <span class="library-update-notice">剧目更新动态可以关注<a href="https://xhslink.cn/m/5oUCF9o85fs" target="_blank" rel="noopener noreferrer">小红书</a>，进群反馈更实时噢～多多四连，阿浮更有动力上新呀！</span>
           </div>
           <p class="intro">感谢剧场让我们的轨迹短暂交叠，行走在志同道合的路上，愿我们一直望着<span class="no-break">同一个月亮。</span></p>
+          <div class="library-tools">
           <nav class="library-nav" id="languageNav" aria-label="按语种快速定位">
             <a href="#language-yue">粤语</a>
             <a href="#language-en">英语</a>
             <a href="#language-de">德语</a>
             <a href="#language-fr">法语</a>
           </nav>
-        </div>
-        <div class="counter" aria-label="当前收录剧目数量">
-          <strong id="showCount">17</strong>
-          <span>shows on shelf</span>
+          <form class="library-search" id="librarySearch" role="search" hidden>
+            <label class="library-search-field">
+              <svg class="library-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="5.8"/><path d="m15.2 15.2 4.2 4.2"/></svg>
+              <input id="showSearchInput" type="search" aria-label="搜索剧目" placeholder="搜索剧目" autocomplete="off" maxlength="120" aria-controls="languageGroups" />
+            </label>
+            <button id="clearShowSearch" type="button" hidden>清空</button>
+          </form>
+          <div class="counter" aria-label="总收录剧目数量"><strong id="showCount">43</strong><span>部在架</span></div>
+          </div>
+          <p id="showSearchStatus" class="search-status" role="status" hidden></p>
+          <noscript><p class="search-status">搜索需要启用 JavaScript，您仍可浏览下方剧目。</p></noscript>
         </div>
       </header>
 
@@ -1131,10 +1157,14 @@
           </div>
         </section>
         <section class="language-group" id="language-fr" aria-labelledby="fr-heading">
-          <div class="language-heading"><h2 id="fr-heading">法语音乐剧</h2><span>7 部</span></div>
+          <div class="language-heading"><h2 id="fr-heading">法语音乐剧</h2><span>8 部</span></div>
           <nav class="alpha-nav" aria-label="法语音乐剧首字母索引"><a href="#letter-fr-B">B</a><a href="#letter-fr-L">L</a><a href="#letter-fr-M">M</a><a href="#letter-fr-Y">Y</a></nav>
           <div class="display-case">
             <div class="collection">
+              <a class="show-card bastille" data-initial="#" href="1789-les-amants-de-la-bastille/index.html">
+                <div class="cover" aria-hidden="true"><img class="show-logo" src="1789-les-amants-de-la-bastille/assets/show-logo.png" alt="" loading="lazy" decoding="async" /></div>
+                <div class="show-copy"><span class="show-meta">法语 / IPA / 中英对照</span><strong>1789：巴士底狱的恋人</strong></div>
+              </a>
               <a class="show-card lesmis" id="letter-fr-B" data-initial="B" href="les-miserables-1980/index.html">
                 <div class="cover" aria-hidden="true"><img class="show-logo" src="les-miserables-1980/assets/show-logo.jpg" alt="" loading="lazy" decoding="async" /></div>
                 <div class="show-copy"><span class="show-meta">法语 / IPA / 中英对照</span><strong>悲惨世界（1980法语原创概念专辑）</strong></div>
@@ -1293,7 +1323,7 @@
     </script>
     <script src="shared/analytics.js" defer onerror="handleOptionalAssetError(this.src)"></script>
     <script src="shows.js" defer onerror="handleOptionalAssetError(this.src)"></script>
-    <script src="library.js?v=20260830-legally-blonde-order-1" defer onerror="handleOptionalAssetError(this.src)"></script>
+    <script src="library.js?v=20260918-show-search-1" defer onerror="handleOptionalAssetError(this.src)"></script>
     <script src="shared/display-settings.js?v=20260817-version-order"></script>
     <script src="library-cursor.js?v=20260817-state-controller"></script>
   </body>

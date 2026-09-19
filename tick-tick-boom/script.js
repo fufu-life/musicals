@@ -4,7 +4,10 @@ const SIDEBAR_KEY = "tick-tick-boom-sidebar-collapsed";
 const PLAYBACK_RATE_KEY = "tick-tick-boom-playback-rate";
 const TOKEN_RE = /\p{L}+(?:['’]\p{L}+)*(?:-\p{L}+)*/gu;
 
-const songs = window.songsInitial || window.songs || [];
+const sortSongsForDisplay = (items) => typeof window.sortSongsForDisplay === "function"
+  ? window.sortSongsForDisplay(items)
+  : items;
+const songs = sortSongsForDisplay(window.songsInitial || window.songs || []);
 let fullSongsReady = null;
 let wordEntries = {};
 let wordDataReady = null;
@@ -123,7 +126,7 @@ async function loadFullSongs() {
   if (window.pageConfig.fullSongsFile) {
     await loadScript(window.pageConfig.fullSongsFile, "high");
   }
-  const fullSongs = window.songs || [];
+  const fullSongs = sortSongsForDisplay(window.songs || []);
   if (!fullSongs.length) throw new Error("Full song data is empty");
   songs.splice(0, songs.length, ...fullSongs);
   renderSongList();
@@ -570,7 +573,7 @@ function getWordAudioPath(key) {
 
 function withAudioVersion(path, speechText) {
   let hash = 2166136261;
-  for (const character of String(speechText || "")) {
+  for (const character of String(config.audioVoice || "system") + "|" + String(speechText || "")) {
     hash ^= character.codePointAt(0);
     hash = Math.imul(hash, 16777619);
   }
@@ -842,9 +845,9 @@ function initThemedCursor() {
       });
       return;
     }
-    const ringKinds = new Set(["roseWindowGlow", "loveRipples", "sunHalo", "moonHalo"]);
+    const ringKinds = new Set(["roseWindowGlow", "loveRipples", "sunHalo", "moonHalo", "subtleRing", "softGreenRipple", "softOceanWave"]);
     if (ringKinds.has(click)) {
-      const count = click === "roseWindowGlow" ? 2 : 3;
+      const count = click === "roseWindowGlow" ? 2 : click === "subtleRing" || click === "softGreenRipple" || click === "softOceanWave" ? 1 : 3;
       for (let index = 0; index < count; index += 1) {
         bursts.push({ x, y, vx: 0, vy: 0, life: 1, radius: 8 + index * 8, angle: 0, delay: index * 3, kind: click, color: index % 2 ? colors.primary : colors.secondary });
       }
@@ -971,11 +974,11 @@ function drawParticles(ctx, particles, bursts, colors) {
       b.delay -= 1;
       continue;
     }
-    b.life -= b.kind === "letterfall" ? 0.025 : /Glow|Ripples|Halo/.test(b.kind) ? 0.045 : 0.065;
+    b.life -= b.kind === "letterfall" ? 0.025 : /Glow|Ripples|Halo|subtleRing|softGreenRipple|softOceanWave/.test(b.kind) ? 0.045 : 0.065;
     b.x += b.vx;
     b.y += b.vy;
     b.vy += b.kind === "letterfall" ? 0.018 : b.kind === "tricolorConfetti" || b.kind === "inkDrops" ? 0.05 : 0.006;
-    b.radius += /Glow|Ripples|Halo/.test(b.kind) ? 0.75 : 0.35;
+    b.radius += /Glow|Ripples|Halo|subtleRing|softGreenRipple|softOceanWave/.test(b.kind) ? 0.75 : 0.35;
     if (b.life <= 0) {
       bursts.splice(index, 1);
       continue;
@@ -992,12 +995,28 @@ function drawParticles(ctx, particles, bursts, colors) {
       ctx.shadowColor = b.color;
       ctx.shadowBlur = 8;
       ctx.fillText(b.text, 0, 0);
-    } else if (["roseWindowGlow", "loveRipples", "sunHalo", "moonHalo"].includes(b.kind)) {
+    } else if (["roseWindowGlow", "loveRipples", "sunHalo", "moonHalo", "subtleRing", "softGreenRipple", "softOceanWave"].includes(b.kind)) {
+      const softRipple = b.kind === "subtleRing" || b.kind === "softGreenRipple" || b.kind === "softOceanWave";
+      const ringColor = b.kind === "subtleRing" || b.kind === "softGreenRipple" ? colors.primary : b.kind === "softOceanWave" ? "#2d9fb6" : b.color;
       ctx.globalCompositeOperation = "screen";
-      ctx.shadowColor = b.color;
-      ctx.shadowBlur = b.kind === "sunHalo" ? 18 : 10;
+      ctx.shadowColor = softRipple ? ringColor : b.color;
+      ctx.shadowBlur = softRipple ? 4 : b.kind === "sunHalo" ? 18 : 10;
+      ctx.strokeStyle = ringColor;
+      if (b.kind === "softGreenRipple") {
+        const haze = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.radius * 1.1);
+        haze.addColorStop(0, "rgba(141,198,63,0.14)");
+        haze.addColorStop(0.5, "rgba(141,198,63,0.06)");
+        haze.addColorStop(1, "rgba(141,198,63,0)");
+        ctx.globalAlpha = b.life * 0.58;
+        ctx.fillStyle = haze;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius * 1.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalCompositeOperation = "source-over";
+      }
+      if (softRipple) ctx.globalAlpha = b.life * 0.62;
       ctx.beginPath();
-      ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, b.radius * (softRipple ? 0.8 : 1), 0, Math.PI * 2);
       ctx.stroke();
       if (b.kind === "roseWindowGlow") {
         for (let ray = 0; ray < 12; ray += 1) {

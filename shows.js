@@ -416,11 +416,13 @@ const libraryShows = [
   },
 {
     id: "1789-les-amants-de-la-bastille",
+    deployed: true,
     language: "fr",
     cardClass: "bastille",
     href: "1789-les-amants-de-la-bastille/index.html",
     title: "1789：巴士底狱的恋人",
     image: "1789-les-amants-de-la-bastille/assets/show-logo.png",
+    prefetch: ["1789-les-amants-de-la-bastille/songs-initial.js"],
     coverLines: ["1789"],
     originalTitle: "Les Amants de la Bastille",
     meta: ["法语", "IPA", "中英对照"],

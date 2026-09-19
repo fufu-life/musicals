@@ -1,3 +1,13 @@
+function normalizeShowSearch(value) {
+  return String(value || "").normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+}
+
+function matchesShowSearch(show, query) {
+  const needle = normalizeShowSearch(query);
+  return !needle || [show.title, show.originalTitle, show.id, ...(show.coverLines || [])]
+    .some((value) => normalizeShowSearch(value).includes(needle));
+}
+
 (function () {
   const groupsRoot = document.querySelector("#languageGroups");
   const languageNav = document.querySelector("#languageNav");
@@ -89,6 +99,16 @@
       date: "2026-09-12",
       title: "第二批英语音乐剧歌词上线",
       summary: "《致埃文·汉森》《六位王后》《女子当参政》《玛蒂尔达》《来自远方》《吉屋出租》《倒数时刻》《律政俏佳人》歌词页面上线，提供歌词、翻译、发音提示、词卡和唱段播放。",
+    },
+    {
+      date: "2026-09-19",
+      title: "首页剧目搜索功能上线",
+      summary: "首页新增剧目搜索，支持按中文名、原文名和剧目标识快速查找。",
+    },
+    {
+      date: "2026-09-19",
+      title: "《1789：巴士底狱的恋人》歌词上线",
+      summary: "法语音乐剧《1789：巴士底狱的恋人》歌词页面上线，提供歌词、翻译、发音提示、词卡和唱段播放。",
     },
   ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
@@ -459,6 +479,17 @@
     });
   }
 
+  const searchForm = document.querySelector("#librarySearch");
+  const searchInput = document.querySelector("#showSearchInput");
+  const clearSearch = document.querySelector("#clearShowSearch");
+  const searchStatus = document.querySelector("#showSearchStatus");
+
+  function resetSearch() {
+    searchInput.value = "";
+    renderLibrary();
+    searchInput.focus();
+  }
+
   function renderLibrary() {
     if (!Array.isArray(window.libraryShows) || !Array.isArray(window.libraryLanguages)) return;
 
@@ -466,9 +497,20 @@
       ? window.libraryShows
       : window.libraryShows.filter((show) => show.deployed);
 
-    countNode.textContent = String(availableShows.length);
+    const query = searchInput?.value || "";
+    const hasQuery = Boolean(normalizeShowSearch(query));
+    const matchingShows = availableShows.filter((show) => matchesShowSearch(show, query));
+    countNode.textContent = String(window.libraryShows.length);
+    if (searchForm) {
+      searchForm.hidden = false;
+      clearSearch.hidden = !query;
+      searchStatus.hidden = !query;
+      searchStatus.textContent = hasQuery
+        ? `找到 ${matchingShows.length} 部剧目（共 ${availableShows.length} 部）`
+        : "显示全部剧目，请输入中文名或原文名的片段。";
+    }
     const groups = window.libraryLanguages.flatMap((language) => {
-      const shows = availableShows.filter((show) => show.language === language.id);
+      const shows = matchingShows.filter((show) => show.language === language.id);
       return shows.length ? [createGroup(language, shows)] : [];
     });
     groupsRoot.replaceChildren(...groups);
@@ -476,9 +518,31 @@
       const language = window.libraryLanguages.find((item) => `language-${item.id}` === group.id);
       return createAnchor(`#${group.id}`, language.label, "language-link");
     }));
+    if (!matchingShows.length) {
+      const empty = document.createElement("div");
+      empty.className = "search-empty";
+      const message = document.createElement("p");
+      message.textContent = availableShows.length
+        ? "没有找到符合条件的剧目，试试更短的中文名或原文名片段。"
+        : "暂时没有可显示的剧目，请稍后刷新页面。";
+      empty.append(message);
+      if (availableShows.length) {
+        const reset = document.createElement("button");
+        reset.type = "button";
+        reset.textContent = "显示全部剧目";
+        reset.addEventListener("click", resetSearch);
+        empty.append(reset);
+      }
+      groupsRoot.append(empty);
+    }
     updateActiveNavigation();
   }
 
+  searchForm?.addEventListener("submit", (event) => { event.preventDefault(); renderLibrary(); });
+  searchInput?.addEventListener("input", (event) => { if (!event.isComposing) renderLibrary(); });
+  searchInput?.addEventListener("compositionend", renderLibrary);
+  searchInput?.addEventListener("keydown", (event) => { if (event.key === "Escape" && !event.isComposing) resetSearch(); });
+  clearSearch?.addEventListener("click", resetSearch);
   renderLibrary();
   mountVersionHistory();
   mountSupportDialog();

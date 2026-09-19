@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
     <link rel="preload" href="songs-initial.js" as="script" />
-    <script src="../shared/display-settings-preload.js" data-musical-page="tick-tick-boom"></script>
+    <script src="../shared/display-settings-preload.js?v=20260830-derived-light-profiles-4" data-musical-page="tick-tick-boom" data-musical-light-profile="#e7e7e7|#f4f4f3|#d5c0e2|#7f6615|#110f09|#4a4844|#af812c"></script>
     <title>tick, tick...BOOM!｜倒数时刻歌词学习</title>
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="../shared/lyrics-page-tools.css?v=20260818-dazhuang-popover-2" />
+    <link rel="stylesheet" href="style.css?v=20260830-derived-light-profiles-4" />
+    <link rel="stylesheet" href="../shared/lyrics-page-tools.css?v=20260830-derived-light-profiles-4" />
     <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
-    <link rel="stylesheet" href="../shared/display-settings.css?v=20260818-dazhuang-popover-2" />
+    <link rel="stylesheet" href="../shared/display-settings.css?v=20260830-derived-light-profiles-4" />
   </head>
   <body>
     <canvas id="effectCanvas" aria-hidden="true"></canvas>
@@ -39,7 +39,6 @@
             <div class="toolbar" role="group" aria-label="显示设置">
               <button class="toggle-btn is-active" type="button" data-toggle="showZh" aria-pressed="true">中译</button>
               <button class="toggle-btn is-active" type="button" data-toggle="showIpa" aria-pressed="true">音标</button>
-
               <button class="toggle-btn feedback-btn" id="feedbackButton" type="button">反馈</button>
               <div class="toolbar-playback-tools" aria-label="本曲播放控制">
                 <button class="song-play-button" id="songPlayButton" type="button" aria-label="连续播放本曲" aria-pressed="false" title="连续播放本曲">
@@ -73,6 +72,7 @@
         "titleZh": "倒数时刻",
         "slug": "tick-tick-boom",
         "language": "en",
+        "audioVoice": "Samantha",
         "showEnglishToggle": false,
         "independentWordIpa": false,
         "effect": {
@@ -178,6 +178,7 @@
       })();
     </script>
     <script>writeCriticalScript("songs-initial.js");</script>
+
     <script>writeCriticalScript("../shared/analytics.js");</script>
     <script>writeCriticalScript("../shared/audio-playback.js");</script>
     <script>writeCriticalScript("../shared/playback-rate.js");</script>
@@ -189,7 +190,7 @@
         window.MusicalDisplaySettings?.customCursorEnabled() !== false
         && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
       ) {
-        document.write('<script src="../shared/cursors/tick-tick-boom.js?v=20260817-come-from-away-globe-2"><\/script>');
+        document.write('<script src="../shared/cursors/tick-tick-boom.js?v=20260830-legally-blonde-balance-1"><\/script>');
       }
     </script>
     <script>writeCriticalScript("script.js");</script>
@@ -200,7 +201,9 @@
         siteName: "倒数时刻歌词学习",
         recipient: "fulife@agent.qq.com",
         trigger: "#feedbackButton",
-        songs: (window.songsInitial || window.songs || []).map((song) => ({
+        songs: (typeof window.sortSongsForDisplay === "function"
+          ? window.sortSongsForDisplay(window.songsInitial || window.songs || [])
+          : (window.songsInitial || window.songs || [])).map((song) => ({
           value: song.id,
           label: `${String(song.displayOrder || song.order).padStart(2, "0")}. ${song.title}`,
         })),
