@@ -429,11 +429,13 @@ const libraryShows = [
   },
 {
     id: "don-juan",
+    deployed: true,
     language: "fr",
     cardClass: "donjuan",
     href: "don-juan/index.html",
     title: "唐璜",
     image: "don-juan/assets/show-logo.png",
+    prefetch: ["don-juan/songs-initial.js"],
     coverLines: ["唐璜"],
     originalTitle: "Don Juan",
     meta: ["法语", "IPA", "中英对照"],

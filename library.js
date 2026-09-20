@@ -110,6 +110,11 @@ function matchesShowSearch(show, query) {
       title: "《1789：巴士底狱的恋人》歌词上线",
       summary: "法语音乐剧《1789：巴士底狱的恋人》歌词页面上线，提供歌词、翻译、发音提示、词卡和唱段播放。",
     },
+    {
+      date: "2026-09-21",
+      title: "《唐璜》歌词上线",
+      summary: "法语音乐剧《唐璜》（Don Juan）歌词页面上线，提供歌词、翻译、发音提示、词卡和唱段播放。",
+    },
   ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
     trackLibraryEntry() {},
