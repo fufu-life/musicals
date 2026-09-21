@@ -183,16 +183,17 @@
       brim.addColorStop(0.48, "#182316");
       brim.addColorStop(1, "#050706");
       cacheCtx.fillStyle = brim;
-      cacheCtx.strokeStyle = "#b8de82";
-      cacheCtx.lineWidth = 1.1;
-      cacheCtx.shadowColor = "rgba(0,0,0,0.72)";
-      cacheCtx.shadowBlur = 4;
+      cacheCtx.strokeStyle = "rgba(184,222,130,0.82)";
+      cacheCtx.lineWidth = 0.92;
+      cacheCtx.shadowColor = "rgba(0,0,0,0.52)";
+      cacheCtx.shadowBlur = 2;
       cacheCtx.beginPath();
       cacheCtx.moveTo(-27, 9);
       cacheCtx.quadraticCurveTo(-4, 2, 27, 9);
       cacheCtx.quadraticCurveTo(16, 16, -18, 15);
       cacheCtx.closePath();
       cacheCtx.fill();
+      cacheCtx.shadowBlur = 0;
       cacheCtx.stroke();
       const crown = cacheCtx.createLinearGradient(-13, -32, 14, 8);
       crown.addColorStop(0, "#273422");
@@ -207,11 +208,13 @@
       cacheCtx.quadraticCurveTo(8, -26, 9, -19);
       cacheCtx.bezierCurveTo(11, -8, 13, 0, 14, 8);
       cacheCtx.closePath();
+      cacheCtx.shadowColor = "rgba(0,0,0,0.52)";
+      cacheCtx.shadowBlur = 2;
       cacheCtx.fill();
-      cacheCtx.stroke();
       cacheCtx.shadowBlur = 0;
+      cacheCtx.stroke();
       cacheCtx.strokeStyle = "#8dc63f";
-      cacheCtx.lineWidth = 2;
+      cacheCtx.lineWidth = 1.5;
       cacheCtx.beginPath();
       cacheCtx.moveTo(-11, 3);
       cacheCtx.quadraticCurveTo(1, 0, 12, 3);
@@ -671,6 +674,58 @@
       cacheCtx.shadowColor = "#ff00ff";
       cacheCtx.shadowBlur = 8;
       cacheCtx.fill();
+    } else if (config.motif === "soundOfMusicNote") {
+      cacheCtx.save();
+      const lightTheme = document.documentElement.dataset.musicalTheme === "light";
+      const halo = cacheCtx.createRadialGradient(0, 2, 2, 0, 2, 31);
+      halo.addColorStop(0, lightTheme ? "rgba(79,182,215,0.2)" : "rgba(132,218,240,0.28)");
+      halo.addColorStop(0.45, lightTheme ? "rgba(79,182,215,0.08)" : "rgba(79,182,215,0.12)");
+      halo.addColorStop(1, "rgba(79,182,215,0)");
+      cacheCtx.fillStyle = halo;
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, 2, 31, 0, Math.PI * 2);
+      cacheCtx.fill();
+
+      cacheCtx.translate(1, 1);
+      cacheCtx.rotate(-0.08);
+      const noteFill = cacheCtx.createLinearGradient(-16, -24, 18, 25);
+      noteFill.addColorStop(0, lightTheme ? "#dff8ff" : "#e8fbff");
+      noteFill.addColorStop(0.28, lightTheme ? "#6ec9e6" : "#9ce6f5");
+      noteFill.addColorStop(0.72, lightTheme ? "#2d8fb6" : "#4fb6d7");
+      noteFill.addColorStop(1, lightTheme ? "#145b83" : "#237da8");
+      cacheCtx.fillStyle = noteFill;
+      cacheCtx.shadowColor = lightTheme ? "rgba(17,89,128,0.36)" : "rgba(79,182,215,0.54)";
+      cacheCtx.shadowBlur = 6;
+
+      cacheCtx.beginPath();
+      cacheCtx.ellipse(-7, 19, 10.5, 6.5, -0.18, 0, Math.PI * 2);
+      cacheCtx.fill();
+
+      cacheCtx.beginPath();
+      cacheCtx.roundRect(0, -20, 6.5, 40, 3.2);
+      cacheCtx.fill();
+
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(3, -20);
+      cacheCtx.bezierCurveTo(14, -19, 22, -14, 22, -5);
+      cacheCtx.bezierCurveTo(22, -1, 19, 1, 16, 1);
+      cacheCtx.bezierCurveTo(18, -5, 15, -9, 6, -10);
+      cacheCtx.lineTo(6, -16);
+      cacheCtx.bezierCurveTo(13, -15, 18, -12, 20, -9);
+      cacheCtx.bezierCurveTo(18, -14, 12, -16, 3, -14);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.strokeStyle = lightTheme ? "rgba(238,252,255,0.78)" : "rgba(224,250,255,0.7)";
+      cacheCtx.lineWidth = 1.1;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(2.5, -16);
+      cacheCtx.lineTo(2.5, 9);
+      cacheCtx.moveTo(-13, 18);
+      cacheCtx.quadraticCurveTo(-7, 13, 1, 17);
+      cacheCtx.stroke();
+      cacheCtx.restore();
     } else if (config.motif === "inspirationPoint") {
       const glow = cacheCtx.createRadialGradient(0, 0, 0, 0, 0, 34);
       glow.addColorStop(0, "rgba(255,255,255,1)");
@@ -1002,6 +1057,32 @@
       cacheCtx.bezierCurveTo(-17, 14, -7, 34, 6, 24);
       cacheCtx.bezierCurveTo(16, 16, 22, 28, 31, 20);
       cacheCtx.stroke();
+    } else if (config.motif === "matildaPencil") {
+      cacheCtx.save();
+      cacheCtx.rotate(Math.PI);
+      cacheCtx.rotate(Math.PI / 4);
+      cacheCtx.fillStyle = "#df72a6";
+      cacheCtx.strokeStyle = "#f8d8e8";
+      cacheCtx.lineWidth = 1.35;
+      cacheCtx.shadowColor = "rgba(223,114,166,0.65)";
+      cacheCtx.shadowBlur = 7;
+      cacheCtx.beginPath();
+      cacheCtx.roundRect(-5, -18, 10, 42, 2);
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+      cacheCtx.fillStyle = "#e8c56a";
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(-5, -18);
+      cacheCtx.lineTo(5, -18);
+      cacheCtx.lineTo(0, -29);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#f9e4ef";
+      cacheCtx.fillRect(-5, 24, 10, 7);
+      cacheCtx.strokeRect(-5, 24, 10, 7);
+      cacheCtx.restore();
     } else if (config.motif === "greatestShow") {
       const glow = cacheCtx.createRadialGradient(0, 0, 4, 0, 0, 33);
       glow.addColorStop(0, "rgba(255,245,207,0.9)");
@@ -1183,51 +1264,63 @@
       cacheCtx.arc(45, 45, 1.7, 0, Math.PI * 2);
       cacheCtx.fillStyle = "#547f8d";
       cacheCtx.fill();
-    } else if (config.motif === "jazzHand") {
+    } else if (config.motif === "chicagoNewspaper") {
       cacheCtx.save();
-      cacheCtx.translate(0, 3);
-      cacheCtx.rotate(-0.12);
-      const glove = cacheCtx.createLinearGradient(-18, -28, 16, 22);
-      glove.addColorStop(0, "#2f2729");
-      glove.addColorStop(0.5, "#090708");
-      glove.addColorStop(1, "#1a1113");
-      cacheCtx.fillStyle = glove;
-      cacheCtx.strokeStyle = "#f0c676";
-      cacheCtx.lineWidth = 1.05;
-      cacheCtx.shadowColor = "rgba(197,31,43,0.42)";
+      cacheCtx.rotate(-0.09);
+      const newsprint = cacheCtx.createLinearGradient(-27, -25, 27, 25);
+      newsprint.addColorStop(0, "#fff9e9");
+      newsprint.addColorStop(0.55, "#e9dfc9");
+      newsprint.addColorStop(1, "#c9bda6");
+      cacheCtx.fillStyle = newsprint;
+      cacheCtx.strokeStyle = "#2b2021";
+      cacheCtx.lineWidth = 1.2;
+      cacheCtx.shadowColor = "rgba(0,0,0,0.58)";
       cacheCtx.shadowBlur = 4;
-      const drawFinger = (x, y, width, height, rotation) => {
-        cacheCtx.save();
-        cacheCtx.translate(x, y);
-        cacheCtx.rotate(rotation);
-        cacheCtx.beginPath();
-        cacheCtx.roundRect(-width / 2, -height, width, height + 5, width / 2);
-        cacheCtx.fill();
-        cacheCtx.stroke();
-        cacheCtx.restore();
-      };
-      drawFinger(-11, -1, 6, 23, -0.25);
-      drawFinger(-4, -4, 6, 29, -0.08);
-      drawFinger(4, -4, 6, 28, 0.08);
-      drawFinger(11, -1, 6, 22, 0.22);
       cacheCtx.beginPath();
-      cacheCtx.moveTo(-10, 3);
-      cacheCtx.lineTo(-23, -5);
-      cacheCtx.quadraticCurveTo(-28, -8, -26, -12);
-      cacheCtx.quadraticCurveTo(-24, -15, -20, -11);
-      cacheCtx.lineTo(-8, 0);
+      cacheCtx.moveTo(-27, -24);
+      cacheCtx.lineTo(27, -24);
+      cacheCtx.lineTo(27, 18);
+      cacheCtx.lineTo(20, 25);
+      cacheCtx.lineTo(-27, 25);
       cacheCtx.closePath();
       cacheCtx.fill();
       cacheCtx.stroke();
-      cacheCtx.beginPath();
-      cacheCtx.roundRect(-12, -8, 24, 29, 8);
-      cacheCtx.fill();
-      cacheCtx.stroke();
       cacheCtx.shadowBlur = 0;
-      cacheCtx.fillStyle = "#b91f2c";
+      cacheCtx.fillStyle = "#241a1b";
+      cacheCtx.fillRect(-23, -21, 46, 11);
+      cacheCtx.fillStyle = "#f8efd9";
+      cacheCtx.font = "700 8px Georgia, serif";
+      cacheCtx.textAlign = "center";
+      cacheCtx.fillText("EXTRA!", 0, -13);
+      cacheCtx.fillStyle = "#c51f2b";
+      cacheCtx.fillRect(-23, -8, 46, 2.4);
+      cacheCtx.fillStyle = "#3a2d2b";
+      cacheCtx.fillRect(-22, -2, 35, 3.2);
+      cacheCtx.fillRect(-22, 3, 29, 2.2);
+      cacheCtx.fillStyle = "#75685b";
+      cacheCtx.fillRect(-22, 9, 15, 11);
+      cacheCtx.strokeStyle = "#766b5d";
+      cacheCtx.lineWidth = 1;
+      [[-3, 10, 21], [-3, 14, 19], [-3, 18, 20], [-22, 23, 38]].forEach(([x, y, width]) => {
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(x, y);
+        cacheCtx.lineTo(x + width, y);
+        cacheCtx.stroke();
+      });
+      cacheCtx.strokeStyle = "rgba(76,63,55,0.5)";
+      cacheCtx.lineWidth = 0.8;
       cacheCtx.beginPath();
-      cacheCtx.roundRect(-11, 17, 22, 9, 2);
+      cacheCtx.moveTo(1, -5);
+      cacheCtx.lineTo(1, 23);
+      cacheCtx.stroke();
+      cacheCtx.fillStyle = "#b6aa94";
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(20, 25);
+      cacheCtx.lineTo(20, 18);
+      cacheCtx.lineTo(27, 18);
+      cacheCtx.closePath();
       cacheCtx.fill();
+      cacheCtx.strokeStyle = "#6f6255";
       cacheCtx.stroke();
       cacheCtx.restore();
     } else if (config.motif === "castNote") {
@@ -1397,11 +1490,91 @@
         cacheCtx.lineTo(x - 2.5, 4);
         cacheCtx.stroke();
       });
+    } else if (config.motif === "legallyBlondeBalance") {
+      const lightTheme = document.documentElement.dataset.musicalTheme === "light";
+      const primary = lightTheme
+        ? getComputedStyle(document.documentElement).getPropertyValue("--musical-light-accent").trim() || config.primary
+        : config.primary;
+      const secondary = lightTheme
+        ? getComputedStyle(document.documentElement).getPropertyValue("--musical-light-motif").trim() || config.secondary
+        : config.secondary;
+      const metal = lightTheme ? "#fffafd" : "#fff3f8";
+      cacheCtx.shadowColor = lightTheme ? "rgba(159,31,88,0.28)" : "rgba(215,45,120,0.52)";
+      cacheCtx.shadowBlur = lightTheme ? 4 : 6;
+      cacheCtx.strokeStyle = primary;
+      cacheCtx.fillStyle = metal;
+      cacheCtx.lineWidth = 2.1;
+      cacheCtx.lineCap = "round";
+      cacheCtx.lineJoin = "round";
+
+      // A clear classical balance: finial, fulcrum, beam, chains, bowls and base.
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, -29);
+      cacheCtx.lineTo(-6, -20);
+      cacheCtx.lineTo(6, -20);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, -20);
+      cacheCtx.lineTo(0, 19);
+      cacheCtx.moveTo(-28, -16);
+      cacheCtx.lineTo(28, -16);
+      cacheCtx.stroke();
+      cacheCtx.beginPath();
+      cacheCtx.arc(0, -16, 2.8, 0, Math.PI * 2);
+      cacheCtx.fillStyle = secondary;
+      cacheCtx.fill();
+      cacheCtx.stroke();
+      cacheCtx.shadowBlur = 0;
+
+      const bowlFill = cacheCtx.createLinearGradient(0, -2, 0, 14);
+      bowlFill.addColorStop(0, secondary);
+      bowlFill.addColorStop(1, primary);
+      cacheCtx.strokeStyle = primary;
+      cacheCtx.fillStyle = bowlFill;
+      cacheCtx.lineWidth = 1.45;
+      [-21, 21].forEach((x) => {
+        const direction = x < 0 ? 1 : -1;
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(x, -16);
+        cacheCtx.lineTo(x, -6);
+        cacheCtx.lineTo(x + direction * 9, 2);
+        cacheCtx.moveTo(x, -6);
+        cacheCtx.lineTo(x - direction * 9, 2);
+        cacheCtx.stroke();
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(x - 11, 2);
+        cacheCtx.quadraticCurveTo(x, 17, x + 11, 2);
+        cacheCtx.quadraticCurveTo(x, 7, x - 11, 2);
+        cacheCtx.fill();
+        cacheCtx.stroke();
+        cacheCtx.strokeStyle = metal;
+        cacheCtx.lineWidth = 0.8;
+        cacheCtx.beginPath();
+        cacheCtx.moveTo(x - 8, 5);
+        cacheCtx.quadraticCurveTo(x, 12, x + 8, 5);
+        cacheCtx.stroke();
+        cacheCtx.strokeStyle = primary;
+        cacheCtx.lineWidth = 1.45;
+      });
+
+      cacheCtx.fillStyle = primary;
+      cacheCtx.beginPath();
+      cacheCtx.moveTo(0, 18);
+      cacheCtx.lineTo(-9, 29);
+      cacheCtx.lineTo(9, 29);
+      cacheCtx.closePath();
+      cacheCtx.fill();
+      cacheCtx.fillStyle = metal;
+      cacheCtx.fillRect(-15, 29, 30, 2.2);
+      cacheCtx.strokeStyle = primary;
+      cacheCtx.strokeRect(-15, 29, 30, 2.2);
     }
     cacheCtx.restore();
   }
   preRenderVampireBat();
-  if (config.motif === "comeFromAwayGlobe") {
+  if (config.motif === "comeFromAwayGlobe" || config.motif === "legallyBlondeBalance") {
     new MutationObserver(() => preRenderVampireBat()).observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["data-musical-theme"],
@@ -1787,7 +1960,7 @@
       this.x = x;
       this.y = y;
       this.age = 0;
-      this.maxAge = 28;
+      this.maxAge = config.burst === "softOceanWave" || config.burst === "softGreenRipple" ? 24 : 28;
     }
     update() {
       this.age += 1;
@@ -1795,19 +1968,52 @@
     draw() {
       const progress = this.age / this.maxAge;
       const radius = 8 + progress * 40;
-      const alpha = Math.max(0, 1 - progress);
+      const alpha = Math.max(0, 1 - progress)
+        * (config.burst === "softOceanWave" || config.burst === "softGreenRipple" ? 0.7 : 1);
       ctx.save();
       ctx.translate(this.x, this.y);
       ctx.globalAlpha = alpha;
       ctx.strokeStyle = config.primary;
       ctx.fillStyle = config.secondary;
       ctx.lineWidth = 1.5;
-      if (config.burst === "subtleRing") {
+      if (config.burst === "headlineDrop") {
+        ctx.shadowColor = "rgba(197,31,43,0.35)";
+        ctx.shadowBlur = 2;
+        ctx.font = "700 9px Georgia, serif";
+        ctx.textAlign = "center";
+        ["N", "E", "W", "S"].forEach((letter, index) => {
+          const spread = (index - 1.5) * 7;
+          const drift = (index % 2 ? 1 : -1) * progress * 1.5;
+          ctx.fillStyle = index === 1 ? "#c51f2b" : "#f1d7a2";
+          ctx.fillText(letter, spread + drift, 24 + progress * (16 + index * 1.2));
+        });
+      } else if (config.burst === "subtleRing") {
         ctx.globalAlpha *= 0.5;
         ctx.strokeStyle = config.primary;
         ctx.lineWidth = Math.max(0.65, 1.35 - progress * 0.7);
         ctx.beginPath();
         ctx.arc(0, 0, 5 + progress * 11, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (config.burst === "softGreenRipple") {
+        const hazeRadius = 10 + progress * 18;
+        const haze = ctx.createRadialGradient(0, 0, 0, 0, 0, hazeRadius);
+        haze.addColorStop(0, "rgba(141,198,63,0.16)");
+        haze.addColorStop(0.45, "rgba(141,198,63,0.08)");
+        haze.addColorStop(1, "rgba(141,198,63,0)");
+        ctx.globalCompositeOperation = "screen";
+        ctx.globalAlpha *= 0.72;
+        ctx.fillStyle = haze;
+        ctx.beginPath();
+        ctx.arc(0, 0, hazeRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalCompositeOperation = "source-over";
+        ctx.globalAlpha *= 0.62;
+        ctx.strokeStyle = "#9fd26a";
+        ctx.shadowColor = "rgba(141,198,63,0.4)";
+        ctx.shadowBlur = 4;
+        ctx.lineWidth = Math.max(0.55, 1.05 - progress * 0.5);
+        ctx.beginPath();
+        ctx.arc(0, 0, 5 + progress * 18, 0, Math.PI * 2);
         ctx.stroke();
       } else if (config.burst === "spectacular") {
         ctx.fillStyle = "#ffd700";
@@ -1922,20 +2128,22 @@
           ctx.lineTo(ray[0], ray[1]);
           ctx.stroke();
         });
-      } else if (config.burst === "oceanWave") {
+      } else if (config.burst === "oceanWave" || config.burst === "softOceanWave") {
+        const softOceanWave = config.burst === "softOceanWave";
         ctx.strokeStyle = "#2d9fb6";
         ctx.shadowColor = "#97d7dc";
-        ctx.shadowBlur = 7;
-        ctx.lineWidth = 1.6;
+        ctx.shadowBlur = softOceanWave ? 3 : 7;
+        ctx.lineWidth = softOceanWave ? 1.05 : 1.6;
+        if (softOceanWave) ctx.globalAlpha *= 0.68;
         ctx.beginPath();
-        ctx.arc(0, 7, radius * 0.74, Math.PI * 1.08, Math.PI * 1.92);
+        ctx.arc(0, 7, radius * (softOceanWave ? 0.58 : 0.74), Math.PI * 1.08, Math.PI * 1.92);
         ctx.stroke();
         ctx.strokeStyle = "#f0d58b";
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(0, 4, radius * 0.48, Math.PI * 1.1, Math.PI * 1.9);
+        ctx.arc(0, 4, radius * (softOceanWave ? 0.38 : 0.48), Math.PI * 1.1, Math.PI * 1.9);
         ctx.stroke();
-        ctx.globalAlpha *= 0.82;
+        ctx.globalAlpha *= softOceanWave ? 0.56 : 0.82;
         ctx.beginPath();
         ctx.moveTo(0, -radius * 0.72);
         ctx.lineTo(0, radius * 0.42);
