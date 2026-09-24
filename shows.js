@@ -8,6 +8,7 @@ const libraryLanguages = [
 const libraryShows = [
 {
     id: "dazhuangwang",
+    fuyinAvailable: true,
     deployed: true,
     language: "yue",
     cardClass: "dzw",
@@ -21,6 +22,7 @@ const libraryShows = [
   },
 {
     id: "hamilton",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "hamilton",
@@ -142,6 +144,7 @@ const libraryShows = [
   },
 {
     id: "elisabeth-das-musical",
+    fuyinAvailable: true,
     deployed: true,
     language: "de",
     cardClass: "elisabeth",
@@ -323,6 +326,7 @@ const libraryShows = [
   },
 {
     id: "rouge-et-noir",
+    fuyinAvailable: true,
     deployed: true,
     language: "fr",
     cardClass: "rouge",

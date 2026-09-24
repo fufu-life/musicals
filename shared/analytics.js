@@ -11,6 +11,7 @@
     "playlist_complete",
   ]);
   const EVENT_FIELDS = {
+    fuyin_promo: ["action", "source", "show_id", "fuyin_available"],
     show_entry_click: ["show_id", "show_name"],
     search_use: ["show_id", "result_count", "song_count", "has_results"],
     word_lookup: ["show_id", "song_id"],
@@ -457,6 +458,7 @@
   }
 
   const api = {
+    trackPromo: (params) => emit("fuyin_promo", params, globalScope),
     searchUse: (result) => currentTracker?.searchUse(result),
     isProduction,
     normalizeShowId,

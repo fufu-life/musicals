@@ -115,6 +115,11 @@ function matchesShowSearch(show, query) {
       title: "《唐璜》歌词上线",
       summary: "法语音乐剧《唐璜》（Don Juan）歌词页面上线，提供歌词、翻译、发音提示、词卡和唱段播放。",
     },
+    {
+      date: "2026-09-24",
+      title: "浮音歌词学习微信小程序上线",
+      summary: "首批上线《摇滚红与黑》《汉密尔顿》《大状王》《伊丽莎白》。在微信搜索“浮音歌词学习”，即可找到小程序。",
+    },
   ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
     trackLibraryEntry() {},
