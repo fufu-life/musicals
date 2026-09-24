@@ -510,7 +510,7 @@ function matchesShowSearch(show, query) {
     const query = searchInput?.value || "";
     const hasQuery = Boolean(normalizeShowSearch(query));
     const matchingShows = availableShows.filter((show) => matchesShowSearch(show, query));
-    countNode.textContent = String(window.libraryShows.length);
+    countNode.textContent = String(availableShows.length);
     if (searchForm) {
       searchForm.hidden = false;
       clearSearch.hidden = !query;

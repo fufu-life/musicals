@@ -121,10 +121,6 @@
     link.addEventListener('click', () => track('open_link', activeSource)); enterActions.prepend(link);
   }
   const code = createCode();
-  if (code) {
-    code.hidden = true;
-    enterActions.append(button('查看小程序码', () => { code.hidden = !code.hidden; if (!code.hidden) track('view_code', activeSource); }, true));
-  }
   dialog.append(enterActions, status); if (code) dialog.append(code);
   doc.body.append(dialog);
   let returnFocus;
