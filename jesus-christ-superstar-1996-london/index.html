@@ -72,7 +72,8 @@
         "titleZh": "耶稣基督万世巨星（1996伦敦卡司录音）",
         "slug": "jesus-christ-superstar-1996-london",
         "language": "en",
-        "audioVoice": "Daniel",
+        "audioVoice": "Samantha",
+        "audioRevision": "20261004-low-volume-1",
         "showEnglishToggle": false,
         "independentWordIpa": false,
         "effect": {
@@ -178,11 +179,13 @@
       })();
     </script>
     <script>writeCriticalScript("songs-initial.js");</script>
+
     <script>writeCriticalScript("../shared/analytics.js");</script>
     <link rel="stylesheet" href="../shared/fuyin-promo.css">
     <script src="../shows.js" defer></script>
     <script src="../shared/fuyin-config.js" defer></script>
     <script src="../shared/fuyin-promo.js" defer></script>
+
     <script>writeCriticalScript("../shared/audio-playback.js");</script>
     <script>writeCriticalScript("../shared/playback-rate.js");</script>
     <script>writeCriticalScript("../shared/lyrics-search.js");</script>
@@ -204,7 +207,9 @@
         siteName: "耶稣基督万世巨星（1996伦敦卡司录音）歌词学习",
         recipient: "fulife@agent.qq.com",
         trigger: "#feedbackButton",
-        songs: (window.songsInitial || window.songs || []).map((song) => ({
+        songs: (typeof window.sortSongsForDisplay === "function"
+          ? window.sortSongsForDisplay(window.songsInitial || window.songs || [])
+          : (window.songsInitial || window.songs || [])).map((song) => ({
           value: song.id,
           label: `${String(song.displayOrder || song.order).padStart(2, "0")}. ${song.title}`,
         })),

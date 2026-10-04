@@ -570,7 +570,8 @@ function getWordAudioPath(key) {
 
 function withAudioVersion(path, speechText) {
   let hash = 2166136261;
-  for (const character of String(speechText || "")) {
+  const revision = config.audioRevision ? String(config.audioRevision) + "|" : "";
+  for (const character of revision + String(config.audioVoice || "system") + "|" + String(speechText || "")) {
     hash ^= character.codePointAt(0);
     hash = Math.imul(hash, 16777619);
   }

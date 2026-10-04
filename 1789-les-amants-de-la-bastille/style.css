@@ -10,7 +10,7 @@
   --shadow: rgba(0, 0, 0, 0.34);
   --body-font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
   --display-font: Oswald, Arial, "PingFang SC", sans-serif;
-  --lyric-font: Oswald, Arial, "PingFang SC", sans-serif;
+  --lyric-font: "Times New Roman", "Liberation Serif", Georgia, serif;
   --title-font: var(--display-font);
   --title-tracking: 0;
   --radius: 8px;

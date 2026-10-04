@@ -1,0 +1,86 @@
+.library-feedback-trigger {
+  display: grid;
+  flex: 0 0 44px;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--panel, #181410) 94%, transparent);
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+.library-feedback-trigger:hover,
+.library-feedback-trigger:focus-visible {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold), transparent 86%);
+  transform: translateY(-1px);
+  outline: none;
+}
+.library-feedback-trigger svg { width: 20px; height: 20px; }
+.library-feedback-overlay[hidden] { display: none; }
+.library-feedback-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000100;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(5, 4, 3, .72);
+  backdrop-filter: blur(3px);
+}
+.library-feedback-dialog {
+  width: min(100%, 480px);
+  max-height: min(90vh, 760px);
+  overflow: auto;
+  padding: 26px;
+  border: 1px solid rgba(216, 177, 91, .4);
+  border-radius: 12px;
+  color: var(--ink);
+  background: linear-gradient(145deg, rgba(216, 177, 91, .11), transparent 36%), #1a100b;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .58);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+}
+.library-feedback-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.library-feedback-head h2 { margin: 0; color: var(--gold); font-family: "Songti SC", "Noto Serif CJK SC", "STSong", serif; font-size: 1.45rem; }
+.library-feedback-close { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 1px solid rgba(216, 177, 91, .28); border-radius: 50%; color: var(--muted); background: none; font: 1.2rem/1 system-ui, sans-serif; cursor: pointer; }
+.library-feedback-close:hover,
+.library-feedback-close:focus-visible { border-color: var(--gold); color: var(--ink); outline: none; }
+.library-feedback-form { display: grid; gap: 16px; margin-top: 22px; }
+.library-feedback-form label { display: grid; gap: 8px; font-size: .94rem; }
+.library-feedback-form select,
+.library-feedback-form input,
+.library-feedback-form textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: var(--bg, #120f0b);
+  font: inherit;
+}
+.library-feedback-form textarea { min-height: 150px; resize: vertical; }
+.library-feedback-form :is(select, input, textarea):focus-visible,
+.library-feedback-form button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.library-feedback-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.library-feedback-actions button { min-height: 44px; padding: 8px 18px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: transparent; font: inherit; cursor: pointer; }
+.library-feedback-actions button[type="submit"] { border-color: var(--gold); color: #1b130d; background: var(--gold); }
+.library-feedback-actions button:disabled { opacity: .5; cursor: not-allowed; }
+.library-feedback-status { min-height: 1.4em; margin: 0; }
+.library-feedback-honey { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+body.library-feedback-open { overflow: hidden; }
+html[data-musical-theme="light"][data-musical-page="library"] .library-feedback-dialog {
+  border-color: color-mix(in srgb, var(--musical-light-accent) 48%, transparent);
+  color: var(--musical-light-ink);
+  background: #ffffff;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--musical-light-ink) 8%, transparent);
+}
+html[data-musical-theme="light"][data-musical-page="library"] .library-feedback-head h2 { color: var(--musical-light-accent); }
+html[data-musical-theme="light"][data-musical-page="library"] .library-feedback-close { border-color: color-mix(in srgb, var(--musical-light-accent) 34%, transparent); color: var(--musical-light-muted); }
+html[data-musical-theme="light"][data-musical-page="library"] .library-feedback-close:is(:hover, :focus-visible) { border-color: var(--musical-light-accent); color: var(--musical-light-ink); }
+html[data-musical-theme="light"][data-musical-page="library"] .library-feedback-form :is(select, input, textarea) { background: color-mix(in srgb, var(--musical-light-panel) 24%, #ffffff); }
+html[data-musical-theme="light"][data-musical-page="library"] .library-feedback-actions button[type="submit"] { border-color: var(--musical-light-accent); color: #ffffff; background: var(--musical-light-accent); }
+@media (max-width: 600px) { .library-feedback-dialog { padding: 20px; } }

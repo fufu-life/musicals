@@ -475,7 +475,7 @@
 
       .language-heading {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         justify-content: space-between;
         gap: 18px;
         padding: 0 4px;
@@ -1067,6 +1067,7 @@
           <div class="library-title-row">
             <h1>浮音——音乐剧歌词网站</h1>
             <button class="copyright-notice-trigger" id="copyrightNoticeButton" type="button" aria-label="版权声明" title="版权声明" aria-haspopup="dialog" aria-controls="copyrightNotice"><span aria-hidden="true">©</span></button>
+            <button class="library-feedback-trigger" id="libraryFeedbackButton" type="button" aria-label="反馈" title="反馈" aria-haspopup="dialog" aria-expanded="false" aria-controls="libraryFeedbackDialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></button>
           </div>
           <p class="intro">感谢剧场让我们的轨迹短暂交叠，行走在志同道合的路上，愿我们一直望着<span class="no-break">同一个月亮。</span></p>
           <div class="library-tools">
@@ -1079,15 +1080,18 @@
           <form class="library-search" id="librarySearch" role="search" hidden>
             <label class="library-search-field">
               <svg class="library-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="5.8"/><path d="m15.2 15.2 4.2 4.2"/></svg>
-              <input id="showSearchInput" type="search" aria-label="搜索剧目" placeholder="搜索剧目" autocomplete="off" maxlength="120" aria-controls="languageGroups" />
+            <input id="showSearchInput" type="search" aria-label="搜索剧目" placeholder="搜索剧目" autocomplete="off" maxlength="120" aria-controls="languageGroups" />
             </label>
             <button id="clearShowSearch" type="button" hidden>清空</button>
           </form>
-          <div class="counter" aria-label="首页可见剧目数量"><strong id="showCount">19</strong><span>部在架</span></div>
+          <div class="counter" aria-label="首页可见剧目数量">
+            <strong id="showCount">19</strong><span>部在架</span>
+          </div>
           </div>
           <p id="showSearchStatus" class="search-status" role="status" hidden></p>
           <noscript><p class="search-status">搜索需要启用 JavaScript，您仍可浏览下方剧目。</p></noscript>
         </div>
+
       </header>
 
       <div class="language-groups" id="languageGroups" aria-live="polite">
@@ -1328,6 +1332,9 @@
     <script src="shows.js" defer onerror="handleOptionalAssetError(this.src)"></script>
     <script src="library.js?v=20260918-show-search-1" defer onerror="handleOptionalAssetError(this.src)"></script>
     <script src="shared/display-settings.js?v=20260817-version-order"></script>
+    <link rel="stylesheet" href="shared/library-feedback.css" />
+    <script src="shared/feedback-widget.js" defer></script>
+    <script src="shared/library-feedback.js" defer></script>
     <script src="library-cursor.js?v=20260817-state-controller"></script>
     <link rel="stylesheet" href="shared/fuyin-promo.css">
     <script src="shared/fuyin-config.js" defer></script>

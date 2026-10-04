@@ -4,7 +4,10 @@ const SIDEBAR_KEY = "jesus-christ-superstar-1996-london-sidebar-collapsed";
 const PLAYBACK_RATE_KEY = "jesus-christ-superstar-1996-london-playback-rate";
 const TOKEN_RE = /\p{L}+(?:['’]\p{L}+)*(?:-\p{L}+)*/gu;
 
-const songs = window.songsInitial || window.songs || [];
+const sortSongsForDisplay = (items) => typeof window.sortSongsForDisplay === "function"
+  ? window.sortSongsForDisplay(items)
+  : items;
+const songs = sortSongsForDisplay(window.songsInitial || window.songs || []);
 let fullSongsReady = null;
 let wordEntries = {};
 let wordDataReady = null;
@@ -123,7 +126,7 @@ async function loadFullSongs() {
   if (window.pageConfig.fullSongsFile) {
     await loadScript(window.pageConfig.fullSongsFile, "high");
   }
-  const fullSongs = window.songs || [];
+  const fullSongs = sortSongsForDisplay(window.songs || []);
   if (!fullSongs.length) throw new Error("Full song data is empty");
   songs.splice(0, songs.length, ...fullSongs);
   renderSongList();
@@ -548,10 +551,12 @@ function hidePopover() {
 }
 
 function normalizeKey(token) {
-  return String(token || "")
+  const normalized = String(token || "")
     .normalize("NFC")
     .toLocaleLowerCase("fr-FR")
-    .replace(/[’‘`]/gu, "'")
+    .replace(/[’‘`]/gu, "'");
+  if (config.slug === "jesus-christ-superstar-1996-london" && normalized === "he'll") return "he'll";
+  return normalized
     .replace(/'/g, "")
     .replace(/[^\p{L}-]/gu, "")
     .trim();
@@ -570,7 +575,8 @@ function getWordAudioPath(key) {
 
 function withAudioVersion(path, speechText) {
   let hash = 2166136261;
-  for (const character of String(config.audioVoice || "system") + "|" + String(speechText || "")) {
+  const revision = config.audioRevision ? String(config.audioRevision) + "|" : "";
+  for (const character of revision + String(config.audioVoice || "system") + "|" + String(speechText || "")) {
     hash ^= character.codePointAt(0);
     hash = Math.imul(hash, 16777619);
   }

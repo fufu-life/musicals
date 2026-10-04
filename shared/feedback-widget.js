@@ -313,6 +313,11 @@
       : options.trigger;
     const trigger = externalTrigger || refs.trigger;
     if (externalTrigger) refs.trigger.hidden = true;
+    if (documentRef.documentElement?.dataset.musicalPage !== "dazhuangwang"
+      && documentRef.documentElement?.dataset.musicalPage !== "library") {
+      trigger.hidden = true;
+      trigger.style.display = "none";
+    }
 
     songs.forEach((song) => {
       const option = documentRef.createElement("option");
