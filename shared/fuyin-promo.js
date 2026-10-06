@@ -88,6 +88,12 @@
   if (mark) { mark.setAttribute('aria-hidden', 'true'); mark.alt = ''; card.append(mark); }
   if (home) {
     const code = createCode(); if (code) { code.classList.add('fy-desktop-code'); card.append(code); }
+    const groupImage = image('shared/fuyin-group-code.jpg', '浮音小程序用户群二维码', 'fy-group-code-image');
+    if (groupImage) {
+      const groupCode = el('figure', 'fy-code fy-group-code');
+      groupCode.append(groupImage, el('figcaption', '', '加入浮音用户群 · 有效至 10 月 13 日'));
+      card.append(groupCode);
+    }
     if (Array.isArray(config.screenshots) && config.screenshots.length) {
       const preview = el('div', 'fy-previews');
       config.screenshots.slice(0, 2).forEach((item) => { const img = image(item.src, item.alt || '浮音歌词学习界面', 'fy-preview'); if (img) preview.append(img); });
