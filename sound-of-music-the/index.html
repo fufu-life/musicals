@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
     <link rel="preload" href="songs-initial.js" as="script" />
-    <script src="../shared/display-settings-preload.js?v=20260829-show-light-profiles-3" data-musical-page="sound-of-music-the"></script>
+    <script src="../shared/display-settings-preload.js?v=20260830-derived-light-profiles-4" data-musical-page="sound-of-music-the" data-musical-light-profile="#e6e8e8|#f3f4f5|#c5dbe4|#306f83|#06131a|#414b51|#3e8ea7"></script>
     <title>The Sound of Music｜音乐之声歌词学习</title>
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="../shared/lyrics-page-tools.css?v=20260829-show-light-profiles-3" />
+    <link rel="stylesheet" href="style.css?v=20260830-derived-light-profiles-4" />
+    <link rel="stylesheet" href="../shared/lyrics-page-tools.css?v=20260830-derived-light-profiles-4" />
     <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
-    <link rel="stylesheet" href="../shared/display-settings.css?v=20260829-show-light-profiles-3" />
+    <link rel="stylesheet" href="../shared/display-settings.css?v=20260830-derived-light-profiles-4" />
   </head>
   <body>
     <canvas id="effectCanvas" aria-hidden="true"></canvas>
@@ -178,11 +178,13 @@
       })();
     </script>
     <script>writeCriticalScript("songs-initial.js");</script>
+
     <script>writeCriticalScript("../shared/analytics.js");</script>
     <link rel="stylesheet" href="../shared/fuyin-promo.css">
     <script src="../shows.js" defer></script>
     <script src="../shared/fuyin-config.js" defer></script>
     <script src="../shared/fuyin-promo.js" defer></script>
+
     <script>writeCriticalScript("../shared/audio-playback.js");</script>
     <script>writeCriticalScript("../shared/playback-rate.js");</script>
     <script>writeCriticalScript("../shared/lyrics-search.js");</script>
@@ -193,7 +195,7 @@
         window.MusicalDisplaySettings?.customCursorEnabled() !== false
         && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
       ) {
-        document.write('<script src="../shared/cursors/sound-of-music-the.js?v=20260829-sound-cursor-7"><\/script>');
+        document.write('<script src="../shared/cursors/sound-of-music-the.js?v=20260830-legally-blonde-balance-1"><\/script>');
       }
     </script>
     <script>writeCriticalScript("script.js");</script>
@@ -204,7 +206,9 @@
         siteName: "音乐之声歌词学习",
         recipient: "fulife@agent.qq.com",
         trigger: "#feedbackButton",
-        songs: (window.songsInitial || window.songs || []).map((song) => ({
+        songs: (typeof window.sortSongsForDisplay === "function"
+          ? window.sortSongsForDisplay(window.songsInitial || window.songs || [])
+          : (window.songsInitial || window.songs || [])).map((song) => ({
           value: song.id,
           label: `${String(song.displayOrder || song.order).padStart(2, "0")}. ${song.title}`,
         })),

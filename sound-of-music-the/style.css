@@ -2,7 +2,7 @@
   color-scheme: dark;
   --bg: #07151c;
   --panel: #112b35;
-  --accent: #e5c978;
+  --accent: #4fb6d7;
   --highlight: #8fb9cc;
   --ink: #f7f3e6;
   --muted: rgba(221, 232, 224, 0.72);
@@ -488,6 +488,8 @@ h2 {
   object-position: var(--visual-position);
   filter: var(--visual-filter);
 }
+
+
 
 .show-visual-symbol::before,
 .show-visual-symbol::after {

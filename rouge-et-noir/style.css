@@ -959,6 +959,12 @@ h1 .lyric-word:focus-visible {
   white-space: nowrap;
 }
 
+.popover-gender {
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.2;
+}
+
 .popover-meaning,
 .popover-en {
   color: var(--muted);

@@ -2150,7 +2150,7 @@
     "word:heart": "770af9d180375fa9",
     "word:heave": "b3d5bd17fa05e96d",
     "word:helicopter": "cbde83173a31f4f2",
-    "word:hell": "3d0922d44dde32ec",
+    "word:hell": "0ebdc3317b75839f",
     "word:hello": "185f8db32271fe25",
     "word:help": "106a5842fc5fce6f",
     "word:helping": "39c42dbad94bee80",
@@ -2246,7 +2246,7 @@
     "word:it": "2ad8a7049d7c5511",
     "word:items": "5f3c4f8580d392e4",
     "word:itll": "96f82cf26a8ba181",
-    "word:its": "1d315be944a93f19",
+    "word:its": "ea103d6cb5c3fb3d",
     "word:ive": "c70c3969c3a62423",
     "word:jackets": "38b1ed12c51c7dc1",
     "word:jamaican": "46e66eeb8f554df8",
@@ -2325,7 +2325,7 @@
     "word:lekin": "5e79828dd176f613",
     "word:lesson": "b78e58750d4f05fb",
     "word:let": "5654d4106d7025c2",
-    "word:lets": "f9754b61f2b7ffbd",
+    "word:lets": "7f7265e23dedf594",
     "word:lewisporte": "22e4084f98d74f27",
     "word:library": "b718f1354f724731",
     "word:librarys": "68fcd39d5e8ce658",
@@ -3253,7 +3253,7 @@
     "line:come-from-away-18-013-b": "82b66221232c5641",
     "line:come-from-away-18-013-c": "a29612385e21a1f4",
     "line:come-from-away-19-024-a": "9e0f9de5404ad495",
-    "line:come-from-away-19-024-b": "d4f4060cb16e5675",
+    "line:come-from-away-19-024-b": "d2a36bef4145065e",
     "line:come-from-away-19-036-a": "3637e212cf13a5ad",
     "line:come-from-away-19-036-b": "c331ca0e66ba2a8a",
     "line:come-from-away-19-049-a": "27b6fce98a63cedc",
@@ -3261,6 +3261,11 @@
     "line:come-from-away-22-001": "25d2fbd51aee3bfe",
     "line:come-from-away-22-004": "a7b7d7be156347d6",
     "word:a-one": "ca9618f060e9772a",
-    "word:toledo": "24d64469c94e9ca2"
+    "word:toledo": "24d64469c94e9ca2",
+    "word:he'll": "3d0922d44dde32ec",
+    "word:it's": "24ceef1cb6b0cbc0",
+    "word:let's": "f9754b61f2b7ffbd",
+    "word:we'll": "6631f4e7e39aeb78",
+    "word:we're": "af32d7043885eb54"
   }
 }

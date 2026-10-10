@@ -480,6 +480,7 @@ function getWordEntry(displayWord) {
       en: entry.en || "",
       note: entry.note || "",
       speak: entry.speak || displayWord,
+      contexts: generatedWordEntries[key]?.contexts || null,
     };
   }
   return {
@@ -1191,6 +1192,8 @@ function showLoadingPopover(term, anchor) {
 }
 
 function showPopover(word, anchor, { autoplay = false } = {}) {
+  const lineId = anchor.closest(".lyric-card")?.dataset.lineId;
+  const contextualSense = lineId ? word.contexts?.[lineId] : null;
   analytics.wordLookup();
   refs.wordPopover.innerHTML = "";
 
@@ -1217,7 +1220,7 @@ function showPopover(word, anchor, { autoplay = false } = {}) {
 
   const meaning = document.createElement("p");
   meaning.className = "popover-meaning";
-  meaning.textContent = word.meaning;
+  meaning.textContent = contextualSense?.meaning || word.meaning;
 
   head.append(title, ipa);
   refs.wordPopover.append(head, meaning);

@@ -479,6 +479,8 @@ function showWord(token, anchor, { autoplay = false } = {}) {
     anchor.classList.add("is-word-unavailable");
     return;
   }
+  const lineId = anchor.closest(".lyric-card")?.dataset.lineId;
+  const contextualSense = lineId ? entry.contexts?.[lineId] : null;
   analytics.wordLookup();
   dom.popover.replaceChildren();
 
@@ -507,10 +509,10 @@ function showWord(token, anchor, { autoplay = false } = {}) {
   head.append(term);
   const meaning = document.createElement("p");
   meaning.className = "popover-meaning";
-  meaning.textContent = entry.meaning || "";
+  meaning.textContent = contextualSense?.meaning || entry.meaning || "";
   const en = document.createElement("p");
   en.className = "popover-en";
-  en.textContent = entry.en || "";
+  en.textContent = contextualSense?.en || entry.en || "";
   dom.popover.append(head, meaning);
   if (config.language !== "en" && entry.en) {
     dom.popover.append(en);

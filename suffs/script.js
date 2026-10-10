@@ -3,8 +3,14 @@ const CURRENT_SONG_KEY = "suffs-current-song";
 const SIDEBAR_KEY = "suffs-sidebar-collapsed";
 const PLAYBACK_RATE_KEY = "suffs-playback-rate";
 const TOKEN_RE = /\p{L}+(?:['’]\p{L}+)*(?:-\p{L}+)*/gu;
+const PRESERVED_WORD_KEYS = new Set(["i'll","we'd","we'll","we're"]);
+const WORD_AUDIO_TTS_KEYS = new Set([]);
+const WORD_AUDIO_REVISIONS = {"ill":"20261008-word-rebuild","wed":"20261008-word-rebuild","well":"20261008-word-rebuild","were":"20261008-word-rebuild"};
 
-const songs = window.songsInitial || window.songs || [];
+const sortSongsForDisplay = (items) => typeof window.sortSongsForDisplay === "function"
+  ? window.sortSongsForDisplay(items)
+  : items;
+const songs = sortSongsForDisplay(window.songsInitial || window.songs || []);
 let fullSongsReady = null;
 let wordEntries = {};
 let wordDataReady = null;
@@ -123,7 +129,7 @@ async function loadFullSongs() {
   if (window.pageConfig.fullSongsFile) {
     await loadScript(window.pageConfig.fullSongsFile, "high");
   }
-  const fullSongs = window.songs || [];
+  const fullSongs = sortSongsForDisplay(window.songs || []);
   if (!fullSongs.length) throw new Error("Full song data is empty");
   songs.splice(0, songs.length, ...fullSongs);
   renderSongList();
@@ -479,6 +485,8 @@ function showWord(token, anchor, { autoplay = false } = {}) {
     anchor.classList.add("is-word-unavailable");
     return;
   }
+  const lineId = anchor.closest(".lyric-card")?.dataset.lineId;
+  const contextualSense = lineId ? entry.contexts?.[lineId] : null;
   analytics.wordLookup();
   dom.popover.replaceChildren();
 
@@ -492,8 +500,13 @@ function showWord(token, anchor, { autoplay = false } = {}) {
   const ipa = document.createElement("p");
   ipa.className = "popover-ipa";
   ipa.textContent = entry.ipa || "";
-  const wordAudioPath = getWordAudioPath(key);
-  window.MusicalAudio.preloadLocalAudio(wordAudioPath);
+  const gender = document.createElement("span");
+  gender.className = "popover-gender";
+  if (config.language === "fr" && ["m", "f"].includes(entry.gender)) {
+    gender.textContent = entry.gender === "m" ? "名词 · 阳性" : "名词 · 阴性";
+  }
+  const wordAudioPath = WORD_AUDIO_TTS_KEYS.has(key) ? "" : getWordAudioPath(key);
+  if (wordAudioPath) window.MusicalAudio.preloadLocalAudio(wordAudioPath);
   const playWordPronunciation = () => {
     audioController.runUserAction(
       anchor,
@@ -504,13 +517,14 @@ function showWord(token, anchor, { autoplay = false } = {}) {
     );
   };
   term.append(word, ipa);
+  if (gender.textContent) term.append(gender);
   head.append(term);
   const meaning = document.createElement("p");
   meaning.className = "popover-meaning";
-  meaning.textContent = entry.meaning || "";
+  meaning.textContent = contextualSense?.meaning || entry.meaning || "";
   const en = document.createElement("p");
   en.className = "popover-en";
-  en.textContent = entry.en || "";
+  en.textContent = contextualSense?.en || entry.en || "";
   dom.popover.append(head, meaning);
   if (config.language !== "en" && entry.en) {
     dom.popover.append(en);
@@ -548,10 +562,12 @@ function hidePopover() {
 }
 
 function normalizeKey(token) {
-  return String(token || "")
+  const normalized = String(token || "")
     .normalize("NFC")
     .toLocaleLowerCase("fr-FR")
-    .replace(/[’‘`]/gu, "'")
+    .replace(/[’‘`]/gu, "'");
+  if (PRESERVED_WORD_KEYS.has(normalized)) return normalized;
+  return normalized
     .replace(/'/g, "")
     .replace(/[^\p{L}-]/gu, "")
     .trim();
@@ -565,12 +581,13 @@ function getWordAudioPath(key) {
   // Delivery files already contain encodeURIComponent(key) in their literal name.
   // Encode the percent signs once more so static HTTP servers do not decode them
   // before resolving the repository path.
-  return withAudioVersion(`audio/words/${encodeURIComponent(encodeURIComponent(key))}.mp3`, wordEntries[key]?.speak || key);
+  return withAudioVersion(`audio/words/${encodeURIComponent(encodeURIComponent(key))}.mp3`, wordEntries[key]?.speak || key, WORD_AUDIO_REVISIONS[key] || "");
 }
 
-function withAudioVersion(path, speechText) {
+function withAudioVersion(path, speechText, wordRevision = "") {
   let hash = 2166136261;
-  for (const character of String(config.audioVoice || "system") + "|" + String(speechText || "")) {
+  const revision = [config.audioRevision, wordRevision].filter(Boolean).join("|");
+  for (const character of (revision ? revision + "|" : "") + String(config.audioVoice || "system") + "|" + String(speechText || "")) {
     hash ^= character.codePointAt(0);
     hash = Math.imul(hash, 16777619);
   }

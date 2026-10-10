@@ -2486,7 +2486,7 @@
     "word:it": "2ad8a7049d7c5511",
     "word:ithaca": "78afae539381433e",
     "word:ithacas": "d91ac88bb4feae5f",
-    "word:its": "24ceef1cb6b0cbc0",
+    "word:its": "ea103d6cb5c3fb3d",
     "word:ive": "c70c3969c3a62423",
     "word:job": "5e8c9902207afaeb",
     "word:journey": "cde56892bbebbf6c",
@@ -2539,7 +2539,7 @@
     "word:lengths": "108915690f1313df",
     "word:lessons": "314a6b49660562c3",
     "word:let": "e947a3d4f4a1b236",
-    "word:lets": "f9754b61f2b7ffbd",
+    "word:lets": "7f7265e23dedf594",
     "word:letting": "4813acc274082702",
     "word:liar": "30e9190d7fdfc50d",
     "word:lie": "c8b1a1a3e6bcee86",
@@ -3380,6 +3380,11 @@
     "line:epic-the-musical-01-051-a": "c47f21f8006042da",
     "line:epic-the-musical-01-051-b": "8386879527d9ab0d",
     "line:epic-the-musical-01-060-a": "07bff998066b55c3",
-    "line:epic-the-musical-01-060-b": "6e36dd58451ea0d2"
+    "line:epic-the-musical-01-060-b": "6e36dd58451ea0d2",
+    "word:he'll": "3d0922d44dde32ec",
+    "word:it's": "24ceef1cb6b0cbc0",
+    "word:let's": "f9754b61f2b7ffbd",
+    "word:we'll": "6631f4e7e39aeb78",
+    "word:we're": "af32d7043885eb54"
   }
 }

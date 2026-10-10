@@ -1257,7 +1257,7 @@
     "word:ways": "063bffb4b52b2315",
     "word:we": "dc7c811b9561739d",
     "word:weep": "8f14105e19bbf022",
-    "word:well": "6631f4e7e39aeb78",
+    "word:well": "a7722b765d15608d",
     "word:went": "bd7e83102fa3e6aa",
     "word:were": "910adfb424646393",
     "word:weve": "201a91a55201e3b3",
@@ -1663,6 +1663,8 @@
     "word:youve": "52f3325c65b03c26",
     "line:dear-evan-hansen-03-002": "c9a320f81d7e096c",
     "line:dear-evan-hansen-13-049-a": "e072c5117469ebe0",
-    "line:dear-evan-hansen-13-049-b": "0029fa6298a99c52"
+    "line:dear-evan-hansen-13-049-b": "0029fa6298a99c52",
+    "word:we'll": "6631f4e7e39aeb78",
+    "word:we're": "af32d7043885eb54"
   }
 }

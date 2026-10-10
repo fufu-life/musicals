@@ -4,7 +4,10 @@ const SIDEBAR_KEY = "elisabeth-das-musical-sidebar-collapsed";
 const PLAYBACK_RATE_KEY = "elisabeth-das-musical-playback-rate";
 const TOKEN_RE = /\p{L}+(?:['’]\p{L}+)*(?:-\p{L}+)*/gu;
 
-const songs = window.songsInitial || window.songs || [];
+const sortSongsForDisplay = (items) => typeof window.sortSongsForDisplay === "function"
+  ? window.sortSongsForDisplay(items)
+  : items;
+const songs = sortSongsForDisplay(window.songsInitial || window.songs || []);
 let fullSongsReady = null;
 let wordEntries = {};
 let wordDataReady = null;
@@ -123,7 +126,7 @@ async function loadFullSongs() {
   if (window.pageConfig.fullSongsFile) {
     await loadScript(window.pageConfig.fullSongsFile, "high");
   }
-  const fullSongs = window.songs || [];
+  const fullSongs = sortSongsForDisplay(window.songs || []);
   if (!fullSongs.length) throw new Error("Full song data is empty");
   songs.splice(0, songs.length, ...fullSongs);
   renderSongList();
@@ -479,6 +482,8 @@ function showWord(token, anchor, { autoplay = false } = {}) {
     anchor.classList.add("is-word-unavailable");
     return;
   }
+  const lineId = anchor.closest(".lyric-card")?.dataset.lineId;
+  const contextualSense = lineId ? entry.contexts?.[lineId] : null;
   analytics.wordLookup();
   dom.popover.replaceChildren();
 
@@ -507,10 +512,10 @@ function showWord(token, anchor, { autoplay = false } = {}) {
   head.append(term);
   const meaning = document.createElement("p");
   meaning.className = "popover-meaning";
-  meaning.textContent = entry.meaning || "";
+  meaning.textContent = contextualSense?.meaning || entry.meaning || "";
   const en = document.createElement("p");
   en.className = "popover-en";
-  en.textContent = entry.en || "";
+  en.textContent = contextualSense?.en || entry.en || "";
   dom.popover.append(head, meaning);
   if (config.language !== "en" && entry.en) {
     dom.popover.append(en);

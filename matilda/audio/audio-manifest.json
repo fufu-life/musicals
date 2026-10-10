@@ -321,7 +321,7 @@
     "line:matilda-05-026": "72af00c9bfece0af",
     "line:matilda-05-027": "0bc86e6fc451c611",
     "line:matilda-05-028": "68de02e0844ba42e",
-    "line:matilda-05-029": "9758de6fc63e1700",
+    "line:matilda-05-029": "02cd198f4a0ac566",
     "line:matilda-05-030": "22abc0f8150f47ca",
     "line:matilda-05-031": "08bc6e400915cbfa",
     "line:matilda-05-032": "72af00c9bfece0af",
@@ -329,7 +329,7 @@
     "line:matilda-05-034": "394f5da04a8cfffb",
     "line:matilda-05-035": "15b7334b86384c03",
     "line:matilda-05-036": "16bbb462f490104d",
-    "line:matilda-05-037": "e0bfdc84b7fd0038",
+    "line:matilda-05-037": "12005da38300d010",
     "line:matilda-05-038": "7c0a26a22a0c22b7",
     "line:matilda-05-039": "bdd434d5fe058bf7",
     "line:matilda-05-040": "38f8075a6d019069",
@@ -1499,7 +1499,7 @@
     "word:heavy": "22d5925ed64680ab",
     "word:heed": "9bd56a115b8e1b40",
     "word:heel": "aee12eebcac8ca0b",
-    "word:hell": "3d0922d44dde32ec",
+    "word:hell": "0ebdc3317b75839f",
     "word:helps": "68894c5f9e0560af",
     "word:her": "354cbfc814262a7a",
     "word:here": "fcec91509759ad99",
@@ -1612,7 +1612,7 @@
     "word:less": "4fdd3b6201a22c78",
     "word:lessons": "314a6b49660562c3",
     "word:let": "5654d4106d7025c2",
-    "word:lets": "f9754b61f2b7ffbd",
+    "word:lets": "7f7265e23dedf594",
     "word:lick": "3c13f6fd6f97586c",
     "word:lie": "c8b1a1a3e6bcee86",
     "word:life": "63bd7065ef1e165a",
@@ -2319,6 +2319,11 @@
     "word:yourself": "d00d825bba6ba94d",
     "word:youve": "ce0da5c29672409d",
     "word:zeke": "1c15790b3d150a4c",
-    "word:zing": "bd2e37ad80b24655"
+    "word:zing": "bd2e37ad80b24655",
+    "word:don't": "df7682099c96e3f6",
+    "word:he'll": "3d0922d44dde32ec",
+    "word:let's": "f9754b61f2b7ffbd",
+    "word:we'll": "6631f4e7e39aeb78",
+    "word:we're": "af32d7043885eb54"
   }
 }

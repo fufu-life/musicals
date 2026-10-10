@@ -2148,7 +2148,7 @@
     "word:we": "dc7c811b9561739d",
     "word:wear": "c47fbc5d87a12981",
     "word:weary": "1702a4bae332d66f",
-    "word:wed": "9193cf9c6a0a0a96",
+    "word:wed": "318aadfe85eb7669",
     "word:week": "6df37daaa46ce714",
     "word:well": "a7722b765d15608d",
     "word:went": "bd7e83102fa3e6aa",
@@ -2763,7 +2763,7 @@
     "word:ignite": "5b8af9e5e9615759",
     "word:ignored": "3514cf816e5407a3",
     "word:ii": "2e561ff2355c0648",
-    "word:ill": "9a42a991e3384511",
+    "word:ill": "c426a5fe614fcd11",
     "word:illegal": "4e73ff840ac8644a",
     "word:ills": "980d771e9522d1f3",
     "word:im": "c9d7ed34ba7890f6",
@@ -3566,6 +3566,10 @@
     "line:suffs-32-002-a": "bb2eb44bfc7cb2b2",
     "line:suffs-32-002-b": "70b08519648830d5",
     "line:suffs-35-010-a": "a171c4e667d35162",
-    "line:suffs-35-010-b": "fa9c50dabee66868"
+    "line:suffs-35-010-b": "fa9c50dabee66868",
+    "word:i'll": "3eaf88211133eef4",
+    "word:we'd": "36530f0cf1ba90cf",
+    "word:we'll": "6631f4e7e39aeb78",
+    "word:we're": "af32d7043885eb54"
   }
 }

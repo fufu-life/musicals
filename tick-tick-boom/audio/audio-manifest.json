@@ -1193,7 +1193,7 @@
     "word:legs": "14e32f3cbdd3b4c4",
     "word:less": "4fdd3b6201a22c78",
     "word:let": "5654d4106d7025c2",
-    "word:lets": "f9754b61f2b7ffbd",
+    "word:lets": "7f7265e23dedf594",
     "word:life": "63bd7065ef1e165a",
     "word:lifes": "595bba6da487a633",
     "word:light": "99a7026172d42714",
@@ -1678,6 +1678,9 @@
     "word:flame": "bd9dc5f78dac9fad",
     "word:hand": "1b001706a418bdfc",
     "word:leave": "af193190b8d3cd14",
-    "word:run": "acba25512100f80b"
+    "word:run": "acba25512100f80b",
+    "word:let's": "f9754b61f2b7ffbd",
+    "word:we'll": "6631f4e7e39aeb78",
+    "word:we're": "af32d7043885eb54"
   }
 }

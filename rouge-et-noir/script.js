@@ -1300,6 +1300,7 @@ function buildSongGlossary(song) {
         zh: word.zh,
         note: word.note || (word.fr.includes(" ") ? `来自短语 ${word.fr}` : ""),
         speak: word.fr,
+        gender: ["m", "f"].includes(word.gender) ? word.gender : undefined,
       };
 
       addGlossaryEntry(glossary, normalizeToken(word.fr), entry);
@@ -1343,6 +1344,7 @@ function getTokenGlossaryEntries(word, phraseEntry) {
       const part = slashParts?.[index];
       const tokenEntry = {
         ...phraseEntry,
+        gender: rawTokens.length === 1 ? phraseEntry.gender : undefined,
         ipa: approximateFrenchWordIpa(rawToken),
         en: part?.en || phraseEntry.en,
         zh: part?.zh || phraseEntry.zh,
@@ -1726,6 +1728,12 @@ function showWordPopup(song, displayWord, key, anchor, phoneticContext = {}, { a
   ipa.className = "popover-ipa";
   ipa.textContent = displayEntry.ipa;
 
+  const gender = document.createElement("span");
+  gender.className = "popover-gender";
+  if (displayEntry.gender === "m" || displayEntry.gender === "f") {
+    gender.textContent = displayEntry.gender === "m" ? "名词 · 阳性" : "名词 · 阴性";
+  }
+
   const zh = document.createElement("span");
   zh.className = "popover-meaning";
   zh.textContent = entry.zh;
@@ -1749,7 +1757,8 @@ function showWordPopup(song, displayWord, key, anchor, phoneticContext = {}, { a
   };
 
   popoverHead.append(title, ipa);
-  wordPopup.append(popoverHead, en, zh);
+  if (gender.textContent) wordPopup.append(popoverHead, gender, en, zh);
+  else wordPopup.append(popoverHead, en, zh);
   wordPopup.hidden = false;
   positionWordPopup(anchor);
   if (autoplay) playWordPronunciation();

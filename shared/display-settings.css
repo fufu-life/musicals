@@ -1161,6 +1161,37 @@ html[data-musical-settings-open] :is(
   opacity: 0 !important;
 }
 
+/* Keep the existing show feedback wiring available while feedback moves to the library. */
+html[data-musical-page]:not([data-musical-page="library"]):not([data-musical-page="dazhuangwang"]) .feedback-btn,
+html[data-musical-page]:not([data-musical-page="library"]):not([data-musical-page="dazhuangwang"]) .feedback-button,
+html[data-musical-page]:not([data-musical-page="library"]):not([data-musical-page="dazhuangwang"]) .mf-trigger {
+  display: none !important;
+}
+
+/* Font glyph side bearings make the sidebar arrows look off-center. */
+#sidebarToggle {
+  font-size: 0;
+  line-height: 0;
+}
+
+#sidebarToggle::before {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateX(2px) rotate(45deg);
+}
+
+#sidebarToggle[aria-expanded="false"]::before {
+  transform: translateX(-2px) rotate(225deg);
+}
+
+.song-play-button svg {
+  display: block;
+}
+
 .musical-display-settings {
   position: relative;
   flex: 0 0 auto;

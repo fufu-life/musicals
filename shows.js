@@ -78,6 +78,7 @@ const libraryShows = [
 {
     id: "dear-evan-hansen",
     deployed: true,
+    prefetch: ["dear-evan-hansen/songs-initial.js"],
     language: "en",
     cardClass: "dear-evan-hansen",
     href: "dear-evan-hansen/index.html",
@@ -89,6 +90,7 @@ const libraryShows = [
 {
     id: "six-the-musical",
     deployed: true,
+    prefetch: ["six-the-musical/songs-initial.js"],
     language: "en",
     cardClass: "six-the-musical",
     href: "six-the-musical/index.html",
@@ -100,6 +102,7 @@ const libraryShows = [
 {
     id: "suffs",
     deployed: true,
+    prefetch: ["suffs/songs-initial.js"],
     language: "en",
     cardClass: "suffs",
     href: "suffs/index.html",
@@ -497,6 +500,7 @@ const libraryShows = [
 {
     id: "legally-blonde",
     deployed: true,
+    prefetch: ["legally-blonde/songs-initial.js"],
     language: "en",
     cardClass: "legally-blonde",
     href: "legally-blonde/index.html",

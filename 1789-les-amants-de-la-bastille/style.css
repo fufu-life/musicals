@@ -489,6 +489,8 @@ h2 {
   filter: var(--visual-filter);
 }
 
+
+
 .show-visual-symbol::before,
 .show-visual-symbol::after {
   content: "";
@@ -833,6 +835,12 @@ h2 {
   margin: 0;
   color: color-mix(in srgb, var(--highlight), white 28%);
   font-size: 0.94rem;
+  white-space: nowrap;
+}
+
+.popover-gender {
+  color: var(--muted);
+  font-size: 0.82rem;
   white-space: nowrap;
 }
 

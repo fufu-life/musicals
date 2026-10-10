@@ -1568,7 +1568,7 @@
     "word:isnt": "2dd6dad08f7ece24",
     "word:it": "2ad8a7049d7c5511",
     "word:itinerary": "9844cdc6c5489db0",
-    "word:its": "1d315be944a93f19",
+    "word:its": "ea103d6cb5c3fb3d",
     "word:ive": "c70c3969c3a62423",
     "word:jealous": "b2f5e2e21758c5c2",
     "word:join": "58393216032be625",
@@ -2234,6 +2234,10 @@
     "word:youre": "7dece7d7d99ed7de",
     "word:yours": "5eb2da9c26b65531",
     "word:youup": "1a22ed265fa44223",
-    "word:youve": "ce0da5c29672409d"
+    "word:youve": "ce0da5c29672409d",
+    "word:it's": "24ceef1cb6b0cbc0",
+    "word:she'd": "78f02553e25998d1",
+    "word:we'll": "6631f4e7e39aeb78",
+    "word:we're": "af32d7043885eb54"
   }
 }

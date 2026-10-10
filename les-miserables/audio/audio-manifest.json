@@ -2426,7 +2426,7 @@
     "word:i": "a83dd0ccbffe39d0",
     "word:id": "d9655e1668a3c93a",
     "word:if": "935f68319d4f227e",
-    "word:ill": "9a42a991e3384511",
+    "word:ill": "c426a5fe614fcd11",
     "word:im": "c9d7ed34ba7890f6",
     "word:impressed": "9cfb469bd28ba246",
     "word:in": "582967534d0f909d",
@@ -3650,6 +3650,10 @@
     "word:valley": "627fd3d05a49a183",
     "word:wounded": "ce96cb0c79011fae",
     "word:wretched": "3dd3934cf4285d9a",
-    "word:write": "3f00927a719345ed"
+    "word:write": "3f00927a719345ed",
+    "word:he'll": "3d0922d44dde32ec",
+    "word:i'll": "3eaf88211133eef4",
+    "word:we'll": "6631f4e7e39aeb78",
+    "word:we're": "af32d7043885eb54"
   }
 }

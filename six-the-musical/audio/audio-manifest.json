@@ -1114,7 +1114,7 @@
     "word:way": "44c5e7071f3a75a2",
     "word:we": "dc7c811b9561739d",
     "word:wed": "318aadfe85eb7669",
-    "word:well": "6631f4e7e39aeb78",
+    "word:well": "a7722b765d15608d",
     "word:went": "bd7e83102fa3e6aa",
     "word:were": "910adfb424646393",
     "word:weve": "bd573a2c01411003",
@@ -1692,6 +1692,11 @@
     "word:youll": "ac4edf18ae2fdd7c",
     "word:youre": "c0212a81b08c69f2",
     "word:youve": "52f3325c65b03c26",
-    "word:concert": "5359565a1aca1516"
+    "word:concert": "5359565a1aca1516",
+    "word:he'll": "3d0922d44dde32ec",
+    "word:it's": "24ceef1cb6b0cbc0",
+    "word:we'd": "36530f0cf1ba90cf",
+    "word:we'll": "6631f4e7e39aeb78",
+    "word:we're": "af32d7043885eb54"
   }
 }

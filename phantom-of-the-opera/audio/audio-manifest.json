@@ -1627,7 +1627,7 @@
     "word:isnt": "9843bc65dd793d70",
     "word:it": "2ad8a7049d7c5511",
     "word:item": "4a33eacd5fa65f2b",
-    "word:its": "24ceef1cb6b0cbc0",
+    "word:its": "ea103d6cb5c3fb3d",
     "word:ive": "c70c3969c3a62423",
     "word:joke": "a2fa4cfad054c30d",
     "word:jokes": "3c00710d34208f34",
@@ -2337,7 +2337,7 @@
     "word:webber": "1e74e005127a8771",
     "word:weight": "0844df8fee9eeada",
     "word:welcome": "280d44ab1e9f79b5",
-    "word:well": "6631f4e7e39aeb78",
+    "word:well": "a7722b765d15608d",
     "word:went": "bd7e83102fa3e6aa",
     "word:were": "910adfb424646393",
     "word:weve": "bd573a2c01411003",
@@ -2411,6 +2411,10 @@
     "line:phantom-of-the-opera-09-111": "018dac8d31cc593f",
     "line:phantom-of-the-opera-19-117": "ba01116c237fe7bf",
     "line:phantom-of-the-opera-21-019": "183037935522f6a9",
-    "word:reprise": "e07cc5516af9480a"
+    "word:reprise": "e07cc5516af9480a",
+    "word:he'll": "3d0922d44dde32ec",
+    "word:it's": "24ceef1cb6b0cbc0",
+    "word:we'll": "6631f4e7e39aeb78",
+    "word:we're": "af32d7043885eb54"
   }
 }

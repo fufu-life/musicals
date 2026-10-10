@@ -2332,7 +2332,7 @@
     "word:heaven": "818efe46a6c2ddb9",
     "word:heavy": "22d5925ed64680ab",
     "word:heels": "d0d0c04e795f8e38",
-    "word:hell": "3d0922d44dde32ec",
+    "word:hell": "0ebdc3317b75839f",
     "word:help": "106a5842fc5fce6f",
     "word:her": "354cbfc814262a7a",
     "word:here": "fcec91509759ad99",
@@ -2390,7 +2390,7 @@
     "word:isnt": "2dd6dad08f7ece24",
     "word:it": "2ad8a7049d7c5511",
     "word:itll": "96f82cf26a8ba181",
-    "word:its": "1d315be944a93f19",
+    "word:its": "ea103d6cb5c3fb3d",
     "word:ive": "c70c3969c3a62423",
     "word:jack": "31611159e7e6ff78",
     "word:jar": "0163f1eea7894350",
@@ -2414,7 +2414,7 @@
     "word:know": "cd1bb3012bcfaa0c",
     "word:known": "7117fff2d0fd2944",
     "word:knows": "fa1f14f6d1bf2114",
-    "word:la": "25cd026529f36e20",
+    "word:la": "adc6e9ebc4eadea7",
     "word:ladies": "481f9996adb1795d",
     "word:lady": "49547872a664dd8e",
     "word:laid": "cb252f54f35648f5",
@@ -3147,6 +3147,10 @@
     "word:yours": "5eb2da9c26b65531",
     "word:yourself": "d00d825bba6ba94d",
     "word:yourselves": "c18696709825b475",
-    "word:youve": "ce0da5c29672409d"
+    "word:youve": "ce0da5c29672409d",
+    "word:he'll": "3d0922d44dde32ec",
+    "word:we'll": "6631f4e7e39aeb78",
+    "word:we're": "af32d7043885eb54",
+    "word:it's": "24ceef1cb6b0cbc0"
   }
 }

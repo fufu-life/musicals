@@ -1360,7 +1360,7 @@
     "word:involved": "ba27edf63ec40abe",
     "word:is": "fa51fd49abf67705",
     "word:it": "2ad8a7049d7c5511",
-    "word:its": "24ceef1cb6b0cbc0",
+    "word:its": "ea103d6cb5c3fb3d",
     "word:ive": "c70c3969c3a62423",
     "word:je": "3d3af356dbef1676",
     "word:jeans": "e074763cb375d9ab",
@@ -1858,7 +1858,7 @@
     "word:wear": "c47fbc5d87a12981",
     "word:wears": "7bec443b70dcd239",
     "word:welcome": "0e2226b5235f0ff9",
-    "word:well": "bdc7e96514483428",
+    "word:well": "a7722b765d15608d",
     "word:well-learned": "ef68697ed5781418",
     "word:were": "910adfb424646393",
     "word:what": "749ab2c0d06c42ae",
@@ -1904,6 +1904,9 @@
     "word:youre": "7dece7d7d99ed7de",
     "word:yours": "54b26f7d3d0ddc66",
     "word:youve": "52f3325c65b03c26",
-    "word:zidler": "8f34d38c5228d922"
+    "word:zidler": "8f34d38c5228d922",
+    "word:it's": "24ceef1cb6b0cbc0",
+    "word:we'll": "6631f4e7e39aeb78",
+    "word:we're": "af32d7043885eb54"
   }
 }
