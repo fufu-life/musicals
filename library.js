@@ -116,6 +116,11 @@ function matchesShowSearch(show, query) {
       title: "浮音歌词学习微信小程序上线",
       summary: "首批上线《摇滚红与黑》《汉密尔顿》《大状王》《伊丽莎白》。在微信搜索“浮音歌词学习”，即可找到小程序。",
     },
+    {
+      date: "2026-10-11",
+      title: "8 部英语音乐剧歌词上线",
+      summary: "《耶稣基督万世巨星》《红磨坊》《芝加哥》《日落大道》《马戏之王》《EPIC》《音乐之声》《魔法坏女巫》现已在首页展示架上线。",
+    },
   ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
     trackLibraryEntry() {},
