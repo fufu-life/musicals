@@ -91,7 +91,7 @@
     const groupImage = image('shared/fuyin-group-code.jpg', '浮音小程序用户群二维码', 'fy-group-code-image');
     if (groupImage) {
       const groupCode = el('figure', 'fy-code fy-group-code');
-      groupCode.append(groupImage, el('figcaption', '', '加入浮音用户群 · 有效至 10 月 13 日'));
+      groupCode.append(groupImage, el('figcaption', '', '加入浮音用户群 · 10 月 20 日前有效'));
       card.append(groupCode);
     }
     if (Array.isArray(config.screenshots) && config.screenshots.length) {
