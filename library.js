@@ -121,6 +121,11 @@ function matchesShowSearch(show, query) {
       title: "8 部英语音乐剧歌词上线",
       summary: "《耶稣基督万世巨星》《红磨坊》《芝加哥》《日落大道》《马戏之王》《EPIC》《音乐之声》《魔法坏女巫》现已在首页展示架上线。",
     },
+    {
+      date: "2026-10-16",
+      title: "8 部德语与法语音乐剧歌词上线",
+      summary: "《路德维希二世：向往天堂》《德古拉》《十诫》《小王子》《星幻》《亚瑟王传奇》《太阳王》《大鼻子情圣》现已在首页展示架上线。",
+    },
   ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
     trackLibraryEntry() {},
