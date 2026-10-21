@@ -126,6 +126,11 @@ function matchesShowSearch(show, query) {
       title: "8 部德语与法语音乐剧歌词上线",
       summary: "《路德维希二世：向往天堂》《德古拉》《十诫》《小王子》《星幻》《亚瑟王传奇》《太阳王》《大鼻子情圣》现已在首页展示架上线。",
     },
+    {
+      date: "2026-10-21",
+      title: "歌词阅读与切歌体验优化",
+      summary: "电脑端歌曲列表随页面滚动保持可见；所有剧目歌词底部新增上一首、下一首按钮并显示歌名，读完即可切歌，无需返回顶部。",
+    },
   ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
     trackLibraryEntry() {},

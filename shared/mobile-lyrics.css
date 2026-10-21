@@ -188,3 +188,52 @@ body.has-playback-dock .dzw-shell {
     max-width: 260px;
   }
 }
+
+/* clip avoids creating a scrolling ancestor that traps position: sticky. */
+html,
+body {
+  overflow-x: clip;
+}
+
+@media (min-width: 960px) {
+  .song-sidebar {
+    align-self: start;
+  }
+}
+
+.song-pagination {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  margin-top: 24px;
+  padding-bottom: 24px;
+}
+
+.song-pagination-button {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  min-height: 76px;
+  padding: 14px;
+  border: 1px solid var(--line, currentColor);
+  border-radius: 8px;
+  background: var(--panel, transparent);
+  color: var(--ink, inherit);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.song-pagination-button:last-child { text-align: right; }
+.song-pagination-button span { font-size: 0.85em; }
+.song-pagination-button strong { overflow-wrap: anywhere; }
+.song-pagination-button:disabled { opacity: 0.5; cursor: default; }
+.song-pagination-button:not(:disabled):hover { border-color: var(--accent, currentColor); }
+.song-pagination-button:focus-visible { outline: 2px solid var(--accent, currentColor); outline-offset: 3px; }
+
+/* Offscreen lyric rows can retain their wide intrinsic size after a resize. */
+html[data-musical-page="dazhuangwang"] .lyrics-list {
+  grid-template-columns: minmax(0, 1fr);
+}
