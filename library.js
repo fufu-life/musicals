@@ -131,6 +131,11 @@ function matchesShowSearch(show, query) {
       title: "歌词阅读与切歌体验优化",
       summary: "电脑端歌曲列表随页面滚动保持可见；所有剧目歌词底部新增上一首、下一首按钮并显示歌名，读完即可切歌，无需返回顶部。",
     },
+    {
+      date: "2026-10-23",
+      title: "法语音乐剧《茶花女》上线",
+      summary: "上线法语音乐剧《茶花女》。",
+    },
   ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
     trackLibraryEntry() {},
@@ -148,6 +153,7 @@ function matchesShowSearch(show, query) {
     "le-roi-soleil": "T", "1789-les-amants-de-la-bastille": "#", "don-juan": "T",
     "moliere-le-spectacle-musical": "M", "cyrano-de-bergerac": "D",
     "les-miserables-1980": "B", "les-miserables-cityprod-2017": "B",
+    "la-dame-aux-camelias": "C",
     "jesus-christ-superstar-1996-london": "Y", "le-petit-prince-2cd": "X",
     "come-from-away": "Y", rent: "J", "tick-tick-boom": "D", wicked: "M", hadestown: "M",
     "legally-blonde": "L", matilda: "M", "sound-of-music-the": "Y",

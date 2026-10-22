@@ -6,6 +6,14 @@ const libraryLanguages = [
 ];
 
 const libraryShows = [
+  {
+    id: "la-dame-aux-camelias", deployed: true, language: "fr", browserSpeechOnly: true,
+    cardClass: "camelias", href: "la-dame-aux-camelias/index.html",
+    title: "茶花女", originalTitle: "La Dame aux camélias",
+    image: "la-dame-aux-camelias/assets/show-logo-poster.webp",
+    prefetch: ["la-dame-aux-camelias/songs-initial.js"],
+    meta: ["法语", "三语对照", "推定整理版"],
+  },
 {
     id: "dazhuangwang",
     fuyinAvailable: true,

@@ -590,6 +590,17 @@ html[data-musical-theme="light"][data-musical-page="romeo-et-juliette"] .lyric-c
   box-shadow: inset 3px 0 0 color-mix(in srgb, var(--musical-light-accent) 68%, transparent), inset -3px 0 0 color-mix(in srgb, var(--musical-light-motif) 58%, transparent), 0 18px 42px color-mix(in srgb, var(--musical-light-ink) 13%, transparent);
 }
 
+html[data-musical-theme="light"][data-musical-page="la-dame-aux-camelias"] .show-visual-image {
+  filter: brightness(0.38) sepia(0.6);
+}
+
+html[data-musical-theme="light"][data-musical-page="la-dame-aux-camelias"] body {
+  background:
+    radial-gradient(ellipse at 82% 4%, color-mix(in srgb, var(--musical-light-motif) 22%, transparent), transparent 28rem),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--musical-light-accent) 5%, transparent) 0 1px, transparent 1px 36px),
+    linear-gradient(180deg, var(--musical-light-panel), color-mix(in srgb, var(--musical-light-bg) 82%, var(--musical-light-panel)) 48%, var(--musical-light-bg));
+}
+
 html[data-musical-theme="light"][data-musical-page="ludwig-ii-sehnsucht-nach-dem-paradies"] body {
   background:
     radial-gradient(ellipse at 82% 0%, color-mix(in srgb, var(--musical-light-motif) 22%, transparent), transparent 25rem),

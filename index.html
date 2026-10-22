@@ -712,6 +712,19 @@
         --cover-bright: #3b2111;
       }
 
+      .show-card.camelias {
+        --accent: #c5a36a;
+        --accent-soft: rgba(143, 25, 35, 0.2);
+        --cover-deep: #080606;
+        --cover-bright: #21100d;
+      }
+      .show-card.camelias .cover {
+        border-color: rgba(197, 163, 106, 0.5);
+        background: radial-gradient(ellipse at 95% 0%, rgba(143,25,35,0.30), transparent 60%), linear-gradient(145deg, #1d120c, #030303 55%, #170a0b);
+        box-shadow: inset 0 0 0 5px #080606, inset 0 0 0 6px rgba(197,163,106,0.22);
+      }
+      .show-card.camelias .show-logo { width: 94%; max-height: 82%; }
+
       .show-card.legally-blonde {
         --accent: #d72d78;
         --accent-soft: rgba(215, 45, 120, 0.2);
@@ -1085,7 +1098,7 @@
             <button id="clearShowSearch" type="button" hidden>清空</button>
           </form>
           <div class="counter" aria-label="首页可见剧目数量">
-            <strong id="showCount">19</strong><span>部在架</span>
+            <strong id="showCount">20</strong><span>部在架</span>
           </div>
           </div>
           <p id="showSearchStatus" class="search-status" role="status" hidden></p>
@@ -1160,8 +1173,8 @@
           </div>
         </section>
         <section class="language-group" id="language-fr" aria-labelledby="fr-heading">
-          <div class="language-heading"><h2 id="fr-heading">法语音乐剧</h2><span>9 部</span></div>
-          <nav class="alpha-nav" aria-label="法语音乐剧首字母索引"><a href="#letter-fr-B">B</a><a href="#letter-fr-L">L</a><a href="#letter-fr-M">M</a><a href="#letter-fr-T">T</a><a href="#letter-fr-Y">Y</a></nav>
+          <div class="language-heading"><h2 id="fr-heading">法语音乐剧</h2><span>10 部</span></div>
+          <nav class="alpha-nav" aria-label="法语音乐剧首字母索引"><a href="#letter-fr-B">B</a><a href="#letter-fr-C">C</a><a href="#letter-fr-L">L</a><a href="#letter-fr-M">M</a><a href="#letter-fr-T">T</a><a href="#letter-fr-Y">Y</a></nav>
           <div class="display-case">
             <div class="collection">
               <a class="show-card bastille" data-initial="#" href="1789-les-amants-de-la-bastille/index.html">
@@ -1179,6 +1192,10 @@
               <a class="show-card ndp" data-initial="B" href="notre-dame-de-paris/index.html">
                 <div class="cover" aria-hidden="true"><img class="show-logo" src="notre-dame-de-paris/assets/show-logo.png" alt="" loading="lazy" decoding="async" /></div>
                 <div class="show-copy"><span class="show-meta">法语 / IPA / 中英对照</span><strong>巴黎圣母院</strong></div>
+              </a>
+              <a class="show-card camelias" id="letter-fr-C" data-initial="C" href="la-dame-aux-camelias/index.html">
+                <div class="cover" aria-hidden="true"><img class="show-logo" src="la-dame-aux-camelias/assets/show-logo-poster.webp" alt="" loading="lazy" decoding="async" /></div>
+                <div class="show-copy"><span class="show-meta">法语 / IPA / 中英对照</span><strong>茶花女</strong></div>
               </a>
               <a class="show-card romeo" id="letter-fr-L" data-initial="L" href="romeo-et-juliette/index.html">
                 <div class="cover" aria-hidden="true"><img class="show-logo" src="romeo-et-juliette/assets/show-logo.png" alt="" loading="lazy" decoding="async" /></div>
@@ -1329,15 +1346,15 @@
       })();
     </script>
     <script src="shared/analytics.js" defer onerror="handleOptionalAssetError(this.src)"></script>
-    <script src="shows.js" defer onerror="handleOptionalAssetError(this.src)"></script>
-    <script src="library.js?v=20261021-song-navigation" defer onerror="handleOptionalAssetError(this.src)"></script>
+    <script src="shows.js?v=20261023-camelias" defer onerror="handleOptionalAssetError(this.src)"></script>
+    <script src="library.js?v=20261023-camelias" defer onerror="handleOptionalAssetError(this.src)"></script>
     <script src="shared/display-settings.js?v=20260817-version-order"></script>
     <link rel="stylesheet" href="shared/library-feedback.css" />
     <script src="shared/feedback-widget.js" defer></script>
     <script src="shared/library-feedback.js" defer></script>
     <script src="library-cursor.js?v=20260817-state-controller"></script>
-    <link rel="stylesheet" href="shared/fuyin-promo.css">
+    <link rel="stylesheet" href="shared/fuyin-promo.css?v=20261022-no-group">
     <script src="shared/fuyin-config.js" defer></script>
-    <script src="shared/fuyin-promo.js" defer></script>
+    <script src="shared/fuyin-promo.js?v=20261022-no-group" defer></script>
   </body>
 </html>
