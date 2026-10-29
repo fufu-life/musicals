@@ -7,7 +7,7 @@ const libraryLanguages = [
 
 const libraryShows = [
   {
-    id: "la-dame-aux-camelias", deployed: true, language: "fr", browserSpeechOnly: true,
+    id: "la-dame-aux-camelias", deployed: true, language: "fr", browserSpeechOnly: false,
     cardClass: "camelias", href: "la-dame-aux-camelias/index.html",
     title: "茶花女", originalTitle: "La Dame aux camélias",
     image: "la-dame-aux-camelias/assets/show-logo-poster.webp",

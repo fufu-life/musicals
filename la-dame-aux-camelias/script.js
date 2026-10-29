@@ -115,7 +115,7 @@ function init() {
 function loadScript(src, fetchPriority = "auto") {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = src;
+    script.src = src + (src.includes("?") ? "&" : "?") + "v=20261029-audio";
     script.async = true;
     script.fetchPriority = fetchPriority;
     script.addEventListener("load", resolve, { once: true });
@@ -581,12 +581,10 @@ function normalizeKey(token) {
 }
 
 function getLineAudioPath(song, line) {
-  return ""; // This editorial edition uses browser French speech.
   return withAudioVersion(`audio/lines/${encodeURIComponent(song.id)}/${encodeURIComponent(line.id)}.mp3`, line.original);
 }
 
 function getWordAudioPath(key) {
-  return ""; // No pre-generated pronunciation clips for this edition.
   // Delivery files already contain encodeURIComponent(key) in their literal name.
   // Encode the percent signs once more so static HTTP servers do not decode them
   // before resolving the repository path.
