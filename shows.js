@@ -42,6 +42,7 @@ const libraryShows = [
   },
 {
     id: "jesus-christ-superstar-1996-london",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "jesus-christ-superstar",
@@ -54,6 +55,7 @@ const libraryShows = [
   },
 {
     id: "les-miserables",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "lesmis",
@@ -67,6 +69,7 @@ const libraryShows = [
   },
 {
     id: "moulin-rouge",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "moulin",
@@ -79,6 +82,7 @@ const libraryShows = [
   },
 {
     id: "chicago",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "chicago",
@@ -91,6 +95,7 @@ const libraryShows = [
   },
 {
     id: "dear-evan-hansen",
+    fuyinAvailable: true,
     deployed: true,
     prefetch: ["dear-evan-hansen/songs-initial.js"],
     language: "en",
@@ -103,6 +108,7 @@ const libraryShows = [
   },
 {
     id: "six-the-musical",
+    fuyinAvailable: true,
     deployed: true,
     prefetch: ["six-the-musical/songs-initial.js"],
     language: "en",
@@ -115,6 +121,7 @@ const libraryShows = [
   },
 {
     id: "suffs",
+    fuyinAvailable: true,
     deployed: true,
     prefetch: ["suffs/songs-initial.js"],
     language: "en",
@@ -127,6 +134,7 @@ const libraryShows = [
   },
 {
     id: "sunset-boulevard",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "sunset-boulevard",
@@ -139,6 +147,7 @@ const libraryShows = [
   },
 {
     id: "phantom-of-the-opera",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "phantom",
@@ -151,6 +160,7 @@ const libraryShows = [
   },
 {
     id: "love-never-dies",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "love-never-dies",
@@ -176,6 +186,7 @@ const libraryShows = [
   },
 {
     id: "mozart-das-musical",
+    fuyinAvailable: true,
     deployed: true,
     language: "de",
     cardClass: "mozart-musical",
@@ -188,6 +199,7 @@ const libraryShows = [
   },
 {
     id: "tanz-der-vampire",
+    fuyinAvailable: true,
     deployed: true,
     language: "de",
     cardClass: "tanz-der-vampire",
@@ -200,6 +212,7 @@ const libraryShows = [
   },
 {
     id: "ludwig-ii-sehnsucht-nach-dem-paradies",
+    fuyinAvailable: true,
     deployed: true,
     language: "de",
     cardClass: "ludwig-ii",
@@ -212,6 +225,7 @@ const libraryShows = [
   },
 {
     id: "dracula-das-musical",
+    fuyinAvailable: true,
     deployed: true,
     language: "de",
     cardClass: "dracula-das-musical",
@@ -224,6 +238,7 @@ const libraryShows = [
   },
 {
     id: "rebecca-das-musical",
+    fuyinAvailable: true,
     deployed: true,
     language: "de",
     cardClass: "rebecca-das-musical",
@@ -236,6 +251,7 @@ const libraryShows = [
   },
 {
     id: "the-greatest-showman",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "the-greatest-showman",
@@ -248,6 +264,7 @@ const libraryShows = [
   },
 {
     id: "epic-the-musical",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "epic-the-musical",
@@ -260,6 +277,7 @@ const libraryShows = [
   },
 {
     id: "sound-of-music-the",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "sound-of-music-the",
@@ -272,6 +290,7 @@ const libraryShows = [
   },
 {
     id: "matilda",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "matilda",
@@ -284,6 +303,7 @@ const libraryShows = [
   },
 {
     id: "come-from-away",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "come-from-away",
@@ -296,6 +316,7 @@ const libraryShows = [
   },
 {
     id: "rent",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "rent",
@@ -308,6 +329,7 @@ const libraryShows = [
   },
 {
     id: "tick-tick-boom",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "tick-tick-boom",
@@ -320,6 +342,7 @@ const libraryShows = [
   },
 {
     id: "wicked",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "wicked",
@@ -332,6 +355,7 @@ const libraryShows = [
   },
 {
     id: "hadestown",
+    fuyinAvailable: true,
     deployed: true,
     language: "en",
     cardClass: "hadestown",
@@ -344,6 +368,7 @@ const libraryShows = [
   },
 {
     id: "les-dix-commandements",
+    fuyinAvailable: true,
     deployed: true,
     language: "fr",
     cardClass: "les-dix-commandements",
@@ -370,6 +395,7 @@ const libraryShows = [
   },
 {
     id: "le-petit-prince-2cd",
+    fuyinAvailable: true,
     deployed: true,
     language: "fr",
     cardClass: "le-petit-prince",
@@ -382,6 +408,7 @@ const libraryShows = [
   },
 {
     id: "starmania",
+    fuyinAvailable: true,
     deployed: true,
     language: "fr",
     cardClass: "starmania",
@@ -394,6 +421,7 @@ const libraryShows = [
   },
 {
     id: "la-legende-du-roi-arthur",
+    fuyinAvailable: true,
     deployed: true,
     language: "fr",
     cardClass: "arthur",
@@ -406,6 +434,7 @@ const libraryShows = [
   },
 {
     id: "notre-dame-de-paris",
+    fuyinAvailable: true,
     deployed: true,
     language: "fr",
     cardClass: "ndp",
@@ -419,6 +448,7 @@ const libraryShows = [
   },
 {
     id: "mozart-opera-rock",
+    fuyinAvailable: true,
     deployed: true,
     language: "fr",
     cardClass: "mozart",
@@ -432,6 +462,7 @@ const libraryShows = [
   },
 {
     id: "romeo-et-juliette",
+    fuyinAvailable: true,
     deployed: true,
     language: "fr",
     cardClass: "romeo",
@@ -445,6 +476,7 @@ const libraryShows = [
   },
 {
     id: "le-roi-soleil",
+    fuyinAvailable: true,
     deployed: true,
     language: "fr",
     cardClass: "soleil",
@@ -458,6 +490,7 @@ const libraryShows = [
   },
 {
     id: "1789-les-amants-de-la-bastille",
+    fuyinAvailable: true,
     deployed: true,
     language: "fr",
     cardClass: "bastille",
@@ -471,6 +504,7 @@ const libraryShows = [
   },
 {
     id: "don-juan",
+    fuyinAvailable: true,
     deployed: true,
     language: "fr",
     cardClass: "donjuan",
@@ -497,6 +531,7 @@ const libraryShows = [
   },
 {
     id: "cyrano-de-bergerac",
+    fuyinAvailable: true,
     deployed: true,
     language: "fr",
     cardClass: "cyrano",
@@ -510,6 +545,7 @@ const libraryShows = [
   },
 {
     id: "les-miserables-1980",
+    fuyinAvailable: true,
     deployed: true,
     language: "fr",
     cardClass: "lesmis-1980",
@@ -523,6 +559,7 @@ const libraryShows = [
   },
 {
     id: "les-miserables-cityprod-2017",
+    fuyinAvailable: true,
     deployed: true,
     language: "fr",
     cardClass: "lesmis-cityprod",
@@ -536,6 +573,7 @@ const libraryShows = [
   },
 {
     id: "legally-blonde",
+    fuyinAvailable: true,
     deployed: true,
     prefetch: ["legally-blonde/songs-initial.js"],
     language: "en",

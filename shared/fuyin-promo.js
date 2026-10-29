@@ -3,14 +3,15 @@
   const sourceFor = (show) => show
     ? `website_show_${show.id === "rouge-et-noir" ? "rouge" : show.id.replace(/-/g, "_")}`
     : "website_home";
-  function describe(show) {
+  const isAvailable = (show) => show?.fuyinAvailable === true;
+  function describe(show, count) {
     return {
-      title: !show ? "把喜欢的音乐剧歌词，带在身边" : show.fuyinAvailable
-        ? `在浮音歌词学习继续学习《${show.title}》` : "浮音歌词学习小程序已上线",
-      copy: !show ? "在「浮音歌词学习」小程序里看歌词、听发音，收藏喜欢的句子和单词，并生成自己的歌词图片。"
-        : show.fuyinAvailable ? "在手机上看歌词、听发音，收藏喜欢的句子和单词。"
-          : "首批带来四部音乐剧，在手机上学习歌词，收藏喜欢的句子和单词。",
-      cta: !show ? "去浮音歌词学习看看" : show.fuyinAvailable ? "去浮音歌词学习继续看" : "看看浮音歌词学习目前有哪些剧",
+      title: !show ? "网站上的音乐剧歌词，微信小程序里也能学" : isAvailable(show)
+        ? `在浮音歌词学习《${show.title}》` : "在浮音歌词学习探索更多音乐剧",
+      copy: !show ? `浮音歌词学习已收录 ${count} 部音乐剧。看歌词、听发音，收藏喜欢的句子和单词，并生成歌词图片。`
+        : isAvailable(show) ? "在手机上看歌词、听发音，收藏喜欢的句子和单词。"
+          : `小程序现已收录 ${count} 部音乐剧，随时随地学习歌词。`,
+      cta: !show ? "去浮音歌词学习看看" : isAvailable(show) ? "去小程序学习" : "去小程序看看",
     };
   }
   function getShow(shows, pathname) {
@@ -25,7 +26,7 @@
     } catch {}
     return "";
   }
-  const api = { sourceFor, describe, getShow, safeUrl };
+  const api = { sourceFor, describe, getShow, safeUrl, isAvailable };
   if (typeof module !== "undefined") module.exports = api;
   if (!scope.document) return;
   const doc = scope.document;
@@ -41,12 +42,12 @@
     : show.id === 'dazhuangwang' ? doc.getElementById('songAnnotations')
       : doc.getElementById('searchResults') || doc.getElementById('lyrics'));
   if (!target) return;
-  const available = shows.filter(item => item.fuyinAvailable === true);
-  const message = describe(show);
+  const availableCount = shows.filter(isAvailable).length;
+  const message = describe(show, availableCount);
   const source = sourceFor(show);
   let activeSource = source;
   const track = (action, from = source) => scope.MusicalAnalytics?.trackPromo?.({
-    action, source: from, show_id: (show?.id || 'musical_library').replace(/-/g, '_'), fuyin_available: show?.fuyinAvailable ? 'yes' : 'no',
+    action, source: from, show_id: (show?.id || 'musical_library').replace(/-/g, '_'), fuyin_available: isAvailable(show) ? 'yes' : 'no',
   });
   const el = (tag, className, text) => {
     const node = doc.createElement(tag);
@@ -71,7 +72,7 @@
   const card = el('section', 'fy-promo' + (home ? ' fy-home' : ' fy-show'));
   card.id = 'fuyinPromo'; card.setAttribute('data-show', show?.id || 'library'); card.setAttribute('aria-labelledby', 'fuyinTitle');
   const body = el('div', 'fy-copy');
-  const label = el('p', 'fy-eyebrow', home ? 'NEW · 浮音歌词学习小程序上线' : '浮音歌词学习 · 微信小程序');
+  const label = el('p', 'fy-eyebrow', '浮音歌词学习 · 微信小程序');
   body.append(label);
   const title = el('h2', 'fy-title', message.title); title.id = 'fuyinTitle'; body.append(title);
   body.append(el('p', 'fy-description', message.copy));
@@ -79,7 +80,6 @@
     const features = el('ul', 'fy-features');
     ['歌词学习', '发音', '单词收藏', '歌词收藏', '生成图片'].forEach(text => features.append(el('li', '', text)));
     body.append(features);
-    body.append(el('p', 'fy-shows', '首批上线：' + available.map(item => item.title).join(' · ')));
   }
   const actions = el('div', 'fy-actions');
   actions.append(button(message.cta, () => open(source)), el('span', 'fy-search-hint', '微信搜索：' + config.name));
@@ -104,8 +104,7 @@
   const header = el('div', 'fy-dialog-header');
   const heading = el('h2', 'fy-title', '在微信里找到浮音歌词学习'); heading.id = 'fuyinDialogTitle';
   const close = button('关闭', () => dialog.close(), true); header.append(heading, close); dialog.append(header);
-  dialog.append(el('p', 'fy-description', '首批上线四部音乐剧'));
-  const list = el('ul', 'fy-show-list'); available.forEach(item => list.append(el('li', '', item.title))); dialog.append(list);
+  dialog.append(el('p', 'fy-description', `浮音歌词学习现已收录 ${availableCount} 部音乐剧。`));
   dialog.append(el('p', 'fy-search-name', '微信搜索：' + config.name));
   const status = el('p', 'fy-status'); status.setAttribute('role', 'status');
   const enterActions = el('div', 'fy-actions');
