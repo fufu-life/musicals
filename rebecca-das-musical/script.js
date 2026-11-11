@@ -115,7 +115,7 @@ function init() {
 function loadScript(src, fetchPriority = "auto") {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = src;
+    script.src = src === "word-data.js" ? "word-data.js?v=20261111-german-noun-gender-1" : src;
     script.async = true;
     script.fetchPriority = fetchPriority;
     script.addEventListener("load", resolve, { once: true });
@@ -500,10 +500,14 @@ function showWord(token, anchor, { autoplay = false } = {}) {
   const ipa = document.createElement("p");
   ipa.className = "popover-ipa";
   ipa.textContent = entry.ipa || "";
+  // German noun data adapted from german-nouns (German Wiktionary), CC BY-SA 4.0.
+  // https://github.com/gambolputty/german-nouns · https://creativecommons.org/licenses/by-sa/4.0/
   const gender = document.createElement("span");
   gender.className = "popover-gender";
-  if (config.language === "fr" && ["m", "f"].includes(entry.gender)) {
-    gender.textContent = entry.gender === "m" ? "名词 · 阳性" : "名词 · 阴性";
+  if (config.language === "de" && ["m", "f", "n"].includes(entry.gender) && entry.nounLemma) {
+    const genderLabel = { m: "阳性", f: "阴性", n: "中性" }[entry.gender];
+    const article = { m: "der", f: "die", n: "das" }[entry.gender];
+    gender.textContent = `名词 · ${genderLabel} · ${article} ${entry.nounLemma}`;
   }
   const wordAudioPath = WORD_AUDIO_TTS_KEYS.has(key) ? "" : getWordAudioPath(key);
   if (wordAudioPath) window.MusicalAudio.preloadLocalAudio(wordAudioPath);

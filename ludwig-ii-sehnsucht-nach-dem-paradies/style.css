@@ -831,6 +831,12 @@ h2 {
   line-height: 1.55;
 }
 
+.popover-gender {
+  color: var(--muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
 .popover-ipa {
   margin: 0;
   color: color-mix(in srgb, var(--highlight), white 28%);

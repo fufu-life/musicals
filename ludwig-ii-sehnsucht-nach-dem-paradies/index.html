@@ -7,7 +7,7 @@
     <link rel="preload" href="songs-initial.js" as="script" />
     <script src="../shared/display-settings-preload.js?v=20260830-derived-light-profiles-4" data-musical-page="ludwig-ii-sehnsucht-nach-dem-paradies" data-musical-light-profile="#e6e7e8|#f3f4f5|#f2eace|#566f8f|#060f19|#414850|#758ba9"></script>
     <title>Ludwig II - Sehnsucht nach dem Paradies｜路德维希二世：向往天堂歌词学习</title>
-    <link rel="stylesheet" href="style.css?v=20260830-derived-light-profiles-4" />
+    <link rel="stylesheet" href="style.css?v=20261111-german-noun-gender-1" />
     <link rel="stylesheet" href="../shared/lyrics-page-tools.css?v=20260830-derived-light-profiles-4" />
     <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
     <script src="../shared/song-navigation.js" defer></script>
@@ -95,6 +95,7 @@
 
         window.writeCriticalScript = (source) => {
           const assetUrl = new URL(source, window.location.href);
+          if (source === "script.js") assetUrl.searchParams.set("v", "20261111-german-noun-gender-1");
           const pageUrl = new URL(window.location.href);
           const retryToken = pageUrl.searchParams.get("_retry");
           if (retryToken && pageUrl.searchParams.get(retryAssetParam) === assetUrl.pathname) {
