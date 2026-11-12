@@ -191,7 +191,7 @@ async function init() {
 function loadScript(src, fetchPriority = "auto") {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = src;
+    script.src = src === "word-data.js" ? "word-data.js?v=20261112-simplified-gloss-1" : src;
     script.async = true;
     script.fetchPriority = fetchPriority;
     script.addEventListener("load", resolve, { once: true });

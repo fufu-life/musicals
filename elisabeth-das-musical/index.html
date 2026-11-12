@@ -95,7 +95,7 @@
 
         window.writeCriticalScript = (source) => {
           const assetUrl = new URL(source, window.location.href);
-          if (source === "script.js") assetUrl.searchParams.set("v", "20261111-german-noun-gender-1");
+          if (source === "script.js") assetUrl.searchParams.set("v", "20261112-simplified-gloss-1");
           const pageUrl = new URL(window.location.href);
           const retryToken = pageUrl.searchParams.get("_retry");
           if (retryToken && pageUrl.searchParams.get(retryAssetParam) === assetUrl.pathname) {

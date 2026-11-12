@@ -112,7 +112,7 @@ function init() {
 function loadScript(src, fetchPriority = "auto") {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = src === "word-data.js" ? "word-data.js?v=20261111-french-noun-gender-3" : src;
+    script.src = src === "word-data.js" ? "word-data.js?v=20261112-french-word-gloss-4" : src;
     script.async = true;
     script.fetchPriority = fetchPriority;
     script.addEventListener("load", resolve, { once: true });

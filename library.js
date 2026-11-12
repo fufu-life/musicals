@@ -139,7 +139,7 @@ function matchesShowSearch(show, query) {
     {
       date: "2026-11-12",
       title: "法语与德语名词性别标注上线",
-      summary: "法语词卡新增名词阴阳性，部分词按歌词语境显示。德语词卡新增名词的阳性、阴性、中性及对应冠词。",
+      summary: "法语词卡新增名词阴阳性，部分词按歌词语境显示。德语词卡新增名词的阳性、阴性、中性及对应冠词。词卡中文释义统一为简体，合并重复释义。",
     },
   ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
