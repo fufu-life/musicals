@@ -7,7 +7,7 @@
     <link rel="preload" href="songs-initial.js" as="script" />
     <script src="../shared/display-settings-preload.js?v=20260830-derived-light-profiles-4" data-musical-page="starmania" data-musical-light-profile="#e6e7e8|#f3f4f5|#eaf6f9|#357187|#050f17|#41484f|#318ea8"></script>
     <title>Starmania｜星幻歌词学习</title>
-    <link rel="stylesheet" href="style.css?v=20260830-derived-light-profiles-4" />
+    <link rel="stylesheet" href="style.css?v=20261111-french-noun-gender-2" />
     <link rel="stylesheet" href="../shared/lyrics-page-tools.css?v=20260830-derived-light-profiles-4" />
     <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
     <script src="../shared/song-navigation.js" defer></script>
@@ -95,6 +95,7 @@
 
         window.writeCriticalScript = (source) => {
           const assetUrl = new URL(source, window.location.href);
+          if (source === "script.js") assetUrl.searchParams.set("v", "20261111-french-noun-gender-3");
           const pageUrl = new URL(window.location.href);
           const retryToken = pageUrl.searchParams.get("_retry");
           if (retryToken && pageUrl.searchParams.get(retryAssetParam) === assetUrl.pathname) {

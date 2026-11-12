@@ -838,6 +838,12 @@ h2 {
   white-space: nowrap;
 }
 
+.popover-gender {
+  color: var(--muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
 .popover-en {
   color: var(--muted);
 }

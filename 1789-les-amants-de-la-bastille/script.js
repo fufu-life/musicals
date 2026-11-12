@@ -112,7 +112,7 @@ function init() {
 function loadScript(src, fetchPriority = "auto") {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = src;
+    script.src = src === "word-data.js" ? "word-data.js?v=20261111-french-noun-gender-3" : src;
     script.async = true;
     script.fetchPriority = fetchPriority;
     script.addEventListener("load", resolve, { once: true });
@@ -401,7 +401,7 @@ function renderClickableWords(text, className, options = {}) {
   const wordParts = Array.from(String(text || "").matchAll(TOKEN_RE)).map((match) => match[0]);
   const ipaParts = splitIpa(options.line?.ipa || "");
   let lastIndex = 0;
-  let wordIndex = 0;
+  let wordIndexCounter = 0;
   for (const match of String(text || "").matchAll(TOKEN_RE)) {
     if (match.index > lastIndex) fragment.append(document.createTextNode(text.slice(lastIndex, match.index)));
     const token = match[0];
@@ -414,12 +414,13 @@ function renderClickableWords(text, className, options = {}) {
       button.disabled = true;
       button.classList.add("is-word-unavailable");
     }
+    const wordIndex = wordIndexCounter;
     button.addEventListener("click", async (event) => {
       const anchor = event.currentTarget;
       showWordLoading(token, anchor);
       await ensureWordDataReady();
       if (!anchor.isConnected) return;
-      showWord(token, anchor, { autoplay: true });
+      showWord(token, anchor, { autoplay: true, wordIndex });
     });
     if (options.showPhonetics) {
       const tokenWrap = document.createElement("span");
@@ -427,13 +428,13 @@ function renderClickableWords(text, className, options = {}) {
       const phonetic = document.createElement("span");
       phonetic.className = "word-phonetic";
       phonetic.hidden = !state.settings.showIpa;
-      phonetic.textContent = getAlignedWordIpa(token, wordIndex, wordParts.length, ipaParts);
+      phonetic.textContent = getAlignedWordIpa(token, wordIndexCounter, wordParts.length, ipaParts);
       tokenWrap.append(button, phonetic);
       fragment.append(tokenWrap);
     } else {
       fragment.append(button);
     }
-    wordIndex += 1;
+    wordIndexCounter += 1;
     lastIndex = match.index + token.length;
   }
   if (lastIndex < String(text).length) fragment.append(document.createTextNode(String(text).slice(lastIndex)));
@@ -473,7 +474,7 @@ function stripIpaSlashes(value) {
   return String(value || "").replace(/^\/|\/$/g, "").trim();
 }
 
-function showWord(token, anchor, { autoplay = false } = {}) {
+function showWord(token, anchor, { autoplay = false, wordIndex = -1 } = {}) {
   const key = normalizeKey(token);
   const entry = wordEntries[key];
   if (!entry) {
@@ -499,8 +500,16 @@ function showWord(token, anchor, { autoplay = false } = {}) {
   ipa.textContent = entry.ipa || "";
   const gender = document.createElement("span");
   gender.className = "popover-gender";
-  if (config.language === "fr" && ["m", "f"].includes(entry.gender)) {
-    gender.textContent = entry.gender === "m" ? "名词 · 阳性" : "名词 · 阴性";
+  const nounContext = config.language === "fr" && lineId && Number.isInteger(wordIndex)
+    ? entry.genderByLine?.[lineId]?.[wordIndex]
+    : null;
+  if (config.language === "fr") {
+    const contextualGender = nounContext?.gender;
+    if (["m", "f"].includes(contextualGender)) {
+      gender.textContent = contextualGender === "m" ? "本句名词 · 阳性" : "本句名词 · 阴性";
+    } else if (["m", "f"].includes(entry.gender)) {
+      gender.textContent = entry.gender === "m" ? "名词 · 阳性" : "名词 · 阴性";
+    }
   }
   const wordAudioPath = getWordAudioPath(key);
   window.MusicalAudio.preloadLocalAudio(wordAudioPath);
@@ -518,10 +527,10 @@ function showWord(token, anchor, { autoplay = false } = {}) {
   head.append(term);
   const meaning = document.createElement("p");
   meaning.className = "popover-meaning";
-  meaning.textContent = contextualSense?.meaning || entry.meaning || "";
+  meaning.textContent = nounContext?.meaning || contextualSense?.meaning || entry.meaning || "";
   const en = document.createElement("p");
   en.className = "popover-en";
-  en.textContent = contextualSense?.en || entry.en || "";
+  en.textContent = nounContext?.en || contextualSense?.en || entry.en || "";
   dom.popover.append(head, meaning);
   if (config.language !== "en" && entry.en) {
     dom.popover.append(en);

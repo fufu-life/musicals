@@ -136,6 +136,11 @@ function matchesShowSearch(show, query) {
       title: "法语音乐剧《茶花女》上线",
       summary: "上线法语音乐剧《茶花女》。",
     },
+    {
+      date: "2026-11-12",
+      title: "法语与德语名词性别标注上线",
+      summary: "法语词卡新增名词阴阳性，部分词按歌词语境显示。德语词卡新增名词的阳性、阴性、中性及对应冠词。",
+    },
   ];
   const analytics = window.MusicalAnalytics?.initLibrary?.() || {
     trackLibraryEntry() {},

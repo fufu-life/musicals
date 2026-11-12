@@ -7,7 +7,7 @@
     <link rel="preload" href="songs-initial.js" as="script" />
     <script src="../shared/display-settings-preload.js?v=20260830-derived-light-profiles-4" data-musical-page="don-juan" data-musical-light-profile="#e6e6e7|#f3f3f4|#ebedf3|#c51622|#050711|#41424a|#8d1627"></script>
     <title>Don Juan｜唐璜歌词学习</title>
-    <link rel="stylesheet" href="style.css?v=20260830-derived-light-profiles-4" />
+    <link rel="stylesheet" href="style.css?v=20261111-french-noun-gender-2" />
     <link rel="stylesheet" href="../shared/lyrics-page-tools.css?v=20260830-derived-light-profiles-4" />
     <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
     <script src="../shared/song-navigation.js" defer></script>
@@ -95,6 +95,7 @@
 
         window.writeCriticalScript = (source) => {
           const assetUrl = new URL(source, window.location.href);
+          if (source === "script.js") assetUrl.searchParams.set("v", "20261111-french-noun-gender-3");
           const pageUrl = new URL(window.location.href);
           const retryToken = pageUrl.searchParams.get("_retry");
           if (retryToken && pageUrl.searchParams.get(retryAssetParam) === assetUrl.pathname) {

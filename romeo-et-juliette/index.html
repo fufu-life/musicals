@@ -7,7 +7,7 @@
     <link rel="preload" href="songs-initial.js" as="script" />
     <script src="../shared/display-settings-preload.js?v=20260830-derived-light-profiles-4" data-musical-page="romeo-et-juliette" data-musical-light-profile="#e6e7eb|#f3f4f6|#fbf8f6|#c91f2c|#061135|#414a65|#b91932"></script>
     <title>Roméo et Juliette｜罗密欧与朱丽叶歌词学习</title>
-    <link rel="stylesheet" href="style.css?v=20260830-derived-light-profiles-4" />
+    <link rel="stylesheet" href="style.css?v=20261111-french-noun-gender-2" />
     <link rel="stylesheet" href="../shared/lyrics-page-tools.css?v=20260830-derived-light-profiles-4" />
     <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
     <script src="../shared/song-navigation.js" defer></script>
@@ -95,6 +95,7 @@
 
         window.writeCriticalScript = (source) => {
           const assetUrl = new URL(source, window.location.href);
+          if (source === "script.js") assetUrl.searchParams.set("v", "20261111-french-noun-gender-3");
           const pageUrl = new URL(window.location.href);
           const retryToken = pageUrl.searchParams.get("_retry");
           if (retryToken && pageUrl.searchParams.get(retryAssetParam) === assetUrl.pathname) {

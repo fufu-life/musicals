@@ -485,7 +485,7 @@ function init() {
 function loadScript(src, fetchPriority = "auto") {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = src;
+    script.src = src === "songs.js" ? "songs.js?v=20261111-french-noun-gender-2" : src;
     script.async = true;
     script.fetchPriority = fetchPriority;
     script.addEventListener("load", resolve, { once: true });
@@ -1730,8 +1730,9 @@ function showWordPopup(song, displayWord, key, anchor, phoneticContext = {}, { a
 
   const gender = document.createElement("span");
   gender.className = "popover-gender";
-  if (displayEntry.gender === "m" || displayEntry.gender === "f") {
-    gender.textContent = displayEntry.gender === "m" ? "名词 · 阳性" : "名词 · 阴性";
+  const nounGender = displayEntry.note?.startsWith("来自短语 ") ? undefined : song.nounGenders?.[key];
+  if (nounGender === "m" || nounGender === "f") {
+    gender.textContent = nounGender === "m" ? "名词 · 阳性" : "名词 · 阴性";
   }
 
   const zh = document.createElement("span");

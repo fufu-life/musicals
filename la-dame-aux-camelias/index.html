@@ -7,7 +7,7 @@
     <link rel="preload" href="songs-initial.js" as="script" />
     <script src="../shared/display-settings-preload.js?v=20260830-derived-light-profiles-4" data-musical-page="la-dame-aux-camelias" data-musical-light-profile="#f1e8d7|#fff9ec|#e2c58f|#79551f|#28170f|#685347|#8f2028"></script>
     <title>La Dame aux camélias｜茶花女歌词学习</title>
-    <link rel="stylesheet" href="style.css?v=20260830-derived-light-profiles-4" />
+    <link rel="stylesheet" href="style.css?v=20261111-french-noun-gender-2" />
     <link rel="stylesheet" href="../shared/lyrics-page-tools.css?v=20260830-derived-light-profiles-4" />
     <link rel="stylesheet" href="../shared/mobile-lyrics.css" />
     <script src="../shared/song-navigation.js" defer></script>
@@ -97,6 +97,7 @@
         window.writeCriticalScript = (source) => {
           const assetUrl = new URL(source, window.location.href);
           if (!source.startsWith("../")) assetUrl.searchParams.set("v", "20261029-audio");
+          if (source === "script.js") assetUrl.searchParams.set("v", "20261111-french-noun-gender-3");
           const pageUrl = new URL(window.location.href);
           const retryToken = pageUrl.searchParams.get("_retry");
           if (retryToken && pageUrl.searchParams.get(retryAssetParam) === assetUrl.pathname) {
